@@ -26,5 +26,5 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Bootstrap unit tests (8 passing, >80% coverage on models)
 - `ROADMAP.md` — 6-sprint development roadmap with checkbox tracking tied to PRD phases and SemVer version targets
 
-[Unreleased]: https://github.com/karl-johnson/kinetic/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/karl-johnson/kinetic/releases/tag/v0.1.0
+[Unreleased]: https://github.com/hirekarl/kinetic/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/hirekarl/kinetic/releases/tag/v0.1.0
