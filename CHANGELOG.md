@@ -6,13 +6,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-04-25
+
 ### Added
-- Sprint 1 agent logic implementation (in progress)
-  - `BioArchivist`: burnout score algorithm (weighted: sleep 40%, nutrition 30%, energy 30%), sleep debt vs. 8h baseline, green/yellow/red thresholds, triage item generation
-  - `LogisticsFixer`: criticality scoring (`days_overdue × priority_weight`), outsourcing suggestion stubs, `time_to_resolve_minutes` estimation
-  - `RelationalDiplomat`: connection margin with recency decay (`max(0.3, 1 - (days-7)*0.05)`), at-risk detection, interaction sprint templates
-  - Lead orchestrator: per-agent try/except, worst-case `overall_status`, triage compilation sorted descending by priority, stable IDs (`{domain}-{i:03d}`)
-  - `AgentResult` extended with `triage_items: list[TriageItem]`
+- `BioArchivist`: weighted burnout score (sleep 40%, nutrition 30%, energy 30%), re-normalized for partial data; green <40 / yellow <70 / red ≥70; triage items at priority 6 (yellow) and 9 (red)
+- `LogisticsFixer`: criticality = `days_overdue × priority_weight` ({low:1, medium:2, high:3, critical:4}); yellow ≤6 / red >6; outsourcing keyword stubs; `time_to_resolve_minutes` estimation
+- `RelationalDiplomat`: recency-decayed connection margin (`max(0.3, 1-(days-7)*0.05)`); at-risk on score<5 (→ red) or days>7 (→ yellow); 3-tier interaction sprint templates
+- Lead orchestrator: per-agent try/except so one failure doesn't block others; worst-case `overall_status`; triage items merged, sorted descending, stable domain-scoped IDs (`{domain}-{i:03d}`)
+- `AgentResult` extended with `triage_items: list[TriageItem]`
+- 27 new unit tests (35 total); 88% coverage; bandit + ruff + mypy strict clean
 
 ## [0.1.0] — 2026-04-25
 
@@ -34,5 +36,6 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Bootstrap unit tests (8 passing, >80% coverage on models)
 - `ROADMAP.md` — 6-sprint development roadmap with checkbox tracking tied to PRD phases and SemVer version targets
 
-[Unreleased]: https://github.com/hirekarl/kinetic/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/hirekarl/kinetic/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/hirekarl/kinetic/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hirekarl/kinetic/releases/tag/v0.1.0

@@ -63,7 +63,7 @@ Foundation: professional tooling, typed skeletons, AI agent team, deployment con
 
 ---
 
-## Sprint 1 — Agent Logic 🔄
+## Sprint 1 — Agent Logic ✅
 **Dates:** 2026-04-26 → 2026-04-27 · **Target version:** `v0.2.0` · **PRD ref:** Phase 1 + Phase 2 (partial)
 
 Implement real business logic in all three agents and the lead orchestrator. All stubs graduate to working implementations with ≥80% test coverage.
@@ -100,9 +100,9 @@ Implement real business logic in all three agents and the lead orchestrator. All
 - [x] `uv run pytest` passes — 35 tests, 88% coverage
 - [x] `uv run mypy src/kinetic --strict` → 0 errors
 - [x] `uv run ruff check src/ tests/` → 0 warnings
-- [ ] `/qa-reviewer` approval
-- [ ] `/security-reviewer` approval
-- [ ] `/docs-keeper` updates CLAUDE.md, GEMINI.md, ROADMAP.md, CHANGELOG.md
+- [x] `/qa-reviewer` approval — 35 tests, 88% coverage, all critical paths covered
+- [x] `/security-reviewer` approval — bandit clean, no high/critical npm vulns, CORS dev-scoped (production config deferred to Sprint 2)
+- [x] `/docs-keeper` updates ROADMAP.md, CHANGELOG.md
 
 ---
 
@@ -255,7 +255,7 @@ Error handling, empty states, onboarding, accessibility, demo script.
 | Version | Sprint | PRD Phase | Status |
 |---------|--------|-----------|--------|
 | `v0.1.0` | Sprint 0 — Bootstrap | Pre-Phase 1 | ✅ Released |
-| `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | 🔄 |
+| `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ✅ Released |
 | `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ⬜ |
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ⬜ |
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ⬜ |
