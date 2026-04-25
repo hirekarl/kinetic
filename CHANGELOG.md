@@ -6,6 +6,22 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+- `ROISummaryCard`: New frontend component for visualizing time reclaimed, system margin, and burnout risk delta.
+- ROI Calculation logic in Lead Orchestrator: Quantifies operational yield based on logistics outsourcing and relational health.
+- React Mission Control Dashboard: High-fidelity split-panel UI with sector-specific status cards (`Bio`, `Logistics`, `Relational`).
+- LLM Parsing Layer: Full implementation using Gemini 2.5 Flash and Instructor to convert natural language check-ins into structured data.
+- Tailwind CSS configuration: Custom dark-mode theme with semantic status colors (emerald, amber, rose) following "Developer Tool Minimalism" aesthetic.
+- `docs/kinetic-design-system.md`: Comprehensive design brief for the Kinetic frontend.
+
+### Changed
+- Refactored LLM Parser to use the modern `google-genai` SDK (v1.0), removing the deprecated `google-generativeai` package.
+- Updated `App.tsx` and `App.test.tsx` to support the new semantic structure and ROI integration.
+
+### Fixed
+- Resolved multiple ESLint and TypeScript issues in the frontend components (misused promises, unsafe any, Confusing void expressions).
+- Added robust error handling for API failures, including 503 fallback for missing Gemini credentials.
+
 ## [0.2.0] — 2026-04-25
 
 ### Added

@@ -6,9 +6,52 @@ from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
 from kinetic.models.inputs import CheckInPayload
-from kinetic.models.outputs import StatusLevel, SystemHealthPayload, TriageItem
+from kinetic.models.outputs import (
+    BioStatus,
+    LogisticsStatus,
+    RelationalStatus,
+    ROISummary,
+    StatusLevel,
+    SystemHealthPayload,
+    TriageItem,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _calculate_roi(
+    bio: BioStatus | None,
+    logistics: LogisticsStatus | None,
+    relational: RelationalStatus | None,
+) -> ROISummary | None:
+    """Calculate ROI based on agent outputs. Returns None if no data."""
+    if not any([bio, logistics, relational]):
+        return None
+
+    time_saved = 0
+    if logistics and logistics.outsourcing_suggestions:
+        # If there are outsourcing suggestions, we count the resolve time as 'recovered'
+        time_saved = logistics.time_to_resolve_minutes
+
+    # Margin recovered is a qualitative/quantitative mix.
+    # We'll use a formula: (time_saved_hours / 16 active hours) + (relational_margin / 100)
+    # Re-mapped to a "System Capacity Reclaimed" percentage.
+    margin_pct = (time_saved / 960) * 100  # 960 mins = 16h
+    if relational:
+        # Add 5% for every 10 points of connection margin above 50
+        margin_pct += max(0, (relational.connection_margin_score - 50) / 2)
+
+    # Burnout risk delta: Potential improvement if recommendations are followed
+    risk_delta = 0.0
+    if bio:
+        # Each recommendation is estimated to reduce burnout by 8%
+        risk_delta = -float(len(bio.recommendations) * 8.0)
+
+    return ROISummary(
+        time_recovered_minutes=time_saved,
+        margin_recovered=f"{margin_pct:.1f}% capacity reclaimed",
+        burnout_risk_delta=risk_delta,
+    )
 
 
 def _aggregate_status(*statuses: StatusLevel | None) -> StatusLevel:
@@ -85,10 +128,13 @@ async def orchestrate(payload: CheckInPayload) -> SystemHealthPayload:
         relational_status.status if relational_status else None,
     )
 
+    roi = _calculate_roi(bio_status, logistics_status, relational_status)
+
     return SystemHealthPayload(
         overall_status=overall,
         bio=bio_status,
         logistics=logistics_status,
         relational=relational_status,
         triage_items=triage_items,
+        roi_summary=roi,
     )

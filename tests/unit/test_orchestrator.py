@@ -124,3 +124,15 @@ async def test_overall_status_is_worst_case() -> None:
     assert result.bio.status == "green"
     assert result.relational.status == "red"
     assert result.overall_status == "red"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_roi_calculation_on_full_payload(full_checkin_payload: CheckInPayload) -> None:
+    """Full payload → ROI summary is populated with non-zero values."""
+    result = await orchestrate(full_checkin_payload)
+
+    assert result.roi_summary is not None
+    assert result.roi_summary.time_recovered_minutes >= 0
+    assert "capacity reclaimed" in result.roi_summary.margin_recovered
+    assert result.roi_summary.burnout_risk_delta <= 0.0

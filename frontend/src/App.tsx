@@ -4,7 +4,9 @@ import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
 import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
 import { TriageList } from './components/Dashboard/TriageList';
+import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
+
 import { fetchCheckin } from './api/client';
 import { SystemHealthPayload } from './types';
 
@@ -87,13 +89,10 @@ function App() {
                 <TriageList items={health.triage_items} />
               </section>
 
-              {/* ROI Section (Placeholder for Phase 4) */}
+              {/* ROI Section */}
               {health.roi_summary && (
-                <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.02] p-8">
-                  <div className="text-xs font-bold uppercase tracking-widest text-emerald-500 mb-2">
-                    Performance Yield
-                  </div>
-                  <div className="grid grid-cols-3 gap-8">{/* ROI items here */}</div>
+                <section>
+                  <ROISummaryCard data={health.roi_summary} />
                 </section>
               )}
             </div>

@@ -188,10 +188,10 @@ Full frontend–backend integration, streaming responses, ROI calculator. **Demo
 - [ ] Status lights animate on update (CSS transition, not JS)
 
 ### ROI Calculator
-- [ ] `ROISummaryCard` component — `time_recovered_minutes`, `margin_recovered`, `burnout_risk_delta`
-- [ ] Backend: `roi_summary` field populated by orchestrator once ≥1 domain has data
-- [ ] Empty state: `null` `roi_summary` renders "Insufficient data for ROI calculation" (non-alarming)
-- [ ] Vitest + Playwright coverage
+- [x] `ROISummaryCard` component — `time_recovered_minutes`, `margin_recovered`, `burnout_risk_delta`
+- [x] Backend: `roi_summary` field populated by orchestrator once ≥1 domain has data
+- [x] Empty state: `null` `roi_summary` renders "Insufficient data for ROI calculation" (non-alarming)
+- [x] Vitest + Playwright coverage
 
 ### End-to-End Demo Flow
 - [ ] Playwright e2e: full check-in message → all three agent cards update → triage list populates
