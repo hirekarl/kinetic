@@ -142,6 +142,62 @@ class LadybugClient:
 
         return checkin_id
 
+    def get_latest_bio(self) -> dict[str, Any] | None:
+        """Fetch the most recent bio-metric record."""
+        result = self.conn.execute(
+            "MATCH (c:CheckIn)-[:HAS_BIO]->(b:BioMetric) "
+            "RETURN b.sleep_hours, b.nutrition_quality, b.energy_level "
+            "ORDER BY c.timestamp DESC LIMIT 1"
+        )
+        if result.has_next():
+            row = result.get_next()
+            return {
+                "sleep_hours": row[0],
+                "nutrition_quality": row[1],
+                "energy_level": row[2],
+            }
+        return None
+
+    def get_all_tasks(self) -> list[dict[str, Any]]:
+        """Fetch all unique tasks mentioned across all check-ins."""
+        # This is a simplification; in a real app, we'd handle 'completed' states.
+        # For now, we return the latest priority/state for every known task.
+        result = self.conn.execute(
+            "MATCH (c:CheckIn)-[r:MENTIONED_TASK]->(t:LogisticsTask) "
+            "RETURN t.name, t.priority, r.days_overdue, c.timestamp "
+            "ORDER BY c.timestamp DESC"
+        )
+        tasks = {}
+        while result.has_next():
+            row = result.get_next()
+            name = row[0]
+            if name not in tasks:
+                tasks[name] = {
+                    "name": name,
+                    "priority": row[1],
+                    "days_overdue": row[2],
+                }
+        return list(tasks.values())
+
+    def get_all_vibes(self) -> list[dict[str, Any]]:
+        """Fetch the latest vibe check for every known person."""
+        result = self.conn.execute(
+            "MATCH (c:CheckIn)-[r:VIBE_CHECK]->(p:Person) "
+            "RETURN p.name, r.score, r.days_since, c.timestamp "
+            "ORDER BY c.timestamp DESC"
+        )
+        vibes = {}
+        while result.has_next():
+            row = result.get_next()
+            name = row[0]
+            if name not in vibes:
+                vibes[name] = {
+                    "person": name,
+                    "score": row[1],
+                    "days_since_contact": row[2],
+                }
+        return list(vibes.values())
+
     def get_recent_bio(self, limit: int = 7) -> list[dict[str, Any]]:
         """Fetch recent bio-metrics for trend analysis."""
         result = self.conn.execute(

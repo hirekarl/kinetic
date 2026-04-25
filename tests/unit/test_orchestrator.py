@@ -48,25 +48,26 @@ async def test_all_agents_fire_on_full_payload(full_checkin_payload: CheckInPayl
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_bio_only_payload_skips_other_agents() -> None:
-    """bio-only payload → only bio runs; logistics and relational are None."""
+async def test_bio_only_payload_still_runs_others(mock_db: MagicMock) -> None:
+    """bio-only payload → all agents run to maintain cumulative context."""
     payload = CheckInPayload(bio=BioInput(sleep_hours=7.0, nutrition_quality=8, energy_level=7))
     result = await orchestrate(payload)
 
     assert result.bio is not None
-    assert result.logistics is None
-    assert result.relational is None
+    # Now that we are cumulative, these are not None but 'green' defaults
+    assert result.logistics is not None
+    assert result.relational is not None
 
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_empty_payload_returns_green_no_agents() -> None:
-    """Empty payload → no agents run, overall_status defaults to green."""
+async def test_empty_payload_returns_default_health() -> None:
+    """Empty payload → all agents run, overall_status defaults to green."""
     result = await orchestrate(CheckInPayload())
 
-    assert result.bio is None
-    assert result.logistics is None
-    assert result.relational is None
+    assert result.bio is not None
+    assert result.logistics is not None
+    assert result.relational is not None
     assert result.overall_status == "green"
     assert result.triage_items == []
 

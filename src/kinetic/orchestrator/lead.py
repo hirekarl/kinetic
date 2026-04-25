@@ -10,7 +10,14 @@ from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
 from kinetic.agents.operational_liaison import OperationalLiaison
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
 from kinetic.db.ladybug_client import LadybugClient
-from kinetic.models.inputs import CheckInPayload
+from kinetic.models.inputs import (
+    BioInput,
+    CheckInPayload,
+    LogisticsInput,
+    LogisticsTask,
+    RelationalInput,
+    VibeCheck,
+)
 from kinetic.models.outputs import (
     BioStatus,
     LogisticsStatus,
@@ -93,6 +100,46 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
     return result
 
 
+def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload:
+    """Populate missing fields in payload with the latest known data from DB."""
+    # 1. Bio
+    latest_bio = db.get_latest_bio()
+    if latest_bio:
+        if payload.bio is None:
+            payload.bio = BioInput(**latest_bio)
+        else:
+            if payload.bio.sleep_hours is None:
+                payload.bio.sleep_hours = latest_bio["sleep_hours"]
+            if payload.bio.nutrition_quality is None:
+                payload.bio.nutrition_quality = latest_bio["nutrition_quality"]
+            if payload.bio.energy_level is None:
+                payload.bio.energy_level = latest_bio["energy_level"]
+
+    # 2. Logistics
+    hist_tasks = db.get_all_tasks()
+    if hist_tasks:
+        if payload.logistics is None:
+            payload.logistics = LogisticsInput(tasks=[LogisticsTask(**t) for t in hist_tasks])
+        else:
+            current_names = {t.name for t in payload.logistics.tasks}
+            for ht in hist_tasks:
+                if ht["name"] not in current_names:
+                    payload.logistics.tasks.append(LogisticsTask(**ht))
+
+    # 3. Relational
+    hist_vibes = db.get_all_vibes()
+    if hist_vibes:
+        if payload.relational is None:
+            payload.relational = RelationalInput(vibe_checks=[VibeCheck(**v) for v in hist_vibes])
+        else:
+            current_people = {v.person for v in payload.relational.vibe_checks}
+            for hv in hist_vibes:
+                if hv["person"] not in current_people:
+                    payload.relational.vibe_checks.append(VibeCheck(**hv))
+
+    return payload
+
+
 async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
     db = get_db()
@@ -101,30 +148,24 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
     if message:
         await db.insert_checkin(payload, message)
 
-    # 2. Fetch history for context
+    # 2. Merge history into payload to maintain system context
+    payload = _merge_history(payload, db)
+
+    # 3. Fetch history for context (rolling metrics)
     history: dict[str, Any] = {
         "bio": db.get_recent_bio(limit=7),
-        # Add logistics/relational history if needed
     }
 
-    bio_task = None
-    logistics_task = None
-    relational_task = None
-
-    if payload.bio is not None:
-        bio_task = asyncio.create_task(BioArchivist().process(payload, history))
-
-    if payload.logistics is not None:
-        logistics_task = asyncio.create_task(LogisticsFixer().process(payload, history))
-
-    if payload.relational is not None:
-        relational_task = asyncio.create_task(RelationalDiplomat().process(payload, history))
+    # 4. Fire agents in parallel
+    bio_task = asyncio.create_task(BioArchivist().process(payload, history))
+    logistics_task = asyncio.create_task(LogisticsFixer().process(payload, history))
+    relational_task = asyncio.create_task(RelationalDiplomat().process(payload, history))
 
     # Wait for all tasks to complete
     results = await asyncio.gather(
-        bio_task if bio_task else asyncio.sleep(0, result=None),
-        logistics_task if logistics_task else asyncio.sleep(0, result=None),
-        relational_task if relational_task else asyncio.sleep(0, result=None),
+        bio_task,
+        logistics_task,
+        relational_task,
         return_exceptions=True,
     )
 
