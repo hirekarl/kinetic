@@ -1,29 +1,41 @@
 import { useState } from 'react';
-import { ChatPanel } from './components/ChatPanel';
+import { ChatPanel, Message } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
 import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
 import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
-
 import { fetchCheckin } from './api/client';
 import { SystemHealthPayload } from './types';
 
 function App() {
   const [health, setHealth] = useState<SystemHealthPayload | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = (content: string) => {
+    // 1. Add user message to feed immediately
+    const userMsg: Message = { role: 'user', content };
+    setMessages((prev) => [...prev, userMsg]);
+
     setIsLoading(true);
     setError(null);
-    void fetchCheckin(message)
+
+    void fetchCheckin(content)
       .then((result) => {
         setHealth(result);
+        // 2. Add liaison feedback to feed
+        if (result.liaison_feedback) {
+          const systemMsg: Message = { role: 'system', content: result.liaison_feedback };
+          setMessages((prev) => [...prev, systemMsg]);
+        }
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to update system health.');
+        const msg = err instanceof Error ? err.message : 'Failed to update system health.';
+        setError(msg);
+        setMessages((prev) => [...prev, { role: 'system', content: `[CRITICAL ERROR] ${msg}` }]);
       })
       .finally(() => {
         setIsLoading(false);
@@ -32,12 +44,13 @@ function App() {
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
-      {/* Left Panel: Chat */}
-      <div className="w-[380px] shrink-0">
-        <ChatPanel onSendMessage={handleSendMessage} isLoading={isLoading} />
+      {/* Left Panel: Operational Liaison Feed */}
+      <div className="w-[420px] shrink-0">
+        <ChatPanel onSendMessage={handleSendMessage} isLoading={isLoading} messages={messages} />
       </div>
 
-      {/* Right Panel: Dashboard */}
+      {/* Right Panel: Mission Control Dashboard */}
+
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/30">
         {/* Top Header */}
         <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-8 py-4">

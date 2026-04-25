@@ -52,6 +52,7 @@ export interface SystemHealthPayload {
   relational: RelationalStatus | null;
   triage_items: TriageItem[];
   roi_summary: ROISummary | null;
+  liaison_feedback: string | null;
 }
 
 export interface CheckInRequest {

@@ -19,7 +19,7 @@ Kinetic is a personal infrastructure management system designed for high-perform
 
 * **Sustain a high-velocity workflow** without approaching burnout by surfacing actionable personal “system errors” early.
 * **Gain at-a-glance visibility** into the health of their personal infrastructure (sleep, logistics, relationships) through unified dashboarding.
-* **Reduce decision fatigue** around self-care and domestic logistics by providing prioritized, data-driven action recommendations.
+* **Reduce decision fatigue and support executive function** by acting as an Operational Liaison that provides clinical, tactical micro-tasking during states of operational paralysis.
 * **Safeguard relationship health** by tracking and supporting intentional connection interventions.
 
 ### Non-Goals
@@ -34,6 +34,7 @@ Kinetic is a personal infrastructure management system designed for high-perform
 
 ### Persona 1 — The Overachiever Engineer (primary: Karl)
 
+* As an overachiever, I want the system to act as an Operational Liaison during decision paralysis, providing single-step micro-tasks so I can bypass executive dysfunction.
 * As an overachiever, I want to check my burnout forecast before starting a work sprint, so that I can safely scale my commitments.
 * As an overachiever, I want to receive a logistics alert when domestic tasks (e.g., laundry) hit a critical threshold, so that I can schedule high-ROI outsourcing or allocate attention before it impacts my bandwidth.
 * As an overachiever, I want to get a relational nudge when my connection margin is in the red, so I can schedule time with friends or family before relationships degrade.
@@ -62,6 +63,9 @@ Kinetic is a personal infrastructure management system designed for high-perform
 * **Relational Diplomat (Priority: P0)**
   * Accepts manual “vibe check” inputs for relationship health.
   * Calculates connection margin and recommends actionable interaction sprints (e.g., call a friend, schedule dinner).
+* **Operational Liaison (Priority: P0 - Accessibility)**
+  * Provides clinical, tactical support for decision paralysis and low-bandwidth states.
+  * Translates aggregated triage items into micro-step instructions.
 * **Dashboard & ROI Calculator (Priority: P1)**
   * Interactive, at-a-glance dashboard visualizing state changes and agent outputs.
   * ROI calculator quantifying time/margin recovered through agent suggestions vs. baseline.

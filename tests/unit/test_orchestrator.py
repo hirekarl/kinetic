@@ -25,6 +25,15 @@ def mock_db() -> MagicMock:
         yield client
 
 
+@pytest.fixture(autouse=True)
+def mock_liaison() -> MagicMock:
+    with patch("kinetic.orchestrator.lead.OperationalLiaison") as mock:
+        instance = MagicMock()
+        instance.process = AsyncMock(return_value="Tactical feedback.")
+        mock.return_value = instance
+        yield instance
+
+
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_all_agents_fire_on_full_payload(full_checkin_payload: CheckInPayload) -> None:

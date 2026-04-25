@@ -176,10 +176,10 @@ Build the split-panel UI: ChatPanel for input, Dashboard for live agent output.
 
 ---
 
-## Sprint 4 — Integration & ROI ⬜
+## Sprint 4 — Integration, ROI & Liaison 🔄
 **Dates:** 2026-05-02 → 2026-05-03 · **Target version:** `v0.5.0` · **PRD ref:** Phase 3 (completion)
 
-Full frontend–backend integration, streaming responses, ROI calculator. **Demo-ready by end of sprint.**
+Full frontend–backend integration, streaming responses, ROI calculator, and the Operational Liaison accessibility layer. **Demo-ready by end of sprint.**
 
 ### Full Integration
 - [x] `App.tsx` wired: ChatPanel submit → `fetchCheckin()` → Dashboard updates
@@ -192,6 +192,18 @@ Full frontend–backend integration, streaming responses, ROI calculator. **Demo
 - [x] Backend: `roi_summary` field populated by orchestrator once ≥1 domain has data
 - [x] Empty state: `null` `roi_summary` renders "Insufficient data for ROI calculation" (non-alarming)
 - [x] Vitest + Playwright coverage
+
+### Operational Liaison (Executive Function Accessibility)
+- [ ] `OperationalLiaison` agent: provides clinical & tactical micro-tasking to break decision paralysis
+- [ ] Orchestration: runs after other agents to translate findings into tactical scripts
+- [ ] System prompt engineering: NOC-style tone, cognitive load reduction, task-dropping authority
+- [ ] Unit tests: verify tactical response structure based on aggregated triage items
+
+### Conversational Dialogue UI
+- [ ] `ChatPanel` evolution: from static input to scrolling dialogue feed
+- [ ] State management: persist message history in the frontend session
+- [ ] System message rendering: distinct styling for tactical [SYSTEM] readouts
+- [ ] Suggested prompts: update to trigger specific paralysis-breaking scenarios
 
 ### End-to-End Demo Flow
 - [ ] Playwright e2e: full check-in message → all three agent cards update → triage list populates

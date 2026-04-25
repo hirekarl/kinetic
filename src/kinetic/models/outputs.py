@@ -59,3 +59,4 @@ class SystemHealthPayload(BaseModel):
     relational: RelationalStatus | None = None
     triage_items: list[TriageItem] = Field(default_factory=list)
     roi_summary: ROISummary | None = None
+    liaison_feedback: str | None = None

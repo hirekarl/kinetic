@@ -7,6 +7,7 @@ from typing import Any
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
+from kinetic.agents.operational_liaison import OperationalLiaison
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
 from kinetic.db.ladybug_client import LadybugClient
 from kinetic.models.inputs import CheckInPayload
@@ -188,6 +189,13 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
 
     roi = _calculate_roi(bio_status, logistics_status, relational_status)
 
+    # 3. Formulate tactical liaison feedback
+    liaison_feedback = await OperationalLiaison().process(
+        message=message,
+        overall_status=overall,
+        triage_items=triage_items,
+    )
+
     return SystemHealthPayload(
         overall_status=overall,
         bio=bio_status,
@@ -195,4 +203,5 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         relational=relational_status,
         triage_items=triage_items,
         roi_summary=roi,
+        liaison_feedback=liaison_feedback,
     )
