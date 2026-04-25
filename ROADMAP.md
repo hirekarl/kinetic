@@ -63,43 +63,43 @@ Foundation: professional tooling, typed skeletons, AI agent team, deployment con
 
 ---
 
-## Sprint 1 — Agent Logic ⬜
+## Sprint 1 — Agent Logic 🔄
 **Dates:** 2026-04-26 → 2026-04-27 · **Target version:** `v0.2.0` · **PRD ref:** Phase 1 + Phase 2 (partial)
 
 Implement real business logic in all three agents and the lead orchestrator. All stubs graduate to working implementations with ≥80% test coverage.
 
 ### BioArchivist
-- [ ] Burnout score algorithm (weighted average of sleep debt, nutrition quality, energy trend)
-- [ ] Sleep debt calculation (rolling 7-day vs. 8h baseline)
-- [ ] Burnout forecast string (green/yellow/red thresholds with plain-language explanation)
-- [ ] `BioArchivistResult` → `BioStatus` fully populated
-- [ ] Unit tests: happy path, partial input (sleep only), no input guard
+- [x] Burnout score algorithm (weighted average of sleep debt, nutrition quality, energy trend)
+- [x] Sleep debt calculation (rolling 7-day vs. 8h baseline)
+- [x] Burnout forecast string (green/yellow/red thresholds with plain-language explanation)
+- [x] `BioArchivistResult` → `BioStatus` fully populated
+- [x] Unit tests: happy path, partial input (sleep only), no input guard
 
 ### LogisticsFixer
-- [ ] Criticality threshold logic (`days_overdue` × `priority` weight → `StatusLevel`)
-- [ ] `critical_tasks` list (tasks that cross the red threshold)
-- [ ] Outsourcing suggestion stubs (static demo responses keyed by task name)
-- [ ] `time_to_resolve_minutes` estimation
-- [ ] `LogisticsFixerResult` → `LogisticsStatus` fully populated
-- [ ] Unit tests: all-green tasks, one critical task, multiple critical tasks
+- [x] Criticality threshold logic (`days_overdue` × `priority` weight → `StatusLevel`)
+- [x] `critical_tasks` list (tasks that cross the red threshold)
+- [x] Outsourcing suggestion stubs (static demo responses keyed by task name)
+- [x] `time_to_resolve_minutes` estimation
+- [x] `LogisticsFixerResult` → `LogisticsStatus` fully populated
+- [x] Unit tests: all-green tasks, one critical task, multiple critical tasks
 
 ### RelationalDiplomat
-- [ ] Connection margin score (weighted average of vibe check scores vs. days-since-contact decay)
-- [ ] At-risk relationship detection (`score < 5` OR `days_since_contact > 7`)
-- [ ] Interaction sprint suggestions (templated by relationship type)
-- [ ] `RelationalDiplomatResult` → `RelationalStatus` fully populated
-- [ ] Unit tests: all healthy, one at-risk, all at-risk
+- [x] Connection margin score (weighted average of vibe check scores vs. days-since-contact decay)
+- [x] At-risk relationship detection (`score < 5` OR `days_since_contact > 7`)
+- [x] Interaction sprint suggestions (templated by relationship type)
+- [x] `RelationalDiplomatResult` → `RelationalStatus` fully populated
+- [x] Unit tests: all healthy, one at-risk, all at-risk
 
 ### Lead Orchestrator
-- [ ] Full routing with graceful agent failure handling (agent raises → `overall_status` degrades, others still run)
-- [ ] `overall_status` aggregation: worst-case across fired agents
-- [ ] `triage_items` compilation from all agent outputs (sorted by priority descending)
-- [ ] Unit tests: all agents fire, partial payload (bio only, relational only), all agents fail
+- [x] Full routing with graceful agent failure handling (agent raises → `overall_status` degrades, others still run)
+- [x] `overall_status` aggregation: worst-case across fired agents
+- [x] `triage_items` compilation from all agent outputs (sorted by priority descending)
+- [x] Unit tests: all agents fire, partial payload (bio only, relational only), all agents fail
 
 ### Quality Gates
-- [ ] `uv run pytest --cov-fail-under=80` passes
-- [ ] `uv run mypy src/kinetic --strict` → 0 errors
-- [ ] `uv run ruff check src/ tests/` → 0 warnings
+- [x] `uv run pytest` passes — 35 tests, 88% coverage
+- [x] `uv run mypy src/kinetic --strict` → 0 errors
+- [x] `uv run ruff check src/ tests/` → 0 warnings
 - [ ] `/qa-reviewer` approval
 - [ ] `/security-reviewer` approval
 - [ ] `/docs-keeper` updates CLAUDE.md, GEMINI.md, ROADMAP.md, CHANGELOG.md
@@ -255,7 +255,7 @@ Error handling, empty states, onboarding, accessibility, demo script.
 | Version | Sprint | PRD Phase | Status |
 |---------|--------|-----------|--------|
 | `v0.1.0` | Sprint 0 — Bootstrap | Pre-Phase 1 | ✅ Released |
-| `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ⬜ |
+| `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | 🔄 |
 | `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ⬜ |
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ⬜ |
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ⬜ |

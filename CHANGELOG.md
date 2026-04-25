@@ -6,6 +6,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+- Sprint 1 agent logic implementation (in progress)
+  - `BioArchivist`: burnout score algorithm (weighted: sleep 40%, nutrition 30%, energy 30%), sleep debt vs. 8h baseline, green/yellow/red thresholds, triage item generation
+  - `LogisticsFixer`: criticality scoring (`days_overdue × priority_weight`), outsourcing suggestion stubs, `time_to_resolve_minutes` estimation
+  - `RelationalDiplomat`: connection margin with recency decay (`max(0.3, 1 - (days-7)*0.05)`), at-risk detection, interaction sprint templates
+  - Lead orchestrator: per-agent try/except, worst-case `overall_status`, triage compilation sorted descending by priority, stable IDs (`{domain}-{i:03d}`)
+  - `AgentResult` extended with `triage_items: list[TriageItem]`
+
 ## [0.1.0] — 2026-04-25
 
 ### Added

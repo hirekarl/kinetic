@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from kinetic.models.inputs import CheckInPayload
+from kinetic.models.outputs import TriageItem
 
 
 class AgentResult(BaseModel):
@@ -12,6 +13,7 @@ class AgentResult(BaseModel):
 
     success: bool = True
     error_message: str | None = None
+    triage_items: list[TriageItem] = Field(default_factory=list)
 
 
 @runtime_checkable
