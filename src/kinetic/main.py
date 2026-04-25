@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv  # type: ignore
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from kinetic.api.routes import router
+
+# Load environment variables from .env at startup
+load_dotenv()
 
 app = FastAPI(
     title="Kinetic",
