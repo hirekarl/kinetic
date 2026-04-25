@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from typing import cast
 
-import google.generativeai as genai
 import instructor
+from google import genai
 
 from kinetic.models.inputs import CheckInPayload
 
@@ -19,18 +19,15 @@ async def parse_checkin(message: str) -> CheckInPayload:
     if not api_key:
         raise OSError("GEMINI_API_KEY is not set")
 
-    genai.configure(api_key=api_key)
-
-    client = instructor.from_gemini(
-        client=genai.GenerativeModel(
-            model_name="models/gemini-2.5-flash",
-        ),
+    client = instructor.from_genai(
+        client=genai.Client(api_key=api_key),
         mode=instructor.Mode.GEMINI_JSON,
     )
 
     return cast(
         CheckInPayload,
         client.chat.completions.create(
+            model="gemini-2.5-flash",
             messages=[
                 {
                     "role": "system",

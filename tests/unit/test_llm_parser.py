@@ -35,8 +35,8 @@ async def test_parse_checkin_returns_payload_on_success() -> None:
 
     with (
         patch.dict(os.environ, {"GEMINI_API_KEY": "fake_key"}),
-        patch("instructor.from_gemini", return_value=mock_client),
-        patch("google.generativeai.GenerativeModel"),
+        patch("instructor.from_genai", return_value=mock_client),
+        patch("google.genai.Client"),
     ):
         result = await parse_checkin("Slept 8 hours, ate great, feeling energized.")
 
