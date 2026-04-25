@@ -26,6 +26,7 @@ export interface BioStatus {
   forecast: string;
   sleep_debt_hours: number;
   recommendations: string[];
+  error_message?: string;
 }
 
 export interface LogisticsStatus {
@@ -33,6 +34,7 @@ export interface LogisticsStatus {
   critical_tasks: string[];
   outsourcing_suggestions: string[];
   time_to_resolve_minutes: number;
+  error_message?: string;
 }
 
 export interface RelationalStatus {
@@ -40,6 +42,7 @@ export interface RelationalStatus {
   connection_margin_score: number;
   at_risk_relationships: string[];
   interaction_sprints: string[];
+  error_message?: string;
 }
 
 export interface SystemHealthPayload {

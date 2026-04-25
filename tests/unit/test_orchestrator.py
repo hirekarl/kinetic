@@ -102,9 +102,11 @@ async def test_agent_failure_does_not_block_other_agents() -> None:
     ):
         result = await orchestrate(payload)
 
-    assert result.bio is None
+    assert result.bio is not None
+    assert result.bio.status == "yellow"
+    assert "Agent failure detected" in result.bio.forecast
     assert result.logistics is not None
-    assert result.overall_status in ("green", "yellow", "red")
+    assert result.overall_status == "yellow"
 
 
 @pytest.mark.unit

@@ -182,10 +182,10 @@ Build the split-panel UI: ChatPanel for input, Dashboard for live agent output.
 Full frontend–backend integration, streaming responses, ROI calculator. **Demo-ready by end of sprint.**
 
 ### Full Integration
-- [ ] `App.tsx` wired: ChatPanel submit → `fetchCheckin()` → Dashboard updates
-- [ ] Loading states propagate from API call to all Dashboard cards
-- [ ] Error states: agent failure surfaces as degraded card (not blank crash)
-- [ ] Status lights animate on update (CSS transition, not JS)
+- [x] `App.tsx` wired: ChatPanel submit → `fetchCheckin()` → Dashboard updates
+- [x] Loading states propagate from API call to all Dashboard cards
+- [x] Error states: agent failure surfaces as degraded card (not blank crash)
+- [x] Status lights animate on update (CSS transition, not JS)
 
 ### ROI Calculator
 - [x] `ROISummaryCard` component — `time_recovered_minutes`, `margin_recovered`, `burnout_risk_delta`
@@ -273,5 +273,5 @@ If transitioning from stateless check-ins to a vector-native memory layer, the f
 | `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ✅ Released |
 | `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ✅ |
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ✅ |
-| `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ⬜ |
+| `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | 🔄 |
 | `v1.0.0` | Sprint 5 — Polish | Phase 4 | ⬜ |

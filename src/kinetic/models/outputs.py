@@ -31,6 +31,7 @@ class BioStatus(BaseModel):
     forecast: str
     sleep_debt_hours: float = 0.0
     recommendations: list[str] = Field(default_factory=list)
+    error_message: str | None = None
 
 
 class LogisticsStatus(BaseModel):
@@ -38,6 +39,7 @@ class LogisticsStatus(BaseModel):
     critical_tasks: list[str] = Field(default_factory=list)
     outsourcing_suggestions: list[str] = Field(default_factory=list)
     time_to_resolve_minutes: int = 0
+    error_message: str | None = None
 
 
 class RelationalStatus(BaseModel):
@@ -45,6 +47,7 @@ class RelationalStatus(BaseModel):
     connection_margin_score: float = Field(ge=0, le=100)
     at_risk_relationships: list[str] = Field(default_factory=list)
     interaction_sprints: list[str] = Field(default_factory=list)
+    error_message: str | None = None
 
 
 class SystemHealthPayload(BaseModel):

@@ -3,19 +3,28 @@ import { TriageItem } from '../../types';
 
 interface TriageListProps {
   items: TriageItem[];
+  isLoading?: boolean;
 }
 
-export const TriageList: React.FC<TriageListProps> = ({ items }) => {
+export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-zinc-100 uppercase tracking-wider">
           Prioritized Triage
         </h2>
-        <span className="text-[10px] text-zinc-500">{items.length} items pending</span>
+        <span className="text-[10px] text-zinc-500">
+          {isLoading ? 'Analyzing...' : `${items.length.toString()} items pending`}
+        </span>
       </div>
 
-      {items.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-2 animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 rounded-xl border border-zinc-800 bg-zinc-900/50" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center">
           <p className="text-sm text-zinc-500">All systems nominal. No triage items pending.</p>
         </div>

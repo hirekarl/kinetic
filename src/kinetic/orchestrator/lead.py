@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
@@ -79,36 +80,67 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
 
 async def orchestrate(payload: CheckInPayload) -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
-    bio_result: BioArchivistResult | None = None
-    logistics_result: LogisticsFixerResult | None = None
-    relational_result: RelationalDiplomatResult | None = None
+    bio_task = None
+    logistics_task = None
+    relational_task = None
 
     if payload.bio is not None:
-        try:
-            bio_result = await BioArchivist().process(payload)
-        except Exception:
-            logger.exception("BioArchivist failed")
-            bio_result = BioArchivistResult(
-                success=False, error_message="BioArchivist unavailable."
-            )
+        bio_task = asyncio.create_task(BioArchivist().process(payload))
 
     if payload.logistics is not None:
-        try:
-            logistics_result = await LogisticsFixer().process(payload)
-        except Exception:
-            logger.exception("LogisticsFixer failed")
-            logistics_result = LogisticsFixerResult(
-                success=False, error_message="LogisticsFixer unavailable."
-            )
+        logistics_task = asyncio.create_task(LogisticsFixer().process(payload))
 
     if payload.relational is not None:
-        try:
-            relational_result = await RelationalDiplomat().process(payload)
-        except Exception:
-            logger.exception("RelationalDiplomat failed")
-            relational_result = RelationalDiplomatResult(
-                success=False, error_message="RelationalDiplomat unavailable."
-            )
+        relational_task = asyncio.create_task(RelationalDiplomat().process(payload))
+
+    # Wait for all tasks to complete
+    results = await asyncio.gather(
+        bio_task if bio_task else asyncio.sleep(0, result=None),
+        logistics_task if logistics_task else asyncio.sleep(0, result=None),
+        relational_task if relational_task else asyncio.sleep(0, result=None),
+        return_exceptions=True,
+    )
+
+    bio_result = results[0] if isinstance(results[0], BioArchivistResult) else None
+    logistics_result = results[1] if isinstance(results[1], LogisticsFixerResult) else None
+    relational_result = results[2] if isinstance(results[2], RelationalDiplomatResult) else None
+
+    # Handle exceptions from gather
+    if isinstance(results[0], Exception):
+        logger.error(f"BioArchivist task failed with exception: {results[0]}")
+        bio_result = BioArchivistResult(
+            success=False,
+            error_message="BioArchivist unavailable.",
+            status=BioStatus(
+                status="yellow",
+                burnout_score=0,
+                forecast="Agent failure detected. System monitoring for this sector is degraded.",
+                error_message=f"Internal error: {results[0]}",
+            ),
+        )
+
+    if isinstance(results[1], Exception):
+        logger.error(f"LogisticsFixer task failed with exception: {results[1]}")
+        logistics_result = LogisticsFixerResult(
+            success=False,
+            error_message="LogisticsFixer unavailable.",
+            status=LogisticsStatus(
+                status="yellow",
+                error_message=f"Internal error: {results[1]}",
+            ),
+        )
+
+    if isinstance(results[2], Exception):
+        logger.error(f"RelationalDiplomat task failed with exception: {results[2]}")
+        relational_result = RelationalDiplomatResult(
+            success=False,
+            error_message="RelationalDiplomat unavailable.",
+            status=RelationalStatus(
+                status="yellow",
+                connection_margin_score=0,
+                error_message=f"Internal error: {results[2]}",
+            ),
+        )
 
     bio_status = bio_result.status if bio_result else None
     logistics_status = logistics_result.status if logistics_result else None

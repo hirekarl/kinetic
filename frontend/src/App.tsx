@@ -78,21 +78,21 @@ function App() {
                   Sector Status
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <BioStatusCard data={health.bio} />
-                  <LogisticsStatusCard data={health.logistics} />
-                  <RelationalStatusCard data={health.relational} />
+                  <BioStatusCard data={health.bio} isLoading={isLoading} />
+                  <LogisticsStatusCard data={health.logistics} isLoading={isLoading} />
+                  <RelationalStatusCard data={health.relational} isLoading={isLoading} />
                 </div>
               </section>
 
               {/* Triage Section */}
               <section>
-                <TriageList items={health.triage_items} />
+                <TriageList items={health.triage_items} isLoading={isLoading} />
               </section>
 
               {/* ROI Section */}
               {health.roi_summary && (
                 <section>
-                  <ROISummaryCard data={health.roi_summary} />
+                  <ROISummaryCard data={health.roi_summary} isLoading={isLoading} />
                 </section>
               )}
             </div>

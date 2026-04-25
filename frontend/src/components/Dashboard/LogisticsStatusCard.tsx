@@ -1,12 +1,16 @@
 import React from 'react';
 import { LogisticsStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
+import { CardSkeleton } from './CardSkeleton';
 
 interface LogisticsStatusCardProps {
   data: LogisticsStatus | null;
+  isLoading?: boolean;
 }
 
-export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data }) => {
+export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, isLoading }) => {
+  if (isLoading) return <CardSkeleton />;
+
   if (!data) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 opacity-50">
@@ -25,6 +29,12 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data }
         <h3 className="text-sm font-semibold text-zinc-100">Logistics Fixer</h3>
         <StatusBadge status={data.status} />
       </div>
+
+      {data.error_message && (
+        <div className="mb-6 rounded border border-status-red/20 bg-status-red/5 p-3 text-xs text-status-red">
+          <span className="font-bold">AGENT ERROR:</span> {data.error_message}
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-4">
         <div>
