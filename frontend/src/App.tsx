@@ -42,6 +42,26 @@ function App() {
       });
   };
 
+  const handleReset = async () => {
+    if (!confirm('Are you sure you want to wipe all system data? This cannot be undone.')) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/debug/reset`,
+        {
+          method: 'POST',
+        }
+      );
+      if (response.ok) {
+        setHealth(null);
+        setMessages([]);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Reset failed', err);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
       {/* Left Panel: Operational Liaison Feed */}
@@ -50,7 +70,6 @@ function App() {
       </div>
 
       {/* Right Panel: Mission Control Dashboard */}
-
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/30">
         {/* Top Header */}
         <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-8 py-4">
@@ -58,8 +77,19 @@ function App() {
             <h2 className="text-lg font-bold tracking-tight text-white">Mission Control</h2>
             {health && <StatusBadge status={health.overall_status} />}
           </div>
-          <div className="text-[10px] font-mono text-zinc-500 uppercase">
-            System Time: {new Date().toLocaleTimeString()}
+
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => {
+                void handleReset();
+              }}
+              className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-rose-500 transition-colors"
+            >
+              Reset System
+            </button>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase">
+              System Time: {new Date().toLocaleTimeString()}
+            </div>
           </div>
         </header>
 

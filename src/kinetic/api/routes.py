@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from kinetic.models.outputs import SystemHealthPayload
-from kinetic.orchestrator.lead import orchestrate
+from kinetic.orchestrator.lead import get_db, orchestrate
 from kinetic.parsing.llm_parser import parse_checkin
 
 router = APIRouter(prefix="/api")
@@ -12,6 +12,14 @@ router = APIRouter(prefix="/api")
 
 class CheckInRequest(BaseModel):
     message: str
+
+
+@router.post("/debug/reset")
+async def reset_database() -> dict[str, str]:
+    """Wipe all data from the graph database (Debug only)."""
+    db = get_db()
+    db.clear_database()
+    return {"status": "success", "message": "Database wiped."}
 
 
 @router.post("/checkin", response_model=SystemHealthPayload)

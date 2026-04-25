@@ -218,3 +218,12 @@ class LadybugClient:
                 }
             )
         return items
+
+    def clear_database(self) -> None:
+        """Wipe all nodes and edges from the graph."""
+        # Note: detach delete is the most efficient way to clear data while keeping tables
+        try:
+            self.conn.execute("MATCH (n) DETACH DELETE n")
+            logger.info("Database wiped successfully.")
+        except Exception as e:
+            logger.error(f"Error wiping database: {e}")
