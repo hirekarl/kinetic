@@ -13,15 +13,19 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      // Measure only files with testable runtime logic — exclude entry points,
+      // ambient type declarations, config files, and test infrastructure.
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        'node_modules/',
-        'dist/',
-        'src/test/',
-        '**/*.test.ts',
-        '**/*.test.tsx',
-        'eslint.config.js',
-        'vite.config.ts',
-        'vitest.config.ts',
+        'src/main.tsx', // React entry point — boilerplate, not unit-testable
+        'src/vite-env.d.ts', // ambient type declarations only
+        'src/types/**', // type-only files, no runtime code
+        'src/test/**', // test setup
+        '**/*.test.{ts,tsx}',
+        '**/*.spec.{ts,tsx}',
+        'e2e/**',
+        'node_modules/**',
+        'dist/**',
       ],
       thresholds: {
         lines: 80,
