@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv:*)",
+      "Bash(uv run:*)",
+      "Bash(pre-commit:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git tag:*)",
+      "Bash(git describe:*)",
+      "Bash(git show:*)",
+      "Bash(npm run:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)"
+    ]
+  }
+}

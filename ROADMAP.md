@@ -1,0 +1,262 @@
+# Kinetic — Development Roadmap
+
+**Project:** Bio-Operational Triage Engine
+**Total timeline:** 10 days (2026-04-25 → 2026-05-05)
+**Demo deadline:** Day 8 · 2026-05-03 — all agents working end-to-end
+**MVP deadline:** Day 10 · 2026-05-05 — fully polished, stretch goals as time allows
+
+> Sprints map to the PRD's four phases. Each sprint targets a version bump via
+> `./scripts/release.sh`. The `/docs-keeper` agent updates this file at the end
+> of every feature cycle.
+
+---
+
+## Legend
+
+```
+✅  Complete       🔄  In progress       ⬜  Not started       🔷  Stretch goal
+```
+
+---
+
+## Sprint 0 — Bootstrap ✅
+**Dates:** 2026-04-25 · **Version:** `v0.1.0` · **PRD ref:** pre-Phase 1
+
+Foundation: professional tooling, typed skeletons, AI agent team, deployment config.
+
+### Tooling & Config
+- [x] `pyproject.toml` — uv, ruff, mypy strict, pytest, commitizen
+- [x] `.pre-commit-config.yaml` — ruff, mypy, prettier, conventional-pre-commit
+- [x] `CLAUDE.md` + `GEMINI.md` — full project docs + OS auto-detect startup ritual
+- [x] `.claude/settings.json` — pre-approved commands
+- [x] `render.yaml` — Render Blueprint (Python API + React static site)
+- [x] `scripts/release.sh` — SemVer release ceremony
+- [x] `.env.example` — environment variable template
+- [x] `CHANGELOG.md` — Keep-a-Changelog initialized
+
+### Python Skeleton
+- [x] Pydantic v2 input models (`CheckInPayload`, `BioInput`, `LogisticsInput`, `RelationalInput`)
+- [x] Pydantic v2 output models (`SystemHealthPayload`, `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`)
+- [x] `Agent` Protocol base class + `AgentResult`
+- [x] Typed agent stubs: `BioArchivist`, `LogisticsFixer`, `RelationalDiplomat`
+- [x] Lead orchestrator skeleton (routing logic, status aggregation)
+- [x] LLM parser stub (Gemini + Instructor integration point)
+- [x] FastAPI app skeleton (`GET /health`, `POST /api/checkin`)
+- [x] 8 passing unit tests on model layer (100% model coverage)
+
+### React Skeleton
+- [x] Vite + TypeScript strict, path aliases
+- [x] Vitest + `@testing-library/react` + jsdom
+- [x] Playwright + `@axe-core/playwright` e2e scaffold
+- [x] ESLint flat config (TypeScript-ESLint + `jsx-a11y` strict + Prettier)
+- [x] `frontend/src/types/index.ts` — TypeScript interfaces mirroring Python models
+- [x] Split-panel `App.tsx` shell + 3 passing component tests
+- [x] Production build verified
+
+### Agent Team
+- [x] `/architect` slash command
+- [x] `/backend-dev` slash command
+- [x] `/frontend-dev` slash command
+- [x] `/qa-reviewer` slash command
+- [x] `/security-reviewer` slash command
+- [x] `/docs-keeper` slash command
+
+---
+
+## Sprint 1 — Agent Logic ⬜
+**Dates:** 2026-04-26 → 2026-04-27 · **Target version:** `v0.2.0` · **PRD ref:** Phase 1 + Phase 2 (partial)
+
+Implement real business logic in all three agents and the lead orchestrator. All stubs graduate to working implementations with ≥80% test coverage.
+
+### BioArchivist
+- [ ] Burnout score algorithm (weighted average of sleep debt, nutrition quality, energy trend)
+- [ ] Sleep debt calculation (rolling 7-day vs. 8h baseline)
+- [ ] Burnout forecast string (green/yellow/red thresholds with plain-language explanation)
+- [ ] `BioArchivistResult` → `BioStatus` fully populated
+- [ ] Unit tests: happy path, partial input (sleep only), no input guard
+
+### LogisticsFixer
+- [ ] Criticality threshold logic (`days_overdue` × `priority` weight → `StatusLevel`)
+- [ ] `critical_tasks` list (tasks that cross the red threshold)
+- [ ] Outsourcing suggestion stubs (static demo responses keyed by task name)
+- [ ] `time_to_resolve_minutes` estimation
+- [ ] `LogisticsFixerResult` → `LogisticsStatus` fully populated
+- [ ] Unit tests: all-green tasks, one critical task, multiple critical tasks
+
+### RelationalDiplomat
+- [ ] Connection margin score (weighted average of vibe check scores vs. days-since-contact decay)
+- [ ] At-risk relationship detection (`score < 5` OR `days_since_contact > 7`)
+- [ ] Interaction sprint suggestions (templated by relationship type)
+- [ ] `RelationalDiplomatResult` → `RelationalStatus` fully populated
+- [ ] Unit tests: all healthy, one at-risk, all at-risk
+
+### Lead Orchestrator
+- [ ] Full routing with graceful agent failure handling (agent raises → `overall_status` degrades, others still run)
+- [ ] `overall_status` aggregation: worst-case across fired agents
+- [ ] `triage_items` compilation from all agent outputs (sorted by priority descending)
+- [ ] Unit tests: all agents fire, partial payload (bio only, relational only), all agents fail
+
+### Quality Gates
+- [ ] `uv run pytest --cov-fail-under=80` passes
+- [ ] `uv run mypy src/kinetic --strict` → 0 errors
+- [ ] `uv run ruff check src/ tests/` → 0 warnings
+- [ ] `/qa-reviewer` approval
+- [ ] `/security-reviewer` approval
+- [ ] `/docs-keeper` updates CLAUDE.md, GEMINI.md, ROADMAP.md, CHANGELOG.md
+
+---
+
+## Sprint 2 — LLM Parsing Layer ⬜
+**Dates:** 2026-04-28 → 2026-04-29 · **Target version:** `v0.3.0` · **PRD ref:** Phase 2 (completion)
+
+Wire Gemini 2.5 Flash + Instructor into the parsing layer. `POST /api/checkin` goes end-to-end.
+
+### LLM Parser
+- [ ] `parse_checkin()` — Gemini 2.5 Flash call via Instructor, returns typed `CheckInPayload`
+- [ ] Prompt engineering: system prompt instructs structured extraction of bio/logistics/relational fields
+- [ ] Graceful handling: partial messages (only bio mentioned) → correct sub-model population
+- [ ] `GEMINI_API_KEY` environment guard (clear error if missing)
+- [ ] Unit test (mocked Gemini): verify `CheckInPayload` structure from example messages
+- [ ] Integration test (live call, marked `@pytest.mark.integration`): verify round-trip from freetext
+
+### FastAPI Route
+- [ ] `POST /api/checkin` fully wired: body → `parse_checkin()` → `orchestrate()` → `SystemHealthPayload`
+- [ ] Input validation: empty message → `400`
+- [ ] Agent failure → `500` with non-leaking error message
+- [ ] Integration tests via `httpx.AsyncClient` (TestClient)
+
+### Quality Gates
+- [ ] All Sprint 1 gates still passing
+- [ ] Integration test suite passes (with `GEMINI_API_KEY` set)
+- [ ] Manual smoke test: `curl -X POST localhost:8000/api/checkin -d '{"message": "..."}'` returns valid JSON
+- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+
+---
+
+## Sprint 3 — Frontend Core ⬜
+**Dates:** 2026-04-30 → 2026-05-01 · **Target version:** `v0.4.0` · **PRD ref:** Phase 3 (partial)
+
+Build the split-panel UI: ChatPanel for input, Dashboard for live agent output.
+
+### API Client
+- [ ] `src/api/client.ts` — typed `fetchCheckin(message: string): Promise<SystemHealthPayload>`
+- [ ] Handles `VITE_API_BASE_URL` for production (Render) vs. Vite proxy (dev)
+- [ ] Unit tests: success response, 400 error, 500 error
+
+### ChatPanel Component
+- [ ] Message input (textarea + submit button)
+- [ ] Suggested prompt chips (3 example messages for first-time UX)
+- [ ] Message history display (user messages + Kinetic responses)
+- [ ] Loading state (spinner / "Analyzing..." indicator)
+- [ ] Empty state: "Brief your system. What's your status?"
+- [ ] Vitest: renders, submit triggers API call, loading state shown, error state shown
+- [ ] Playwright: type message → submit → response appears (with mocked API)
+
+### Dashboard Component
+- [ ] `OverallStatusBadge` — green/yellow/red with text label + ARIA role
+- [ ] `BioStatusCard` — burnout score, forecast, recommendations list
+- [ ] `LogisticsStatusCard` — critical tasks, outsourcing suggestions
+- [ ] `RelationalStatusCard` — connection margin, at-risk relationships, sprints
+- [ ] Empty/default state: "You're all green!" (or per-card: "No data yet")
+- [ ] Vitest: renders each card in all three status levels + empty state
+
+### TriageList Component
+- [ ] Flat list of `TriageItem`s sorted by priority
+- [ ] Each item: priority badge, domain tag, description, action CTA
+- [ ] Mark complete / snooze actions (local state for demo)
+- [ ] Empty state: "No actions needed. Nice work."
+- [ ] Vitest: renders items, complete action removes item, empty state shown
+
+### Quality Gates
+- [ ] `npm run test:coverage` → ≥80% all thresholds
+- [ ] `npm run lint` → 0 errors (including jsx-a11y)
+- [ ] `npm run typecheck` → 0 errors
+- [ ] Playwright e2e + axe audit → 0 WCAG 2.1 AA violations
+- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+
+---
+
+## Sprint 4 — Integration & ROI ⬜
+**Dates:** 2026-05-02 → 2026-05-03 · **Target version:** `v0.5.0` · **PRD ref:** Phase 3 (completion)
+
+Full frontend–backend integration, streaming responses, ROI calculator. **Demo-ready by end of sprint.**
+
+### Full Integration
+- [ ] `App.tsx` wired: ChatPanel submit → `fetchCheckin()` → Dashboard updates
+- [ ] Loading states propagate from API call to all Dashboard cards
+- [ ] Error states: agent failure surfaces as degraded card (not blank crash)
+- [ ] Status lights animate on update (CSS transition, not JS)
+
+### ROI Calculator
+- [ ] `ROISummaryCard` component — `time_recovered_minutes`, `margin_recovered`, `burnout_risk_delta`
+- [ ] Backend: `roi_summary` field populated by orchestrator once ≥1 domain has data
+- [ ] Empty state: `null` `roi_summary` renders "Insufficient data for ROI calculation" (non-alarming)
+- [ ] Vitest + Playwright coverage
+
+### End-to-End Demo Flow
+- [ ] Playwright e2e: full check-in message → all three agent cards update → triage list populates
+- [ ] Axe audit on fully-populated dashboard state (not just empty shell)
+
+### Quality Gates
+- [ ] All prior sprint gates still passing
+- [ ] Playwright e2e full demo flow passes
+- [ ] Manual demo run: verify narrative from PRD ("Slept 5 hours, ate okay, feeling disconnected from Marcus")
+- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+
+> **Critical milestone: demo-ready prototype by 2026-05-03 (Day 8)**
+
+---
+
+## Sprint 5 — Polish & Demo Prep ⬜
+**Dates:** 2026-05-04 → 2026-05-05 · **Target version:** `v1.0.0` · **PRD ref:** Phase 4
+
+Error handling, empty states, onboarding, accessibility, demo script.
+
+### Error & Empty States
+- [ ] Agent failure fallback: degraded status card with "Agent unavailable" message + retry CTA
+- [ ] Malformed input: `400` response surfaced as inline error (not toast, not crash)
+- [ ] Missing `GEMINI_API_KEY`: clear startup warning in logs, API returns `503` with helpful message
+- [ ] All empty states reviewed for non-alarming, non-judgmental copy
+
+### Onboarding Flow
+- [ ] 3-screen micro-tutorial (skippable): "Personal infrastructure", "Chat-first", "Agent roles"
+- [ ] First-time detection: `localStorage` flag, shown once
+- [ ] Vitest + Playwright: tutorial renders, skip works, doesn't re-appear on reload
+
+### Accessibility Final Audit
+- [ ] Full axe WCAG 2.1 AA audit on: empty state, loaded state, error state, onboarding
+- [ ] Keyboard navigation: all interactive elements reachable and operable without mouse
+- [ ] Color contrast: all status colors meet 4.5:1 ratio (green/yellow/red on dark bg)
+- [ ] Screen reader smoke test: status cards announce meaningful content
+
+### Demo Preparation
+- [ ] Demo script written (step-by-step walkthrough of PRD narrative)
+- [ ] Seeded demo state available (pre-populated check-in data for live demo)
+- [ ] Render deploy verified: both services healthy, API responding, frontend loading
+
+### Stretch Goals 🔷
+- [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
+- [ ] Burnout trend chart (7-day sparkline)
+- [ ] Agent log / history panel (collapsible sidebar)
+- [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
+
+### Quality Gates
+- [ ] All prior sprint gates still passing
+- [ ] `v1.0.0` release ceremony complete (`./scripts/release.sh`)
+- [ ] Render deploy healthy (both services green)
+- [ ] Demo run rehearsed end-to-end
+
+> **Critical milestone: fully functional MVP by 2026-05-05 (Day 10)**
+
+---
+
+## Version Map
+
+| Version | Sprint | PRD Phase | Status |
+|---------|--------|-----------|--------|
+| `v0.1.0` | Sprint 0 — Bootstrap | Pre-Phase 1 | ✅ Released |
+| `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ⬜ |
+| `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ⬜ |
+| `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ⬜ |
+| `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ⬜ |
+| `v1.0.0` | Sprint 5 — Polish | Phase 4 | ⬜ |

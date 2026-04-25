@@ -1,0 +1,53 @@
+repos:
+  # ── Python: Ruff lint + format ────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ── Python: mypy strict ───────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        args: [--strict]
+        exclude: '^tests/'
+        additional_dependencies:
+          - pydantic>=2.10
+          - fastapi>=0.115
+
+  # ── Frontend: Prettier (TS/TSX/JSON/CSS/MD) ───────────────────────────────
+  # Uses the project's own prettier install so the version stays in lockstep
+  # with package.json rather than a separately pinned mirror.
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (frontend)
+        language: node
+        entry: npx prettier --write
+        files: '^frontend/.*\.(ts|tsx|js|json|css|md)$'
+        additional_dependencies: ["prettier@3.4.2"]
+
+  # ── Commit message: Conventional Commits ──────────────────────────────────
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert]
+
+  # ── General hygiene ───────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+      - id: check-merge-conflict
