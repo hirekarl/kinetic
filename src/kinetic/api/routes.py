@@ -20,5 +20,11 @@ async def checkin(body: CheckInRequest) -> SystemHealthPayload:
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
 
-    payload = await parse_checkin(body.message)
+    try:
+        payload = await parse_checkin(body.message)
+    except OSError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
+
     return await orchestrate(payload)

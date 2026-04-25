@@ -1,43 +1,107 @@
-import type { FC } from 'react';
+import { useState } from 'react';
+import { ChatPanel } from './components/ChatPanel';
+import { BioStatusCard } from './components/Dashboard/BioStatusCard';
+import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
+import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
+import { TriageList } from './components/Dashboard/TriageList';
+import { StatusBadge } from './components/Dashboard/StatusBadge';
+import { fetchCheckin } from './api/client';
+import { SystemHealthPayload } from './types';
 
-const App: FC = () => {
+function App() {
+  const [health, setHealth] = useState<SystemHealthPayload | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSendMessage = (message: string) => {
+    setIsLoading(true);
+    setError(null);
+    void fetchCheckin(message)
+      .then((result) => {
+        setHealth(result);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to update system health.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        height: '100dvh',
-        gap: '1px',
-        background: 'var(--color-border)',
-      }}
-    >
-      {/* Left panel: Chat input */}
-      <section
-        style={{
-          background: 'var(--color-bg)',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '1.5rem',
-        }}
-        aria-label="Chat panel"
-      >
-        <h1 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Kinetic</h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-          Brief your system. What&apos;s your status?
-        </p>
-      </section>
+    <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      {/* Left Panel: Chat */}
+      <div className="w-[380px] shrink-0">
+        <ChatPanel onSendMessage={handleSendMessage} isLoading={isLoading} />
+      </div>
 
-      {/* Right panel: Dashboard */}
-      <section
-        style={{ background: 'var(--color-surface)', padding: '1.5rem' }}
-        aria-label="Dashboard panel"
-      >
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-          System health will appear here.
-        </p>
-      </section>
+      {/* Right Panel: Dashboard */}
+      <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/30">
+        {/* Top Header */}
+        <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-8 py-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-bold tracking-tight text-white">Mission Control</h2>
+            {health && <StatusBadge status={health.overall_status} />}
+          </div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase">
+            System Time: {new Date().toLocaleTimeString()}
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-8">
+          {error && (
+            <div className="mb-8 rounded-lg border border-status-red/20 bg-status-red/5 p-4 text-sm text-status-red">
+              <span className="font-bold">SYSTEM ERROR:</span> {error}
+            </div>
+          )}
+
+          {!health && !isLoading && !error && (
+            <div className="flex h-[60vh] flex-col items-center justify-center text-center">
+              <div className="mb-4 h-12 w-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                <div className="h-2 w-2 rounded-full bg-zinc-700 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-medium text-zinc-100">System Idle</h3>
+              <p className="max-w-xs text-sm text-zinc-500 mt-2 leading-relaxed">
+                Brief Kinetic via the panel to the left to begin personal infrastructure triage.
+              </p>
+            </div>
+          )}
+
+          {health && (
+            <div className="mx-auto max-w-5xl space-y-12">
+              {/* Status Grid */}
+              <section>
+                <div className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                  Sector Status
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <BioStatusCard data={health.bio} />
+                  <LogisticsStatusCard data={health.logistics} />
+                  <RelationalStatusCard data={health.relational} />
+                </div>
+              </section>
+
+              {/* Triage Section */}
+              <section>
+                <TriageList items={health.triage_items} />
+              </section>
+
+              {/* ROI Section (Placeholder for Phase 4) */}
+              {health.roi_summary && (
+                <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.02] p-8">
+                  <div className="text-xs font-bold uppercase tracking-widest text-emerald-500 mb-2">
+                    Performance Yield
+                  </div>
+                  <div className="grid grid-cols-3 gap-8">{/* ROI items here */}</div>
+                </section>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
-};
+}
 
 export default App;

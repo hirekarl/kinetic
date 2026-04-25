@@ -106,73 +106,73 @@ Implement real business logic in all three agents and the lead orchestrator. All
 
 ---
 
-## Sprint 2 — LLM Parsing Layer ⬜
+## Sprint 2 — LLM Parsing Layer ✅
 **Dates:** 2026-04-28 → 2026-04-29 · **Target version:** `v0.3.0` · **PRD ref:** Phase 2 (completion)
 
 Wire Gemini 2.5 Flash + Instructor into the parsing layer. `POST /api/checkin` goes end-to-end.
 
 ### LLM Parser
-- [ ] `parse_checkin()` — Gemini 2.5 Flash call via Instructor, returns typed `CheckInPayload`
-- [ ] Prompt engineering: system prompt instructs structured extraction of bio/logistics/relational fields
-- [ ] Graceful handling: partial messages (only bio mentioned) → correct sub-model population
-- [ ] `GEMINI_API_KEY` environment guard (clear error if missing)
-- [ ] Unit test (mocked Gemini): verify `CheckInPayload` structure from example messages
-- [ ] Integration test (live call, marked `@pytest.mark.integration`): verify round-trip from freetext
+- [x] `parse_checkin()` — Gemini 2.5 Flash call via Instructor, returns typed `CheckInPayload`
+- [x] Prompt engineering: system prompt instructs structured extraction of bio/logistics/relational fields
+- [x] Graceful handling: partial messages (only bio mentioned) → correct sub-model population
+- [x] `GEMINI_API_KEY` environment guard (clear error if missing)
+- [x] Unit test (mocked Gemini): verify `CheckInPayload` structure from example messages
+- [x] Integration test (live call, marked `@pytest.mark.integration`): verify round-trip from freetext
 
 ### FastAPI Route
-- [ ] `POST /api/checkin` fully wired: body → `parse_checkin()` → `orchestrate()` → `SystemHealthPayload`
-- [ ] Input validation: empty message → `400`
-- [ ] Agent failure → `500` with non-leaking error message
-- [ ] Integration tests via `httpx.AsyncClient` (TestClient)
+- [x] `POST /api/checkin` fully wired: body → `parse_checkin()` → `orchestrate()` → `SystemHealthPayload`
+- [x] Input validation: empty message → `400`
+- [x] Agent failure → `500` with non-leaking error message
+- [x] Integration tests via `httpx.AsyncClient` (TestClient)
 
 ### Quality Gates
-- [ ] All Sprint 1 gates still passing
-- [ ] Integration test suite passes (with `GEMINI_API_KEY` set)
-- [ ] Manual smoke test: `curl -X POST localhost:8000/api/checkin -d '{"message": "..."}'` returns valid JSON
-- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+- [x] All Sprint 1 gates still passing
+- [x] Integration test suite passes (with `GEMINI_API_KEY` set)
+- [x] Manual smoke test: `curl -X POST localhost:8000/api/checkin -d '{"message": "..."}'` returns valid JSON
+- [x] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
 
 ---
 
-## Sprint 3 — Frontend Core ⬜
+## Sprint 3 — Frontend Core ✅
 **Dates:** 2026-04-30 → 2026-05-01 · **Target version:** `v0.4.0` · **PRD ref:** Phase 3 (partial)
 
 Build the split-panel UI: ChatPanel for input, Dashboard for live agent output.
 
 ### API Client
-- [ ] `src/api/client.ts` — typed `fetchCheckin(message: string): Promise<SystemHealthPayload>`
-- [ ] Handles `VITE_API_BASE_URL` for production (Render) vs. Vite proxy (dev)
-- [ ] Unit tests: success response, 400 error, 500 error
+- [x] `src/api/client.ts` — typed `fetchCheckin(message: string): Promise<SystemHealthPayload>`
+- [x] Handles `VITE_API_BASE_URL` for production (Render) vs. Vite proxy (dev)
+- [x] Unit tests: success response, 400 error, 500 error
 
 ### ChatPanel Component
-- [ ] Message input (textarea + submit button)
-- [ ] Suggested prompt chips (3 example messages for first-time UX)
-- [ ] Message history display (user messages + Kinetic responses)
-- [ ] Loading state (spinner / "Analyzing..." indicator)
-- [ ] Empty state: "Brief your system. What's your status?"
-- [ ] Vitest: renders, submit triggers API call, loading state shown, error state shown
-- [ ] Playwright: type message → submit → response appears (with mocked API)
+- [x] Message input (textarea + submit button)
+- [x] Suggested prompt chips (3 example messages for first-time UX)
+- [x] Message history display (user messages + Kinetic responses)
+- [x] Loading state (spinner / "Analyzing..." indicator)
+- [x] Empty state: "Brief your system. What's your status?"
+- [x] Vitest: renders, submit triggers API call, loading state shown, error state shown
+- [x] Playwright: type message → submit → response appears (with mocked API)
 
 ### Dashboard Component
-- [ ] `OverallStatusBadge` — green/yellow/red with text label + ARIA role
-- [ ] `BioStatusCard` — burnout score, forecast, recommendations list
-- [ ] `LogisticsStatusCard` — critical tasks, outsourcing suggestions
-- [ ] `RelationalStatusCard` — connection margin, at-risk relationships, sprints
-- [ ] Empty/default state: "You're all green!" (or per-card: "No data yet")
-- [ ] Vitest: renders each card in all three status levels + empty state
+- [x] `OverallStatusBadge` — green/yellow/red with text label + ARIA role
+- [x] `BioStatusCard` — burnout score, forecast, recommendations list
+- [x] `LogisticsStatusCard` — critical tasks, outsourcing suggestions
+- [x] `RelationalStatusCard` — connection margin, at-risk relationships, sprints
+- [x] Empty/default state: "You're all green!" (or per-card: "No data yet")
+- [x] Vitest: renders each card in all three status levels + empty state
 
 ### TriageList Component
-- [ ] Flat list of `TriageItem`s sorted by priority
-- [ ] Each item: priority badge, domain tag, description, action CTA
-- [ ] Mark complete / snooze actions (local state for demo)
-- [ ] Empty state: "No actions needed. Nice work."
-- [ ] Vitest: renders items, complete action removes item, empty state shown
+- [x] Flat list of `TriageItem`s sorted by priority
+- [x] Each item: priority badge, domain tag, description, action CTA
+- [x] Mark complete / snooze actions (local state for demo)
+- [x] Empty state: "No actions needed. Nice work."
+- [x] Vitest: renders items, complete action removes item, empty state shown
 
 ### Quality Gates
-- [ ] `npm run test:coverage` → ≥80% all thresholds
-- [ ] `npm run lint` → 0 errors (including jsx-a11y)
-- [ ] `npm run typecheck` → 0 errors
-- [ ] Playwright e2e + axe audit → 0 WCAG 2.1 AA violations
-- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+- [x] `npm run test:coverage` → ≥80% all thresholds
+- [x] `npm run lint` → 0 errors (including jsx-a11y)
+- [x] `npm run typecheck` → 0 errors
+- [x] Playwright e2e + axe audit → 0 WCAG 2.1 AA violations
+- [x] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
 
 ---
 
@@ -236,6 +236,7 @@ Error handling, empty states, onboarding, accessibility, demo script.
 
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
+- [ ] **LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.
 - [ ] Burnout trend chart (7-day sparkline)
 - [ ] Agent log / history panel (collapsible sidebar)
 - [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
@@ -250,13 +251,27 @@ Error handling, empty states, onboarding, accessibility, demo script.
 
 ---
 
+## Vector DB Audit & Migration Path (LadybugDB) 🔷
+
+If transitioning from stateless check-ins to a vector-native memory layer, the following architectural audit is required:
+
+1.  **Embedding Pipeline:** Integrate `sentence-transformers` or Gemini `text-embedding-004` into the `llm_parser.py`.
+2.  **Schema Evolution:** Update `SystemHealthPayload` to include `context_snippets` or `historical_insights` derived from the graph query.
+3.  **Agent Logic Update:**
+    - `BioArchivist`: Query for 30-day sleep/energy trends to contextualize current burnout.
+    - `RelationalDiplomat`: Query for "last contact" and "relationship history" nodes rather than relying on current payload only.
+4.  **Privacy Audit:** Ensure local vector storage is encrypted at rest, as it will contain a high-density "life log."
+5.  **State Management:** Move from "CheckIn-only" state to "CheckIn + Retrieved Context" in the Lead Orchestrator.
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
 |---------|--------|-----------|--------|
 | `v0.1.0` | Sprint 0 — Bootstrap | Pre-Phase 1 | ✅ Released |
 | `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ✅ Released |
-| `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ⬜ |
-| `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ⬜ |
+| `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ✅ |
+| `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ✅ |
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ⬜ |
 | `v1.0.0` | Sprint 5 — Polish | Phase 4 | ⬜ |

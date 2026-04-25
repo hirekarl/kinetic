@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import os
+from typing import cast
+
+import google.generativeai as genai
+import instructor
 
 from kinetic.models.inputs import CheckInPayload
 
@@ -15,6 +19,29 @@ async def parse_checkin(message: str) -> CheckInPayload:
     if not api_key:
         raise OSError("GEMINI_API_KEY is not set")
 
-    # Implementation: Phase 2 (Agent Logic + LLM Parsing Layer)
-    # Will use: instructor.from_gemini(genai.GenerativeModel("gemini-2.5-flash"))
-    raise NotImplementedError
+    genai.configure(api_key=api_key)
+
+    client = instructor.from_gemini(
+        client=genai.GenerativeModel(
+            model_name="models/gemini-2.5-flash",
+        ),
+        mode=instructor.Mode.GEMINI_JSON,
+    )
+
+    return cast(
+        CheckInPayload,
+        client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are the Kinetic LLM Parser. Your job is to extract bio-metrics, "
+                        "logistics tasks, and relational vibe checks from user messages into "
+                        "a structured JSON format. If a domain is not mentioned, return null for it."
+                    ),
+                },
+                {"role": "user", "content": message},
+            ],
+            response_model=CheckInPayload,
+        ),
+    )
