@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'development'
       ? {
           port: 5173,
+          host: '127.0.0.1',
           proxy: {
             '/api': {
               target: 'http://127.0.0.1:8000',
