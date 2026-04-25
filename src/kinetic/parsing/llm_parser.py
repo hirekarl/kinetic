@@ -21,7 +21,7 @@ async def parse_checkin(message: str) -> CheckInPayload:
 
     client = instructor.from_genai(
         client=genai.Client(api_key=api_key),
-        mode=instructor.Mode.GEMINI_JSON,
+        mode=instructor.Mode.GENAI_STRUCTURED_OUTPUTS,
     )
 
     return cast(
