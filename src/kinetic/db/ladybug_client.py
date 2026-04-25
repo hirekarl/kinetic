@@ -7,34 +7,41 @@ from datetime import datetime
 from typing import Any
 
 import ladybug  # type: ignore
-from sentence_transformers import SentenceTransformer  # type: ignore
+from google import genai
 
 from kinetic.models.inputs import CheckInPayload
 
 logger = logging.getLogger(__name__)
 
 # Constants
-VECTOR_DIMENSION = 384  # Default for all-MiniLM-L6-v2
+VECTOR_DIMENSION = 768  # Standard for Gemini text-embedding-004
 
 
 class LadybugClient:
     """Handles persistence of check-ins into LadybugDB (Graph + Vector)."""
 
-    def __init__(self, db_path: str = "./kinetic.db") -> None:
+    def __init__(self, db_path: str = "./kinetic.db", api_key: str | None = None) -> None:
         # Ensure path directory exists if it's not a memory db
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
         self.db = ladybug.Database(db_path)
         self.conn = ladybug.Connection(self.db)
         self._init_schema()
-        # Initialize embedding model lazily
-        self._model: SentenceTransformer | None = None
+
+        # Initialize Gemini Client for embeddings
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        if not self.api_key:
+            logger.warning("GEMINI_API_KEY not set; embeddings will be disabled.")
+            self.client = None
+        else:
+            self.client = genai.Client(api_key=self.api_key)
 
     def _init_schema(self) -> None:
         """Create schema if it doesn't exist."""
         # Nodes
         self._safe_execute(
-            "CREATE NODE TABLE CheckIn(id UUID, timestamp TIMESTAMP, message STRING, embedding FLOAT[384], PRIMARY KEY (id))"
+            f"CREATE NODE TABLE CheckIn(id UUID, timestamp TIMESTAMP, message STRING, embedding FLOAT[{VECTOR_DIMENSION}], PRIMARY KEY (id))"
         )
         self._safe_execute(
             "CREATE NODE TABLE BioMetric(id UUID, sleep_hours DOUBLE, nutrition_quality INT64, energy_level INT64, PRIMARY KEY (id))"
@@ -61,11 +68,20 @@ class LadybugClient:
                 logger.debug(f"Query error (safe): {e}")
 
     def get_embedding(self, text: str) -> list[float]:
-        """Convert text to vector embedding."""
-        if self._model is None:
-            self._model = SentenceTransformer("all-MiniLM-L6-v2")
-        embedding = self._model.encode(text)
-        return embedding.tolist()  # type: ignore
+        """Convert text to vector embedding using Gemini API."""
+        if not self.client:
+            logger.error("Embedding requested but Gemini Client not initialized.")
+            return [0.0] * VECTOR_DIMENSION
+
+        try:
+            result = self.client.models.embed_content(
+                model="text-embedding-004",
+                contents=text,
+            )
+            return result.embeddings[0].values  # type: ignore
+        except Exception as e:
+            logger.error(f"Gemini embedding failed: {e}")
+            return [0.0] * VECTOR_DIMENSION
 
     async def insert_checkin(self, payload: CheckInPayload, message: str) -> str:
         """Insert a parsed check-in into the graph."""
