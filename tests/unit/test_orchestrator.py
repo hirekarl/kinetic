@@ -1,6 +1,6 @@
 """Unit tests for the lead orchestrator."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -13,6 +13,16 @@ from kinetic.models.inputs import (
     VibeCheck,
 )
 from kinetic.orchestrator.lead import orchestrate
+
+
+@pytest.fixture(autouse=True)
+def mock_db() -> MagicMock:
+    with patch("kinetic.orchestrator.lead.get_db") as mock:
+        client = MagicMock()
+        client.insert_checkin = AsyncMock(return_value="test-id")
+        client.get_recent_bio.return_value = []
+        mock.return_value = client
+        yield client
 
 
 @pytest.mark.unit

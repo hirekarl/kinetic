@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from kinetic.agents.base import AgentResult
 from kinetic.models.inputs import CheckInPayload, LogisticsTask
 from kinetic.models.outputs import LogisticsStatus, StatusLevel, TriageItem
@@ -50,7 +52,9 @@ class LogisticsFixerResult(AgentResult):
 class LogisticsFixer:
     """Triages domestic tasks and surfaces outsourcing ROI recommendations."""
 
-    async def process(self, payload: CheckInPayload) -> LogisticsFixerResult:
+    async def process(
+        self, payload: CheckInPayload, history: dict[str, Any] | None = None
+    ) -> LogisticsFixerResult:
         if payload.logistics is None:
             return LogisticsFixerResult(
                 success=False, error_message="No logistics data in payload."

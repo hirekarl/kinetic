@@ -65,8 +65,11 @@ Kinetic is a personal infrastructure management system designed for high-perform
 * **Dashboard & ROI Calculator (Priority: P1)**
   * Interactive, at-a-glance dashboard visualizing state changes and agent outputs.
   * ROI calculator quantifying time/margin recovered through agent suggestions vs. baseline.
+* **LadybugDB Persistence Layer (Priority: P1 - Completed)**
+  * Persistent historical state using an embedded Graph+Vector database.
+  * Historical accountability: agents query history for rolling averages (e.g., 7-day sleep debt).
+  * Vector embeddings for semantic search and retrieval (RAG).
 * **Stretch MVP Features (Priority: P2)**
-  * Persistent historical state storage and retrieval.
   * Visualization of burnout trends over time.
   * Additional dashboard modules (e.g., agent logs/history).
 
@@ -194,9 +197,8 @@ Integration Points
 
 ### Data Storage & Privacy
 
-* For demo: Store state locally or in a lightweight file-based DB, with clear wipe/reseed options.
-* For MVP: Optionally persist historical data for trend analysis.
-* All data is single-user, fully private, with no login or auth for demo; only basic auth for stretch MVP if time allows.
+* For demo/MVP: Store state in **LadybugDB**, an embedded Graph+Vector database. This enables historical accountability (e.g., rolling sleep debt) and semantic search (RAG).
+* All data is single-user, fully private, stored locally in `kinetic.db`. No cloud synchronization is implemented in the prototype.
 
 ### Scalability & Performance
 

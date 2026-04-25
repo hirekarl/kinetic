@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+from typing import Any
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
+from kinetic.db.ladybug_client import LadybugClient
 from kinetic.models.inputs import CheckInPayload
 from kinetic.models.outputs import (
     BioStatus,
@@ -18,6 +21,17 @@ from kinetic.models.outputs import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Global DB Client
+_db_client: LadybugClient | None = None
+
+
+def get_db() -> LadybugClient:
+    global _db_client
+    if _db_client is None:
+        path = os.environ.get("LADYBUG_DB_PATH", "./.kinetic_db")
+        _db_client = LadybugClient(path)
+    return _db_client
 
 
 def _calculate_roi(
@@ -78,20 +92,32 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
     return result
 
 
-async def orchestrate(payload: CheckInPayload) -> SystemHealthPayload:
+async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
+    db = get_db()
+
+    # 1. Persist the current check-in (and get embedding)
+    if message:
+        await db.insert_checkin(payload, message)
+
+    # 2. Fetch history for context
+    history: dict[str, Any] = {
+        "bio": db.get_recent_bio(limit=7),
+        # Add logistics/relational history if needed
+    }
+
     bio_task = None
     logistics_task = None
     relational_task = None
 
     if payload.bio is not None:
-        bio_task = asyncio.create_task(BioArchivist().process(payload))
+        bio_task = asyncio.create_task(BioArchivist().process(payload, history))
 
     if payload.logistics is not None:
-        logistics_task = asyncio.create_task(LogisticsFixer().process(payload))
+        logistics_task = asyncio.create_task(LogisticsFixer().process(payload, history))
 
     if payload.relational is not None:
-        relational_task = asyncio.create_task(RelationalDiplomat().process(payload))
+        relational_task = asyncio.create_task(RelationalDiplomat().process(payload, history))
 
     # Wait for all tasks to complete
     results = await asyncio.gather(

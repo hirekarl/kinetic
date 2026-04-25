@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from kinetic.agents.base import AgentResult
 from kinetic.models.inputs import BioInput, CheckInPayload
 from kinetic.models.outputs import BioStatus, StatusLevel, TriageItem
@@ -32,7 +34,9 @@ def _burnout_status(score: float) -> StatusLevel:
     return "red"
 
 
-def _compute_burnout(bio: BioInput) -> tuple[float, float]:
+def _compute_burnout(
+    bio: BioInput, history: list[dict[str, Any]] | None = None
+) -> tuple[float, float]:
     """Return (burnout_score 0-100, sleep_debt_hours)."""
     weighted_sum = 0.0
     total_weight = 0.0
@@ -53,7 +57,24 @@ def _compute_burnout(bio: BioInput) -> tuple[float, float]:
         return 0.0, 0.0
 
     score = round(weighted_sum / total_weight, 2)
-    debt = round(max(0.0, _BASELINE_SLEEP_HOURS - (bio.sleep_hours or _BASELINE_SLEEP_HOURS)), 2)
+
+    # Historical Accountability: Calculate true rolling debt if history exists
+    if history:
+        # Sum deficits from past days + current
+        recent_sleep = [h.get("sleep_hours", _BASELINE_SLEEP_HOURS) for h in history]
+        if bio.sleep_hours is not None:
+            recent_sleep.append(bio.sleep_hours)
+
+        total_deficit = sum(max(0.0, _BASELINE_SLEEP_HOURS - s) for s in recent_sleep)
+        debt = round(total_deficit, 2)
+        # Increase score if debt is high
+        if debt > 10:
+            score = min(100.0, score + (debt - 10) * 2)
+    else:
+        debt = round(
+            max(0.0, _BASELINE_SLEEP_HOURS - (bio.sleep_hours or _BASELINE_SLEEP_HOURS)), 2
+        )
+
     return score, debt
 
 
@@ -90,12 +111,15 @@ class BioArchivistResult(AgentResult):
 class BioArchivist:
     """Computes burnout score from sleep, nutrition, and energy inputs."""
 
-    async def process(self, payload: CheckInPayload) -> BioArchivistResult:
+    async def process(
+        self, payload: CheckInPayload, history: dict[str, Any] | None = None
+    ) -> BioArchivistResult:
         if payload.bio is None:
             return BioArchivistResult(success=False, error_message="No bio data in payload.")
 
         bio = payload.bio
-        score, debt = _compute_burnout(bio)
+        bio_history = (history.get("bio") if history else None) or []
+        score, debt = _compute_burnout(bio, bio_history)
         level = _burnout_status(score)
 
         triage: list[TriageItem] = []

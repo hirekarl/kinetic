@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from kinetic.agents.base import AgentResult
 from kinetic.models.inputs import CheckInPayload, VibeCheck
 from kinetic.models.outputs import RelationalStatus, StatusLevel, TriageItem
@@ -55,13 +57,26 @@ class RelationalDiplomatResult(AgentResult):
 class RelationalDiplomat:
     """Tracks connection margin and recommends interaction sprints."""
 
-    async def process(self, payload: CheckInPayload) -> RelationalDiplomatResult:
+    async def process(
+        self, payload: CheckInPayload, history: dict[str, Any] | None = None
+    ) -> RelationalDiplomatResult:
         if payload.relational is None:
             return RelationalDiplomatResult(
                 success=False, error_message="No relational data in payload."
             )
 
         checks = payload.relational.vibe_checks
+        # Merge with historical vibes if they exist
+        if history and "relational" in history:
+            hist_vibes = history["relational"]
+            # Deduplicate by person, current check wins
+            known_people = {c.person for c in checks}
+            for hb in hist_vibes:
+                if hb["person"] not in known_people:
+                    # Adjust days_since_contact based on when historical check was made
+                    # For now, we assume simple passing of VibeCheck-like dicts
+                    checks.append(VibeCheck(**hb))
+
         margin = _connection_margin(checks)
         level = _overall_status(checks)
 

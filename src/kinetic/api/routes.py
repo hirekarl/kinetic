@@ -27,4 +27,4 @@ async def checkin(body: CheckInRequest) -> SystemHealthPayload:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
 
-    return await orchestrate(payload)
+    return await orchestrate(payload, body.message)

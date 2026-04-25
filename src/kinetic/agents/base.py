@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -20,4 +20,6 @@ class AgentResult(BaseModel):
 class Agent(Protocol):
     """Structural protocol all Kinetic agents must satisfy."""
 
-    async def process(self, payload: CheckInPayload) -> AgentResult: ...
+    async def process(
+        self, payload: CheckInPayload, history: dict[str, Any] | None = None
+    ) -> AgentResult: ...

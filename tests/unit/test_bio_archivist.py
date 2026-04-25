@@ -86,3 +86,32 @@ async def test_green_status_has_no_triage_items() -> None:
     assert result.status is not None
     assert result.status.status == "green"
     assert result.triage_items == []
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_historical_sleep_debt_increases_burnout() -> None:
+    """Historical sleep debt should be reflected in today's score and debt."""
+    payload = CheckInPayload(bio=BioInput(sleep_hours=7.0, nutrition_quality=9, energy_level=9))
+    # No history
+    res1 = await BioArchivist().process(payload)
+
+    # With history: 4h sleep yesterday (4h deficit)
+    history = {"bio": [{"sleep_hours": 4.0}]}
+    res2 = await BioArchivist().process(payload, history=history)
+
+    # 1h debt today + 4h debt yesterday = 5h total debt
+    assert res2.status is not None
+    assert res1.status is not None
+    assert res2.status.sleep_debt_hours == pytest.approx(5.0)
+    # 5h debt < 10h threshold, so score might not increase yet, but let's check debt
+    assert res2.status.sleep_debt_hours > res1.status.sleep_debt_hours
+
+    # With massive history: 15h total debt
+    history_massive = {"bio": [{"sleep_hours": 4.0}, {"sleep_hours": 4.0}, {"sleep_hours": 4.0}]}
+    res3 = await BioArchivist().process(payload, history=history_massive)
+    # 1h + 4*3 = 13h debt
+    assert res3.status is not None
+    assert res3.status.sleep_debt_hours == pytest.approx(13.0)
+    # debt > 10 → score should increase
+    assert res3.status.burnout_score > res1.status.burnout_score

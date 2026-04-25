@@ -236,7 +236,7 @@ Error handling, empty states, onboarding, accessibility, demo script.
 
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
-- [ ] **LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.
+- [x] **LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.
 - [ ] Burnout trend chart (7-day sparkline)
 - [ ] Agent log / history panel (collapsible sidebar)
 - [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
