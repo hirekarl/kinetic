@@ -4,71 +4,6 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
-
-### Added
-- **Demo preparation:** `docs/DEMO.md` — complete 10-minute presenter script with pre-demo checklist, PRD narrative, step-by-step walkthrough (onboarding → behavioral history → live check-in → triage → ROI → architecture Q&A), troubleshooting table, and post-demo reset instructions. `scripts/seed_demo.py` — async seed script populating 7 days of historical check-ins (declining sleep 7.5h→5.0h, laundry escalating to 6 days overdue, Marcus contact drifting 3→9 days) and 2 Gemini-derived behavioral profiles (`chronic_sleep_deficit`, `marcus_relational_drift`) directly into SQLite, with a clean-slate wipe before seeding and a printed summary.
-- **Onboarding flow:** 3-screen modal tutorial shown on first visit (Personal Infrastructure → Chat-First → Your Agent Team). Skippable at any step; dismissed permanently via a `kinetic_onboarded` localStorage flag. Includes focus trap, Escape-key dismiss, `role="dialog"` + `aria-modal`, `role="group"` step indicator for screen readers, and a mouse-only backdrop button. Zero WCAG 2.1 AA violations (axe).
-- **Startup warning:** FastAPI `lifespan` handler emits a `WARNING`-level log at startup when `GEMINI_API_KEY` is absent, making missing credentials immediately visible in server logs rather than silently failing on first request.
-- **Retry CTA in error banner:** After a failed check-in the error banner now shows a "Retry" button that re-submits the last message without requiring the user to re-type it. The button is hidden once the retry succeeds and the banner clears.
-
-### Changed
-- Error banner heading softened from alarming "SYSTEM ERROR" copy to "Analysis unavailable" — non-alarming, actionable framing consistent with the NOC-style tone.
-- Chat feed error message softened from `[CRITICAL ERROR]` prefix to "Check-in could not be processed." — same information, lower cognitive load.
-- Error banner upgraded to `role="alert"` live region so screen readers announce the error immediately without requiring focus change.
-
-### Added
-- **BehavioralProfilePanel:** Collapsible disclosure section on the Mission Control dashboard rendering accumulated `behavioral_profiles` from `SystemHealthPayload`. Collapsed by default, keyboard-navigable, `aria-expanded` wired. Shows `profile_key` tag, plain-English `insight`, `observation_count` badge, and `last_updated` date per profile. Empty state: "Building your profile — check in again tomorrow." Vitest (11 tests, 100% component coverage), 2 new Playwright e2e scenarios, zero WCAG 2.1 AA violations.
-- **Behavioral Memory — Pattern Detector Service:** `src/kinetic/services/pattern_detector.py` — `detect_and_update_patterns()` calls Gemini after each check-in to derive behavioral patterns from the accumulated summary; upserts results as `BehavioralProfile` records. Rate-limit guard prevents redundant calls (skips if `days_analyzed < 3` or any profile updated within 20 hours). Fires as a non-blocking `asyncio.create_task()` — never propagates exceptions.
-- **Behavioral Memory — Orchestrator + Liaison Integration:** `orchestrate()` fetches `BehavioralSummary` and `BehavioralProfile` list after agents fire and threads both through to `OperationalLiaison.process()`. The Liaison's Gemini prompt now includes a BEHAVIORAL CONTEXT section with 14-day trend data and established patterns, grounding tactical guidance in history rather than just the current check-in. `SystemHealthPayload` now always includes `behavioral_profiles`.
-- **Behavioral Memory data layer:** Five new Pydantic output models (`BioTrend`, `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`) enabling the app to accumulate and expose structured knowledge of the user's behavioral patterns over time.
-- `behavioral_profiles` SQLite table for persisting Gemini-derived pattern insights across sessions; supports upsert with `first_observed` immutability and `observation_count` tracking.
-- `SqliteClient.get_behavioral_summary()`: queries 7–14 days of stored bio, logistics, and relational data to compute sleep slope (stdlib `statistics.linear_regression`), recurring overdue tasks, and relational drift velocity — all returned as typed Pydantic models.
-- `SystemHealthPayload.behavioral_profiles` field: accumulated behavioral profiles are now included in every API response, available for frontend rendering.
-- TypeScript mirror interfaces for all new models in `frontend/src/types/index.ts`.
-- SQLite column migration guard for existing databases missing the `liaison_feedback` column.
-- `ROISummaryCard`: New frontend component for visualizing time reclaimed, system margin, and burnout risk delta.
-- ROI Calculation logic in Lead Orchestrator: Quantifies operational yield based on logistics outsourcing and relational health.
-- React Mission Control Dashboard: High-fidelity split-panel UI with sector-specific status cards (`Bio`, `Logistics`, `Relational`).
-- LLM Parsing Layer: Full implementation using Gemini 2.5 Flash and Instructor to convert natural language check-ins into structured data.
-- Tailwind CSS configuration: Custom dark-mode theme with semantic status colors (emerald, amber, rose) following "Developer Tool Minimalism" aesthetic.
-- `docs/kinetic-design-system.md`: Comprehensive design brief for the Kinetic frontend.
-
-### Changed
-- Refactored LLM Parser to use the modern `google-genai` SDK (v1.0), removing the deprecated `google-generativeai` package.
-- Updated `App.tsx` and `App.test.tsx` to support the new semantic structure and ROI integration.
-- WCAG 2.1 AA color contrast remediation: all `text-zinc-500` and `text-zinc-600` occurrences across Dashboard components, `App.tsx`, and `ChatPanel` changed to `text-zinc-400` (7–8:1 ratio vs. 4.11:1 minimum). Active Blockers badge lightened from `bg-status-red/10` to `bg-status-red/5` for 5.5:1 contrast on red text.
-- Playwright mobile-safari project updated to iPad Pro 11 viewport (1024px) from iPhone 14 (390px) — the fixed 420px left panel was clipped on narrow viewports, hiding the dashboard panel from tests.
-- Added `tabIndex={0}` to main scrollable content region in `App.tsx` to satisfy the axe `scrollable-region-focusable` rule.
-
-### Removed
-- `render.yaml` — Render deployment config removed; MVP targets local demo only.
-
-### Fixed
-- **Accessibility final audit — contrast & screen reader:** `BehavioralProfilePanel` "Last updated" text changed from `text-zinc-500` (4.12:1 — failing) to `text-zinc-400` (7.76:1 — passing WCAG AA). Decorative color indicator dots in `StatusBadge` and `ROISummaryCard` marked `aria-hidden="true"` so screen readers rely on the adjacent text label. `TriageList` items converted from `<div>` to `<ul>/<li>` for semantic list announcement. Task progress bars in `LogisticsStatusCard` wired with `role="progressbar"` and `aria-valuenow/min/max`. Keyboard tab-order verified across all 6 focusable stops; zero WCAG 2.1 AA violations with `BehavioralProfilePanel` expanded.
-- `clear_database()` now deletes from `behavioral_profiles` — previously left stale profiles after `/api/debug/reset`.
-- `_parse_patterns()` uses bracket-depth matching instead of a greedy regex, correctly handling nested arrays in `evidence` payloads and prose commentary containing brackets before the JSON array.
-- Integration test `test_checkin_success_path` now verifies response shape rather than asserting a specific status value, preventing false failures when the local database contains historical data.
-- `SqliteClient.get_embedding()` now correctly guards against `None` embeddings and `None` values from the Gemini API response.
-- Removed stale `# type: ignore` comments on `aiosqlite` and `python-dotenv` imports now that both packages ship type stubs.
-- Resolved multiple ESLint and TypeScript issues in the frontend components (misused promises, unsafe any, Confusing void expressions).
-- Added robust error handling for API failures, including 503 fallback for missing Gemini credentials.
-- Two new Playwright e2e tests: full check-in flow verifying all three sector cards and triage list populate, and axe WCAG 2.1 AA audit on fully-populated dashboard state.
-- 54 new Vitest component unit tests across all Dashboard components, `ChatPanel`, `App`, and API client; overall frontend coverage: 98% lines, 92% branches, 100% functions.
-- `bandit` and `pip-audit` added to dev dependencies for security scanning.
-- `frontend/playwright-report/` and `frontend/test-results/` excluded from git via `.gitignore`.
-
-## [0.2.0] — 2026-04-25
-
-### Added
-- `BioArchivist`: weighted burnout score (sleep 40%, nutrition 30%, energy 30%), re-normalized for partial data; green <40 / yellow <70 / red ≥70; triage items at priority 6 (yellow) and 9 (red)
-- `LogisticsFixer`: criticality = `days_overdue × priority_weight` ({low:1, medium:2, high:3, critical:4}); yellow ≤6 / red >6; outsourcing keyword stubs; `time_to_resolve_minutes` estimation
-- `RelationalDiplomat`: recency-decayed connection margin (`max(0.3, 1-(days-7)*0.05)`); at-risk on score<5 (→ red) or days>7 (→ yellow); 3-tier interaction sprint templates
-- Lead orchestrator: per-agent try/except so one failure doesn't block others; worst-case `overall_status`; triage items merged, sorted descending, stable domain-scoped IDs (`{domain}-{i:03d}`)
-- `AgentResult` extended with `triage_items: list[TriageItem]`
-- 27 new unit tests (35 total); 88% coverage; bandit + ruff + mypy strict clean
-
-## [0.1.0] — 2026-04-25
 
 ### Added
 - Project bootstrap: `pyproject.toml` with uv, ruff, mypy strict, pytest, commitizen
@@ -91,3 +26,64 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 [Unreleased]: https://github.com/hirekarl/kinetic/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/hirekarl/kinetic/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hirekarl/kinetic/releases/tag/v0.1.0
+
+## v1.0.0 (2026-04-26)
+
+### Feat
+
+- **demo**: add demo script, seed script, and verify end-to-end flow
+- **frontend**: Sprint 6 accessibility final audit — contrast + screen reader fixes
+- **frontend**: Sprint 6 onboarding flow with localStorage persistence
+- **frontend**: soften error copy and add Retry CTA to error banner
+- **main**: add lifespan startup warning when GEMINI_API_KEY is absent
+- **frontend**: BehavioralProfilePanel — collapsible behavioral profile section
+- **frontend**: Sprint 4 e2e tests, a11y contrast fixes, and component unit tests
+- **orchestrator**: wire behavioral memory into orchestrator and liaison
+- **services**: implement Pattern Detector background service
+- **persistence**: implement Behavioral Memory data layer
+- **persistence**: implement state hydration on page refresh
+- **logistics**: implement granular checklists for task tracking
+- **debug**: add reset button to wipe database during testing
+- **liaison**: implement Operational Liaison for executive function support
+- **persistence**: implement LadybugDB graph persistence for historical accountability
+- **integration**: polish frontend integration with loading and error states
+- **roi**: implement ROI calculator and performance yield summary
+- **frontend**: implement Sprint 2 & 3 — LLM parsing + React dashboard
+
+### Fix
+
+- **e2e**: mock history endpoint in Firefox-flaky interaction tests
+- **db**: remove dead embedding code from SqliteClient
+- **tests**: mock orchestrate in checkin unit test to avoid GEMINI_API_KEY dependency
+- **db,services**: clear behavioral_profiles on reset; harden JSON parser
+- **persistence**: resolve LadybugDB binder errors with explicit casting
+- **orchestrator**: implement cumulative context merging
+- **liaison**: use correct gemini-2.5-flash model as per PRD
+- **integration**: resolve connectivity issues on Windows
+- **backend**: add missing jsonref dependency
+- **frontend**: use explicit IPv4 for proxy target
+- **parsing**: update instructor mode for google-genai SDK
+- **backend**: load environment variables at startup
+
+### Refactor
+
+- **persistence**: pivot from LadybugDB to SQLite for stability
+- **persistence**: comprehensive database audit and parallel-safety fix
+- **persistence**: switch to Gemini embeddings for reliability
+- **parsing**: upgrade to modern google-genai SDK
+
+## v0.2.0 (2026-04-25)
+
+### Feat
+
+- **agents**: implement Sprint 1 — all three agents + orchestrator
+
+### Fix
+
+- scope Vitest coverage to runtime source files only
+
+## v0.1.0 (2026-04-25)
+
+### Feat
+
+- bootstrap project infrastructure (v0.1.0)
