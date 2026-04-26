@@ -286,9 +286,9 @@ Error handling, empty states, accessibility, demo script.
 - [x] Screen reader smoke test: status cards announce meaningful content
 
 ### Demo Preparation
-- [ ] Demo script written (step-by-step walkthrough of PRD narrative)
-- [ ] Seeded demo state available (pre-populated check-in data for live demo)
-- [ ] Local demo run verified end-to-end: backend on :8000, frontend on :5173, full check-in flow
+- [x] Demo script written (step-by-step walkthrough of PRD narrative)
+- [x] Seeded demo state available (pre-populated check-in data for live demo)
+- [x] Local demo run verified end-to-end: backend on :8000, frontend on :5173, full check-in flow
 
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
