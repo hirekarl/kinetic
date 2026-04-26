@@ -194,18 +194,20 @@ Full frontend–backend integration, streaming responses, ROI calculator, and th
 - [x] Vitest + Playwright coverage
 
 ### Operational Liaison (Executive Function Accessibility)
-- [ ] `OperationalLiaison` agent: provides clinical & tactical micro-tasking to break decision paralysis
-- [ ] Orchestration: runs after other agents to translate findings into tactical scripts
-- [ ] System prompt engineering: NOC-style tone, cognitive load reduction, task-dropping authority
-- [ ] Unit tests: verify tactical response structure based on aggregated triage items
+- [x] `OperationalLiaison` agent: provides clinical & tactical micro-tasking to break decision paralysis
+- [x] Orchestration: runs after other agents to translate findings into tactical scripts
+- [x] System prompt engineering: NOC-style tone, cognitive load reduction, task-dropping authority
+- [x] Unit tests: verify tactical response structure based on aggregated triage items
 
 ### Conversational Dialogue UI
-- [ ] `ChatPanel` evolution: from static input to scrolling dialogue feed
-- [ ] State management: persist message history in the frontend session
-- [ ] System message rendering: distinct styling for tactical [SYSTEM] readouts
-- [ ] Suggested prompts: update to trigger specific paralysis-breaking scenarios
+- [x] `ChatPanel` evolution: from static input to scrolling dialogue feed
+- [x] State management: persist message history in the frontend session (and hydrate from DB)
+- [x] System message rendering: distinct styling for tactical [SYSTEM] readouts
+- [x] Suggested prompts: update to trigger specific paralysis-breaking scenarios
 
 ### End-to-End Demo Flow
+- [x] Persistence: Pivot from LadybugDB to SQLite for stability on Windows.
+- [x] Hydration: Page refresh preserves dashboard state and dialogue history.
 - [ ] Playwright e2e: full check-in message → all three agent cards update → triage list populates
 - [ ] Axe audit on fully-populated dashboard state (not just empty shell)
 

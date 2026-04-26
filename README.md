@@ -126,8 +126,8 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 1 | Agent logic — all three agents + orchestrator | `v0.2.0` | ✅ Released |
 | Sprint 2 | LLM parsing layer — Gemini + Instructor end-to-end | `v0.3.0` | ✅ |
 | Sprint 3 | Frontend core — ChatPanel + Dashboard components | `v0.4.0` | ✅ |
-| Sprint 4 | Integration + ROI calculator + Persistence | `v0.5.0` | 🔄 In progress |
-| Sprint 5 | Polish, accessibility audit, demo prep | `v1.0.0` | ⬜ |
+| Sprint 4 | Integration + ROI + Persistence + Liaison | `v0.5.0` | ✅ |
+| Sprint 5 | Polish, accessibility audit, demo prep | `v1.0.0` | 🔄 In progress |
 
 **Demo deadline:** 2026-05-03 · **MVP deadline:** 2026-05-05
 
