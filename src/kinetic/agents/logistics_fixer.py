@@ -57,7 +57,13 @@ class LogisticsFixer:
     ) -> LogisticsFixerResult:
         if payload.logistics is None:
             return LogisticsFixerResult(
-                success=False, error_message="No logistics data in payload."
+                success=True,
+                status=LogisticsStatus(
+                    status="green",
+                    critical_tasks=[],
+                    outsourcing_suggestions=[],
+                    time_to_resolve_minutes=0,
+                ),
             )
 
         tasks = payload.logistics.tasks

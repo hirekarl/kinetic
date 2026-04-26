@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -28,7 +29,8 @@ class LadybugClient:
 
         self.db = ladybug.Database(db_path)
         self.conn = ladybug.Connection(self.db)
-        self._init_schema()
+        self._lock = asyncio.Lock()  # Serialize access to the single connection
+        self._init_schema_sync()
 
         # Initialize Gemini Client for embeddings
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
@@ -38,35 +40,40 @@ class LadybugClient:
         else:
             self.client = genai.Client(api_key=self.api_key)
 
-    def _init_schema(self) -> None:
-        """Create schema if it doesn't exist."""
+    def _init_schema_sync(self) -> None:
+        """Create schema synchronously during init."""
         # Nodes
-        self._safe_execute(
+        self._safe_execute_sync(
             f"CREATE NODE TABLE CheckIn(id UUID, timestamp TIMESTAMP, message STRING, embedding FLOAT[{VECTOR_DIMENSION}], PRIMARY KEY (id))"
         )
-        self._safe_execute(
+        self._safe_execute_sync(
             "CREATE NODE TABLE BioMetric(id UUID, sleep_hours DOUBLE, nutrition_quality INT64, energy_level INT64, PRIMARY KEY (id))"
         )
-        self._safe_execute(
+        self._safe_execute_sync(
             "CREATE NODE TABLE LogisticsTask(name STRING, priority STRING, subtasks STRING, completed_subtasks STRING, status STRING, PRIMARY KEY (name))"
         )
-        self._safe_execute("CREATE NODE TABLE Person(name STRING, PRIMARY KEY (name))")
+        self._safe_execute_sync("CREATE NODE TABLE Person(name STRING, PRIMARY KEY (name))")
 
         # Edges
-        self._safe_execute("CREATE REL TABLE HAS_BIO(FROM CheckIn TO BioMetric, ONE_ONE)")
-        self._safe_execute(
+        self._safe_execute_sync("CREATE REL TABLE HAS_BIO(FROM CheckIn TO BioMetric, ONE_ONE)")
+        self._safe_execute_sync(
             "CREATE REL TABLE MENTIONED_TASK(FROM CheckIn TO LogisticsTask, days_overdue INT64, MANY_MANY)"
         )
-        self._safe_execute(
+        self._safe_execute_sync(
             "CREATE REL TABLE VIBE_CHECK(FROM CheckIn TO Person, score INT64, days_since INT64, MANY_MANY)"
         )
 
-    def _safe_execute(self, query: str) -> None:
+    def _safe_execute_sync(self, query: str) -> None:
         try:
             self.conn.execute(query)
         except Exception as e:
             if "already exists" not in str(e):
                 logger.debug(f"Query error (safe): {e}")
+
+    async def execute(self, query: str, parameters: dict[str, Any] | None = None) -> Any:  # noqa: ANN401
+        """Execute a query with serialized access."""
+        async with self._lock:
+            return self.conn.execute(query, parameters or {})
 
     def get_embedding(self, text: str) -> list[float]:
         """Convert text to vector embedding using Gemini API."""
@@ -91,7 +98,7 @@ class LadybugClient:
         embedding = self.get_embedding(message)
 
         # 1. Create CheckIn node
-        self.conn.execute(
+        await self.execute(
             f"CREATE (c:CheckIn {{id: CAST($id, 'UUID'), timestamp: $ts, message: $msg, embedding: CAST($emb, 'FLOAT[{VECTOR_DIMENSION}]')}})",
             {"id": checkin_id, "ts": timestamp, "msg": message, "emb": embedding},
         )
@@ -99,7 +106,7 @@ class LadybugClient:
         # 2. Handle Bio
         if payload.bio:
             bio_id = str(uuid.uuid4())
-            self.conn.execute(
+            await self.execute(
                 "CREATE (b:BioMetric {id: CAST($id, 'UUID'), sleep_hours: $sleep, nutrition_quality: $nutr, energy_level: $eng})",
                 {
                     "id": bio_id,
@@ -108,7 +115,7 @@ class LadybugClient:
                     "eng": payload.bio.energy_level or 0,
                 },
             )
-            self.conn.execute(
+            await self.execute(
                 "MATCH (c:CheckIn), (b:BioMetric) WHERE c.id = CAST($cid, 'UUID') AND b.id = CAST($bid, 'UUID') CREATE (c)-[:HAS_BIO]->(b)",
                 {"cid": checkin_id, "bid": bio_id},
             )
@@ -120,7 +127,7 @@ class LadybugClient:
                 completed_json = json.dumps(task.completed_subtasks)
 
                 # MERGE the task node (keeping properties updated)
-                self.conn.execute(
+                await self.execute(
                     "MERGE (t:LogisticsTask {name: $name}) "
                     "ON CREATE SET t.priority = $pri, t.subtasks = $sub, t.completed_subtasks = $comp, t.status = $stat "
                     "ON MATCH SET t.priority = $pri, t.subtasks = $sub, t.completed_subtasks = $comp, t.status = $stat",
@@ -132,7 +139,7 @@ class LadybugClient:
                         "stat": task.status,
                     },
                 )
-                self.conn.execute(
+                await self.execute(
                     "MATCH (c:CheckIn), (t:LogisticsTask) WHERE c.id = CAST($cid, 'UUID') AND t.name = $tname "
                     "CREATE (c)-[:MENTIONED_TASK {days_overdue: $overdue}]->(t)",
                     {"cid": checkin_id, "tname": task.name, "overdue": task.days_overdue},
@@ -141,8 +148,8 @@ class LadybugClient:
         # 4. Handle Relational
         if payload.relational:
             for vibe in payload.relational.vibe_checks:
-                self.conn.execute("MERGE (p:Person {name: $name})", {"name": vibe.person})
-                self.conn.execute(
+                await self.execute("MERGE (p:Person {name: $name})", {"name": vibe.person})
+                await self.execute(
                     "MATCH (c:CheckIn), (p:Person) WHERE c.id = CAST($cid, 'UUID') AND p.name = $pname "
                     "CREATE (c)-[:VIBE_CHECK {score: $score, days_since: $days}]->(p)",
                     {
@@ -155,9 +162,9 @@ class LadybugClient:
 
         return checkin_id
 
-    def get_latest_bio(self) -> dict[str, Any] | None:
+    async def get_latest_bio(self) -> dict[str, Any] | None:
         """Fetch the most recent bio-metric record."""
-        result = self.conn.execute(
+        result = await self.execute(
             "MATCH (c:CheckIn)-[:HAS_BIO]->(b:BioMetric) "
             "RETURN b.sleep_hours, b.nutrition_quality, b.energy_level "
             "ORDER BY c.timestamp DESC LIMIT 1"
@@ -171,11 +178,9 @@ class LadybugClient:
             }
         return None
 
-    def get_all_tasks(self) -> list[dict[str, Any]]:
+    async def get_all_tasks(self) -> list[dict[str, Any]]:
         """Fetch all unique tasks mentioned across all check-ins."""
-        # This is a simplification; in a real app, we'd handle 'completed' states.
-        # For now, we return the latest priority/state for every known task.
-        result = self.conn.execute(
+        result = await self.execute(
             "MATCH (c:CheckIn)-[r:MENTIONED_TASK]->(t:LogisticsTask) "
             "RETURN t.name, t.priority, r.days_overdue, t.subtasks, t.completed_subtasks, t.status, c.timestamp "
             "ORDER BY c.timestamp DESC"
@@ -195,9 +200,9 @@ class LadybugClient:
                 }
         return list(tasks.values())
 
-    def get_all_vibes(self) -> list[dict[str, Any]]:
+    async def get_all_vibes(self) -> list[dict[str, Any]]:
         """Fetch the latest vibe check for every known person."""
-        result = self.conn.execute(
+        result = await self.execute(
             "MATCH (c:CheckIn)-[r:VIBE_CHECK]->(p:Person) "
             "RETURN p.name, r.score, r.days_since, c.timestamp "
             "ORDER BY c.timestamp DESC"
@@ -214,9 +219,9 @@ class LadybugClient:
                 }
         return list(vibes.values())
 
-    def get_recent_bio(self, limit: int = 7) -> list[dict[str, Any]]:
+    async def get_recent_bio(self, limit: int = 7) -> list[dict[str, Any]]:
         """Fetch recent bio-metrics for trend analysis."""
-        result = self.conn.execute(
+        result = await self.execute(
             "MATCH (c:CheckIn)-[:HAS_BIO]->(b:BioMetric) "
             "RETURN b.sleep_hours, b.nutrition_quality, b.energy_level, c.timestamp "
             "ORDER BY c.timestamp DESC LIMIT $limit",
@@ -235,11 +240,10 @@ class LadybugClient:
             )
         return items
 
-    def clear_database(self) -> None:
+    async def clear_database(self) -> None:
         """Wipe all nodes and edges from the graph."""
-        # Note: detach delete is the most efficient way to clear data while keeping tables
         try:
-            self.conn.execute("MATCH (n) DETACH DELETE n")
+            await self.execute("MATCH (n) DETACH DELETE n")
             logger.info("Database wiped successfully.")
         except Exception as e:
             logger.error(f"Error wiping database: {e}")

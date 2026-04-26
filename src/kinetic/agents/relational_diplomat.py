@@ -62,7 +62,13 @@ class RelationalDiplomat:
     ) -> RelationalDiplomatResult:
         if payload.relational is None:
             return RelationalDiplomatResult(
-                success=False, error_message="No relational data in payload."
+                success=True,
+                status=RelationalStatus(
+                    status="green",
+                    connection_margin_score=100,
+                    at_risk_relationships=[],
+                    interaction_sprints=[],
+                ),
             )
 
         checks = payload.relational.vibe_checks

@@ -20,7 +20,10 @@ def mock_db() -> MagicMock:
     with patch("kinetic.orchestrator.lead.get_db") as mock:
         client = MagicMock()
         client.insert_checkin = AsyncMock(return_value="test-id")
-        client.get_recent_bio.return_value = []
+        client.get_latest_bio = AsyncMock(return_value=None)
+        client.get_all_tasks = AsyncMock(return_value=[])
+        client.get_all_vibes = AsyncMock(return_value=[])
+        client.get_recent_bio = AsyncMock(return_value=[])
         mock.return_value = client
         yield client
 

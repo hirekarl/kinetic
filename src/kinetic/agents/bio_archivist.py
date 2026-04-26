@@ -114,11 +114,22 @@ class BioArchivist:
     async def process(
         self, payload: CheckInPayload, history: dict[str, Any] | None = None
     ) -> BioArchivistResult:
-        if payload.bio is None:
-            return BioArchivistResult(success=False, error_message="No bio data in payload.")
-
         bio = payload.bio
         bio_history = (history.get("bio") if history else None) or []
+
+        if bio is None:
+            if not bio_history:
+                return BioArchivistResult(
+                    success=True,
+                    status=BioStatus(
+                        status="green",
+                        burnout_score=0,
+                        forecast="No data received. System monitoring idle.",
+                    ),
+                )
+            # Use history to fill in a "current" baseline if payload is empty
+            bio = BioInput()
+
         score, debt = _compute_burnout(bio, bio_history)
         level = _burnout_status(score)
 

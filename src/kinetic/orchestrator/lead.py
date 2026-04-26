@@ -100,10 +100,10 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
     return result
 
 
-def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload:
+async def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload:
     """Populate missing fields in payload with the latest known data from DB."""
     # 1. Bio
-    latest_bio = db.get_latest_bio()
+    latest_bio = await db.get_latest_bio()
     if latest_bio:
         if payload.bio is None:
             payload.bio = BioInput(**latest_bio)
@@ -116,7 +116,7 @@ def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload
                 payload.bio.energy_level = latest_bio["energy_level"]
 
     # 2. Logistics
-    hist_tasks = db.get_all_tasks()
+    hist_tasks = await db.get_all_tasks()
     if hist_tasks:
         if payload.logistics is None:
             payload.logistics = LogisticsInput(tasks=[LogisticsTask(**t) for t in hist_tasks])
@@ -127,7 +127,7 @@ def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload
                     payload.logistics.tasks.append(LogisticsTask(**ht))
 
     # 3. Relational
-    hist_vibes = db.get_all_vibes()
+    hist_vibes = await db.get_all_vibes()
     if hist_vibes:
         if payload.relational is None:
             payload.relational = RelationalInput(vibe_checks=[VibeCheck(**v) for v in hist_vibes])
@@ -149,11 +149,11 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         await db.insert_checkin(payload, message)
 
     # 2. Merge history into payload to maintain system context
-    payload = _merge_history(payload, db)
+    payload = await _merge_history(payload, db)
 
     # 3. Fetch history for context (rolling metrics)
     history: dict[str, Any] = {
-        "bio": db.get_recent_bio(limit=7),
+        "bio": await db.get_recent_bio(limit=7),
     }
 
     # 4. Fire agents in parallel
