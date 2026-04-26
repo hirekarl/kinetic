@@ -98,6 +98,9 @@ test.describe('Kinetic — Mission Control', () => {
   });
 
   test('can perform a check-in and see dashboard updates', async ({ page }) => {
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: null, messages: [] } });
+    });
     await page.route('**/api/checkin', async (route) => {
       // Small delay so the "Analyzing..." loading state is visible before mock resolves
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -144,6 +147,7 @@ test.describe('Kinetic — Mission Control', () => {
 
     await page.goto('/');
     const input = page.getByPlaceholder(/what's your status/i);
+    await expect(input).toBeEnabled();
     await input.fill('Slept 5 hours.');
     await page.getByRole('button', { name: /send/i }).click();
 
@@ -221,6 +225,9 @@ test.describe('Kinetic — Mission Control', () => {
   });
 
   test('error banner shows "Analysis unavailable" with Retry button on 503', async ({ page }) => {
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: null, messages: [] } });
+    });
     let callCount = 0;
     await page.route('**/api/checkin', async (route) => {
       callCount++;
@@ -233,6 +240,7 @@ test.describe('Kinetic — Mission Control', () => {
 
     await page.goto('/');
     const input = page.getByPlaceholder(/what's your status/i);
+    await expect(input).toBeEnabled();
     await input.fill('Slept 5 hours.');
     await page.getByRole('button', { name: /send/i }).click();
 
