@@ -263,16 +263,16 @@ Persistent, accumulating behavioral understanding of the user. The app gets to k
 
 ---
 
-## Sprint 6 — Polish & Demo Prep ⬜
+## Sprint 6 — Polish & Demo Prep 🔄
 **Dates:** 2026-05-01 → 2026-05-05 · **Target version:** `v1.0.0` · **PRD ref:** Phase 4
 
 Error handling, empty states, accessibility, demo script.
 
 ### Error & Empty States
-- [ ] Agent failure fallback: degraded status card with "Agent unavailable" message + retry CTA
-- [ ] Malformed input: `400` response surfaced as inline error (not toast, not crash)
-- [ ] Missing `GEMINI_API_KEY`: clear startup warning in logs, API returns `503` with helpful message
-- [ ] All empty states reviewed for non-alarming, non-judgmental copy
+- [x] Agent failure fallback: degraded status card with "Agent unavailable" message + retry CTA
+- [x] Malformed input: `400` response surfaced as inline error (not toast, not crash)
+- [x] Missing `GEMINI_API_KEY`: clear startup warning in logs, API returns `503` with helpful message
+- [x] All empty states reviewed for non-alarming, non-judgmental copy
 
 ### Onboarding Flow
 - [ ] 3-screen micro-tutorial (skippable): "Personal infrastructure", "Chat-first", "Agent roles"

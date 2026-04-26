@@ -92,7 +92,7 @@ React Dashboard (frontend/src/)
 ```
 src/kinetic/
   __init__.py              package version (__version__)
-  main.py                  FastAPI app, CORS config, router mount
+  main.py                  FastAPI app, CORS config, router mount; lifespan startup warning when GEMINI_API_KEY absent
   models/
     inputs.py              CheckInPayload + sub-models (canonical input contracts)
     outputs.py             SystemHealthPayload + sub-models (canonical output contracts)
@@ -117,6 +117,7 @@ src/kinetic/
 tests/
   conftest.py              shared fixtures (sample payloads, health objects)
   unit/test_models.py      model validation tests
+  unit/test_main.py        startup warning / lifespan tests
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/             end-to-end API tests (Phase 3+)
 
@@ -142,9 +143,9 @@ frontend/src/
 | Sprint 1 | `v0.2.0` | Agent Logic | ✅ |
 | Sprint 2 | `v0.3.0` | LLM Parsing | ✅ |
 | Sprint 3 | `v0.4.0` | Frontend Core | ✅ |
-| Sprint 4 | `v0.5.0` | Integration + ROI | 🔄 |
-| Sprint 5 | `v0.6.0` | Behavioral Memory | 🔄 |
-| Sprint 6 | `v1.0.0` | Polish + Demo | ⬜ |
+| Sprint 4 | `v0.5.0` | Integration + ROI | ✅ |
+| Sprint 5 | `v0.6.0` | Behavioral Memory | ✅ |
+| Sprint 6 | `v1.0.0` | Polish + Demo | 🔄 |
 
 ---
 

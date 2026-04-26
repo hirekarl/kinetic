@@ -7,6 +7,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- **Startup warning:** FastAPI `lifespan` handler emits a `WARNING`-level log at startup when `GEMINI_API_KEY` is absent, making missing credentials immediately visible in server logs rather than silently failing on first request.
+- **Retry CTA in error banner:** After a failed check-in the error banner now shows a "Retry" button that re-submits the last message without requiring the user to re-type it. The button is hidden once the retry succeeds and the banner clears.
+
+### Changed
+- Error banner heading softened from alarming "SYSTEM ERROR" copy to "Analysis unavailable" — non-alarming, actionable framing consistent with the NOC-style tone.
+- Chat feed error message softened from `[CRITICAL ERROR]` prefix to "Check-in could not be processed." — same information, lower cognitive load.
+- Error banner upgraded to `role="alert"` live region so screen readers announce the error immediately without requiring focus change.
+
+### Added
 - **BehavioralProfilePanel:** Collapsible disclosure section on the Mission Control dashboard rendering accumulated `behavioral_profiles` from `SystemHealthPayload`. Collapsed by default, keyboard-navigable, `aria-expanded` wired. Shows `profile_key` tag, plain-English `insight`, `observation_count` badge, and `last_updated` date per profile. Empty state: "Building your profile — check in again tomorrow." Vitest (11 tests, 100% component coverage), 2 new Playwright e2e scenarios, zero WCAG 2.1 AA violations.
 - **Behavioral Memory — Pattern Detector Service:** `src/kinetic/services/pattern_detector.py` — `detect_and_update_patterns()` calls Gemini after each check-in to derive behavioral patterns from the accumulated summary; upserts results as `BehavioralProfile` records. Rate-limit guard prevents redundant calls (skips if `days_analyzed < 3` or any profile updated within 20 hours). Fires as a non-blocking `asyncio.create_task()` — never propagates exceptions.
 - **Behavioral Memory — Orchestrator + Liaison Integration:** `orchestrate()` fetches `BehavioralSummary` and `BehavioralProfile` list after agents fire and threads both through to `OperationalLiaison.process()`. The Liaison's Gemini prompt now includes a BEHAVIORAL CONTEXT section with 14-day trend data and established patterns, grounding tactical guidance in history rather than just the current check-in. `SystemHealthPayload` now always includes `behavioral_profiles`.
