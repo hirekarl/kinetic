@@ -3,7 +3,7 @@
 # Aggregates conventional commits → calculates SemVer bump →
 # updates CHANGELOG.md → creates release commit + tag.
 #
-# Usage: ./scripts/release.sh
+# Usage: ./scripts/release.sh [--increment MAJOR|MINOR|PATCH]
 #
 # Requires: uv, commitizen (installed via uv sync --group dev)
 
@@ -19,6 +19,19 @@ info()    { echo -e "${BOLD}[release]${RESET} $*"; }
 success() { echo -e "${GREEN}✓${RESET} $*"; }
 warn()    { echo -e "${YELLOW}⚠${RESET} $*"; }
 fail()    { echo -e "${RED}✗${RESET} $*"; exit 1; }
+
+# ── Parse args ─────────────────────────────────────────────────────────────
+
+INCREMENT_FLAG=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --increment)
+      INCREMENT_FLAG="--increment $2"
+      shift 2
+      ;;
+    *) fail "Unknown argument: $1" ;;
+  esac
+done
 
 # ── Preflight ──────────────────────────────────────────────────────────────
 
@@ -48,7 +61,7 @@ success "All commits are valid."
 
 echo ""
 info "Version bump preview:"
-uv run cz bump --dry-run
+uv run cz bump --dry-run $INCREMENT_FLAG
 
 echo ""
 info "Changelog preview:"
@@ -63,7 +76,7 @@ read -r -p "$(echo -e "${BOLD}Proceed with release?${RESET} [y/N] ")" confirm
 # ── Bump + tag ─────────────────────────────────────────────────────────────
 
 info "Bumping version, updating CHANGELOG, creating release commit + tag..."
-uv run cz bump --changelog
+uv run cz bump --changelog $INCREMENT_FLAG
 success "Version bumped and tagged."
 
 # ── Push ───────────────────────────────────────────────────────────────────
