@@ -65,7 +65,18 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
                   steps
                 </span>
               </div>
-              <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                role="progressbar"
+                aria-label={`${task.name} progress`}
+                aria-valuenow={
+                  task.subtasks.length > 0
+                    ? Math.round((task.completed_subtasks.length / task.subtasks.length) * 100)
+                    : 0
+                }
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden"
+              >
                 <div
                   className={`h-full transition-all duration-500 ${
                     task.status === 'completed' ? 'bg-status-green' : 'bg-status-yellow'

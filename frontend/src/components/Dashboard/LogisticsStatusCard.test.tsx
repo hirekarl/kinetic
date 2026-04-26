@@ -76,4 +76,14 @@ describe('LogisticsStatusCard', () => {
     render(<LogisticsStatusCard data={withError} />);
     expect(screen.getByText('Parser failed')).toBeInTheDocument();
   });
+
+  it('task progress bar has progressbar role with ARIA value attributes', () => {
+    render(<LogisticsStatusCard data={mockData} />);
+    const progressbar = screen.getByRole('progressbar', { name: /laundry progress/i });
+    expect(progressbar).toBeInTheDocument();
+    // 1 of 3 subtasks complete → Math.round(1/3 * 100) = 33
+    expect(progressbar).toHaveAttribute('aria-valuenow', '33');
+    expect(progressbar).toHaveAttribute('aria-valuemin', '0');
+    expect(progressbar).toHaveAttribute('aria-valuemax', '100');
+  });
 });

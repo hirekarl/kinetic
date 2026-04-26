@@ -108,4 +108,15 @@ describe('BehavioralProfilePanel', () => {
     render(<BehavioralProfilePanel profiles={[]} isLoading={true} />);
     expect(screen.queryByRole('button', { name: /behavioral profile/i })).not.toBeInTheDocument();
   });
+
+  it('expanded "Last updated" text uses text-zinc-400 for WCAG AA contrast', async () => {
+    const user = userEvent.setup();
+    render(<BehavioralProfilePanel profiles={mockProfiles} />);
+    await user.click(screen.getByRole('button', { name: /behavioral profile/i }));
+    const dateEls = screen.getAllByText(/last updated:/i);
+    dateEls.forEach((el) => {
+      expect(el).toHaveClass('text-zinc-400');
+      expect(el).not.toHaveClass('text-zinc-500');
+    });
+  });
 });

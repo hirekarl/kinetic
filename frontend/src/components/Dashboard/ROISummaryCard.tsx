@@ -35,7 +35,10 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
   return (
     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.02] p-8 transition-all hover:border-emerald-500/30">
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+        <div
+          aria-hidden="true"
+          className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+        />
         <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-500">
           Performance Yield & ROI
         </h2>

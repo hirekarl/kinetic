@@ -66,4 +66,10 @@ describe('TriageList', () => {
     render(<TriageList items={[]} isLoading={true} />);
     expect(screen.getByText('Analyzing...')).toBeInTheDocument();
   });
+
+  it('renders triage items as semantic list items for screen readers', () => {
+    render(<TriageList items={mockItems} />);
+    const listItems = screen.getAllByRole('listitem');
+    expect(listItems).toHaveLength(3);
+  });
 });

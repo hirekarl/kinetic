@@ -89,7 +89,7 @@ export const BehavioralProfilePanel: React.FC<BehavioralProfilePanelProps> = ({
                       </span>
                     </div>
                     <p className="text-sm text-zinc-300 leading-relaxed">{profile.insight}</p>
-                    <p className="mt-2 text-[10px] text-zinc-500">
+                    <p className="mt-2 text-[10px] text-zinc-400">
                       Last updated:{' '}
                       {new Date(profile.last_updated).toLocaleDateString(undefined, {
                         year: 'numeric',

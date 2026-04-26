@@ -29,9 +29,9 @@ export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
           <p className="text-sm text-zinc-400">All systems nominal. No triage items pending.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {items.map((item) => (
-            <div
+            <li
               key={item.id}
               className="flex items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 transition-colors hover:border-zinc-700"
             >
@@ -58,9 +58,9 @@ export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
                   <span>{item.action}</span>
                 </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

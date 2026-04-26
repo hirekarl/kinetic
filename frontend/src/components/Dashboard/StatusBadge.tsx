@@ -30,6 +30,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label }) => {
   return (
     <div className="flex items-center gap-2">
       <div
+        aria-hidden="true"
         className={`h-2 w-2 rounded-full transition-all duration-500 ${config.color} ${config.glow}`}
       />
       <span className="text-xs font-medium text-zinc-400 uppercase tracking-tight">

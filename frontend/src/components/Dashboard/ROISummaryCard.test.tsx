@@ -41,4 +41,10 @@ describe('ROISummaryCard', () => {
     render(<ROISummaryCard data={mockData} isLoading={true} />);
     expect(screen.queryByText(/performance yield/i)).not.toBeInTheDocument();
   });
+
+  it('decorative status dot is aria-hidden so screen readers skip it', () => {
+    const { container } = render(<ROISummaryCard data={mockData} />);
+    const dot = container.querySelector('[aria-hidden="true"]');
+    expect(dot).not.toBeNull();
+  });
 });

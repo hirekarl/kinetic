@@ -22,4 +22,10 @@ describe('StatusBadge', () => {
     render(<StatusBadge status="green" label="All Clear" />);
     expect(screen.getByText('All Clear')).toBeInTheDocument();
   });
+
+  it('color indicator dot is aria-hidden so screen readers rely on the text label', () => {
+    const { container } = render(<StatusBadge status="green" />);
+    const dot = container.querySelector('[aria-hidden="true"]');
+    expect(dot).not.toBeNull();
+  });
 });
