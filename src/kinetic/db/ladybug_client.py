@@ -92,7 +92,7 @@ class LadybugClient:
 
         # 1. Create CheckIn node
         self.conn.execute(
-            "CREATE (c:CheckIn {id: $id, timestamp: $ts, message: $msg, embedding: $emb})",
+            f"CREATE (c:CheckIn {{id: CAST($id, 'UUID'), timestamp: $ts, message: $msg, embedding: CAST($emb, 'FLOAT[{VECTOR_DIMENSION}]')}})",
             {"id": checkin_id, "ts": timestamp, "msg": message, "emb": embedding},
         )
 
@@ -100,7 +100,7 @@ class LadybugClient:
         if payload.bio:
             bio_id = str(uuid.uuid4())
             self.conn.execute(
-                "CREATE (b:BioMetric {id: $id, sleep_hours: $sleep, nutrition_quality: $nutr, energy_level: $eng})",
+                "CREATE (b:BioMetric {id: CAST($id, 'UUID'), sleep_hours: $sleep, nutrition_quality: $nutr, energy_level: $eng})",
                 {
                     "id": bio_id,
                     "sleep": float(payload.bio.sleep_hours or 0.0),
@@ -109,7 +109,7 @@ class LadybugClient:
                 },
             )
             self.conn.execute(
-                "MATCH (c:CheckIn), (b:BioMetric) WHERE c.id = $cid AND b.id = $bid CREATE (c)-[:HAS_BIO]->(b)",
+                "MATCH (c:CheckIn), (b:BioMetric) WHERE c.id = CAST($cid, 'UUID') AND b.id = CAST($bid, 'UUID') CREATE (c)-[:HAS_BIO]->(b)",
                 {"cid": checkin_id, "bid": bio_id},
             )
 
@@ -133,7 +133,7 @@ class LadybugClient:
                     },
                 )
                 self.conn.execute(
-                    "MATCH (c:CheckIn), (t:LogisticsTask) WHERE c.id = $cid AND t.name = $tname "
+                    "MATCH (c:CheckIn), (t:LogisticsTask) WHERE c.id = CAST($cid, 'UUID') AND t.name = $tname "
                     "CREATE (c)-[:MENTIONED_TASK {days_overdue: $overdue}]->(t)",
                     {"cid": checkin_id, "tname": task.name, "overdue": task.days_overdue},
                 )
@@ -143,7 +143,7 @@ class LadybugClient:
             for vibe in payload.relational.vibe_checks:
                 self.conn.execute("MERGE (p:Person {name: $name})", {"name": vibe.person})
                 self.conn.execute(
-                    "MATCH (c:CheckIn), (p:Person) WHERE c.id = $cid AND p.name = $pname "
+                    "MATCH (c:CheckIn), (p:Person) WHERE c.id = CAST($cid, 'UUID') AND p.name = $pname "
                     "CREATE (c)-[:VIBE_CHECK {score: $score, days_since: $days}]->(p)",
                     {
                         "cid": checkin_id,
