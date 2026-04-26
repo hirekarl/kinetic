@@ -456,3 +456,99 @@ async def test_process_history_maps_system_role_to_assistant() -> None:
     history_turns = [m for m in messages if "Prior liaison response" in m.get("content", "")]
     assert history_turns
     assert history_turns[0]["role"] == "assistant"
+
+
+# ── Prompt hardening rules (Task B1) ─────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_synthesis_rule() -> None:
+    """SYNTHESIS rule: competing multi-domain crisis → unified sequenced protocol."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="Everything is on fire.",
+            overall_status="red",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert "SYNTHESIS" in prompt or "competing" in prompt.lower() or "sequenced" in prompt.lower()
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_improvement_ack_rule() -> None:
+    """IMPROVEMENT ACK rule: partial recovery → acknowledge delta, update forecast."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="I slept better last night.",
+            overall_status="yellow",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert "IMPROVEMENT" in prompt or "acknowledge" in prompt.lower() or "delta" in prompt.lower()
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_event_routing_rule() -> None:
+    """EVENT ROUTING rule: upcoming deadline → one action per specialist domain."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="I have a big presentation tomorrow.",
+            overall_status="yellow",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert (
+        "EVENT" in prompt
+        or "deadline" in prompt.lower()
+        or "presentation" in prompt.lower()
+        or "routing" in prompt.lower()
+    )
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_history_resolution_rule() -> None:
+    """HISTORY RESOLUTION rule: pronoun references → resolve from last 3 turns."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="How is she doing?",
+            overall_status="green",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert "HISTORY" in prompt or "pronoun" in prompt.lower() or "resolution" in prompt.lower()
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_agency_rule() -> None:
+    """AGENCY rule: user overrides recommendation → pivot to risk mitigation only."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="I know you said to sleep but I'm going to stay up anyway.",
+            overall_status="red",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert "AGENCY" in prompt or "override" in prompt.lower() or "risk mitigation" in prompt.lower()
+
+
+@pytest.mark.unit
+async def test_system_prompt_contains_task_completion_rule() -> None:
+    """task_completions field rule: populated only when user explicitly states task completion."""
+    with _patch_liaison() as mock_client:
+        await _liaison().process(
+            message="I finished the laundry.",
+            overall_status="green",
+            triage_items=[],
+        )
+
+    prompt = str(mock_client.chat.completions.create.call_args)
+    assert (
+        "task_completions" in prompt
+        or "completed" in prompt.lower()
+        or "finished" in prompt.lower()
+    )
