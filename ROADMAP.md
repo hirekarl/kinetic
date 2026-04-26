@@ -221,7 +221,7 @@ Full frontend–backend integration, streaming responses, ROI calculator, and th
 
 ---
 
-## Sprint 5 — Behavioral Memory ⬜
+## Sprint 5 — Behavioral Memory 🔄
 **Dates:** 2026-04-26 → 2026-04-30 · **Target version:** `v0.6.0` · **PRD ref:** Phase 3+
 
 Persistent, accumulating behavioral understanding of the user. The app gets to know patterns over time and uses them to ground the OperationalLiaison's tactical guidance.
@@ -236,18 +236,18 @@ Persistent, accumulating behavioral understanding of the user. The app gets to k
 - [x] `frontend/src/types/index.ts` updated to mirror all new models
 
 ### Pattern Detector Service (backend)
-- [ ] New file: `src/kinetic/services/pattern_detector.py`
-- [ ] `detect_and_update_patterns(db, behavioral_summary, current_profiles, api_key) -> None`
-- [ ] Rate-limit guard: no-op if `days_analyzed < 3` or any profile updated within 20 hours
-- [ ] Gemini call to derive behavioral patterns from summary; upserts profiles via db
-- [ ] All exceptions caught and logged — never propagates (background task safety)
+- [x] New file: `src/kinetic/services/pattern_detector.py`
+- [x] `detect_and_update_patterns(db, behavioral_summary, current_profiles, api_key) -> None`
+- [x] Rate-limit guard: no-op if `days_analyzed < 3` or any profile updated within 20 hours
+- [x] Gemini call to derive behavioral patterns from summary; upserts profiles via db
+- [x] All exceptions caught and logged — never propagates (background task safety)
 
 ### Orchestrator + Liaison Integration (backend)
-- [ ] `orchestrate()` calls `get_behavioral_summary()` and `get_behavioral_profiles()` after agents fire
-- [ ] `OperationalLiaison.process()` signature updated to accept `behavioral_summary` and `behavioral_profiles`
-- [ ] System prompt gains BEHAVIORAL CONTEXT section and 14-day trend summary
-- [ ] `asyncio.create_task(detect_and_update_patterns(...))` fires non-blocking after Liaison responds
-- [ ] All existing orchestrator tests still pass
+- [x] `orchestrate()` calls `get_behavioral_summary()` and `get_behavioral_profiles()` after agents fire
+- [x] `OperationalLiaison.process()` signature updated to accept `behavioral_summary` and `behavioral_profiles`
+- [x] System prompt gains BEHAVIORAL CONTEXT section and 14-day trend summary
+- [x] `asyncio.create_task(detect_and_update_patterns(...))` fires non-blocking after Liaison responds
+- [x] All existing orchestrator tests still pass
 
 ### Frontend — Behavioral Profile Panel (stretch)
 - [ ] `BehavioralProfilePanel` component (collapsible disclosure, keyboard-navigable)
