@@ -35,11 +35,9 @@ async def _seed_checkin(
     async with aiosqlite.connect(client.db_path) as db:
         await client._init_db(db)
         checkin_id = str(uuid.uuid4())
-        emb = json.dumps([0.0] * 768)
         await db.execute(
-            "INSERT INTO checkins (id, timestamp, message, embedding, liaison_feedback)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (checkin_id, ts.isoformat(), message, emb, None),
+            "INSERT INTO checkins (id, timestamp, message, liaison_feedback) VALUES (?, ?, ?, ?)",
+            (checkin_id, ts.isoformat(), message, None),
         )
         if payload.bio:
             await db.execute(

@@ -11,7 +11,6 @@ from itertools import groupby
 from typing import Any
 
 import aiosqlite
-from google import genai
 
 from kinetic.models.inputs import CheckInPayload
 from kinetic.models.outputs import (
@@ -28,11 +27,9 @@ logger = logging.getLogger(__name__)
 class SqliteClient:
     """Handles persistence of check-ins into SQLite (Relational)."""
 
-    def __init__(self, db_path: str = "./kinetic.db", api_key: str | None = None) -> None:
+    def __init__(self, db_path: str = "./kinetic.db") -> None:
         self.db_path = os.path.abspath(db_path)
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.client = genai.Client(api_key=self.api_key) if self.api_key else None
 
     async def _init_db(self, db: aiosqlite.Connection) -> None:
         """Create tables if they don't exist."""
@@ -42,7 +39,6 @@ class SqliteClient:
                 id TEXT PRIMARY KEY,
                 timestamp DATETIME,
                 message TEXT,
-                embedding TEXT,
                 liaison_feedback TEXT
             )
             """
@@ -110,24 +106,6 @@ class SqliteClient:
             await db.execute("ALTER TABLE checkins ADD COLUMN liaison_feedback TEXT")
         await db.commit()
 
-    def get_embedding(self, text: str) -> list[float]:
-        """Convert text to vector embedding using Gemini API."""
-        if not self.client:
-            return [0.0] * 768
-        try:
-            result = self.client.models.embed_content(
-                model="text-embedding-004",
-                contents=text,
-            )
-            embeddings = result.embeddings
-            values = embeddings[0].values if embeddings else None
-            if not values:
-                return [0.0] * 768
-            return [float(x) for x in values]
-        except Exception as e:
-            logger.error(f"Embedding failed: {e}")
-            return [0.0] * 768
-
     async def insert_checkin(
         self, payload: CheckInPayload, message: str, liaison_feedback: str | None = None
     ) -> str:
@@ -136,11 +114,10 @@ class SqliteClient:
             await self._init_db(db)
             checkin_id = str(uuid.uuid4())
             ts = datetime.now()
-            emb = self.get_embedding(message)
 
             await db.execute(
-                "INSERT INTO checkins (id, timestamp, message, embedding, liaison_feedback) VALUES (?, ?, ?, ?, ?)",
-                (checkin_id, ts, message, json.dumps(emb), liaison_feedback),
+                "INSERT INTO checkins (id, timestamp, message, liaison_feedback) VALUES (?, ?, ?, ?)",
+                (checkin_id, ts, message, liaison_feedback),
             )
 
             if payload.bio:
