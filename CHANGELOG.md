@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- Conversational history threading: prior chat turns forwarded to `OperationalLiaison` (capped at 10 messages) so the agent responds in context rather than resetting each turn
+- Specialist agent routing: `LiaisonResponse.responding_agent` field routes responses to `bio_archivist`, `logistics_fixer`, `relational_diplomat`, or `liaison`; ChatPanel renders a colored agent label on each system message
+- Rich specialist context: orchestrator forwards live `bio_status`, `logistics_status`, `relational_status` objects to the liaison so it grounds responses in current data
+- Contact pause lifecycle: user-stated no-contact agreements are extracted by the liaison as `ContactPauseDirective` objects, persisted to SQLite, and used to filter triage items and relational status in real time
+- `ContactPause` model and `SystemHealthPayload.active_pauses` field; Relational Diplomat card shows "On Break" section with expiry date for each paused contact
+- `SystemHealthPayload.responding_agent: str | None` surfaces the routing decision to the frontend
 - 7-day sleep sparkline on `BioStatusCard`: pure SVG polyline (no chart library) showing per-day sleep hours oldest→newest; amber stroke when declining, emerald when improving; `aria-hidden="true"` (decorative); degrades gracefully when fewer than 2 data points are available
 - `BioTrend.sleep_series: list[float]` — per-day sleep hours populated by `get_behavioral_summary()` and surfaced in `SystemHealthPayload.behavioral_summary`
 - `SystemHealthPayload.behavioral_summary: BehavioralSummary | None` — full trend data now included in the API response, enabling frontend visualization

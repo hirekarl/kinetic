@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChatPanel, Message } from './components/ChatPanel';
+import { ChatPanel, Message, RespondingAgent } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
 import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
@@ -58,7 +58,11 @@ function App() {
         setLastMessage(null);
         // 2. Add liaison feedback to feed
         if (result.liaison_feedback) {
-          const systemMsg: Message = { role: 'system', content: result.liaison_feedback };
+          const systemMsg: Message = {
+            role: 'system',
+            content: result.liaison_feedback,
+            agent: (result.responding_agent as RespondingAgent) ?? 'liaison',
+          };
           setMessages((prev) => [...prev, systemMsg]);
         }
       })
@@ -187,7 +191,11 @@ function App() {
                     behavioralSummary={health.behavioral_summary ?? null}
                   />
                   <LogisticsStatusCard data={health.logistics} isLoading={isLoading} />
-                  <RelationalStatusCard data={health.relational} isLoading={isLoading} />
+                  <RelationalStatusCard
+                    data={health.relational}
+                    isLoading={isLoading}
+                    activePauses={health.active_pauses ?? []}
+                  />
                 </div>
               </section>
 

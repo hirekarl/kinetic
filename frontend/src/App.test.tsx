@@ -43,8 +43,10 @@ const mockHealth: SystemHealthPayload = {
     burnout_risk_delta: -5.0,
   },
   liaison_feedback: 'Focus on sleep first.',
+  responding_agent: null,
   behavioral_profiles: [],
   behavioral_summary: null,
+  active_pauses: [],
 };
 
 const mockFetchHistory = vi.fn();

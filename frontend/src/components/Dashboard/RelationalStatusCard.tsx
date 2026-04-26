@@ -1,14 +1,19 @@
 import React from 'react';
-import { RelationalStatus } from '../../types';
+import { ContactPause, RelationalStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
 
 interface RelationalStatusCardProps {
   data: RelationalStatus | null;
   isLoading?: boolean;
+  activePauses?: ContactPause[];
 }
 
-export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data, isLoading }) => {
+export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({
+  data,
+  isLoading,
+  activePauses = [],
+}) => {
   if (isLoading) return <CardSkeleton />;
 
   if (!data) {
@@ -80,7 +85,30 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
         </div>
       )}
 
-      {data.status === 'green' && (
+      {activePauses.length > 0 && (
+        <div className="mt-6">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2">On Break</div>
+          <div className="space-y-2">
+            {activePauses.map((pause) => (
+              <div
+                key={pause.person}
+                className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2"
+              >
+                <span className="text-sm font-medium text-zinc-300">{pause.person}</span>
+                <span className="text-[10px] font-mono text-zinc-500">
+                  until{' '}
+                  {new Date(pause.paused_until).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.status === 'green' && activePauses.length === 0 && (
         <p className="text-sm text-zinc-400 italic">
           Relationship margins healthy. Connections maintained.
         </p>

@@ -100,6 +100,16 @@ class SqliteClient:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contact_pauses (
+                person TEXT PRIMARY KEY,
+                paused_until TEXT NOT NULL,
+                reason TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         # Column migration: swallow error when column already exists
         # (SQLite has no ALTER TABLE ... ADD COLUMN IF NOT EXISTS)
         with contextlib.suppress(Exception):
@@ -220,6 +230,37 @@ class SqliteClient:
             async with db.execute(
                 "SELECT sleep_hours, nutrition_quality, energy_level FROM bio_metrics ORDER BY rowid DESC LIMIT ?",
                 (limit,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(r) for r in rows]
+
+    async def upsert_contact_pause(
+        self, person: str, paused_until: str, reason: str | None
+    ) -> None:
+        """Insert or replace a contact pause (keyed by person name)."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            await db.execute(
+                """
+                INSERT INTO contact_pauses (person, paused_until, reason)
+                VALUES (?, ?, ?)
+                ON CONFLICT(person) DO UPDATE SET paused_until=excluded.paused_until, reason=excluded.reason
+                """,
+                (person, paused_until, reason),
+            )
+            await db.commit()
+
+    async def get_active_pauses(self) -> list[dict[str, Any]]:
+        """Return contact pauses that have not yet expired."""
+        from datetime import date
+
+        today = date.today().isoformat()
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT person, paused_until, reason FROM contact_pauses WHERE paused_until >= ?",
+                (today,),
             ) as cursor:
                 rows = await cursor.fetchall()
                 return [dict(r) for r in rows]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -99,6 +99,12 @@ class BehavioralProfile(BaseModel):
     observation_count: int
 
 
+class ContactPause(BaseModel):
+    person: str
+    paused_until: date
+    reason: str | None = None
+
+
 class SystemHealthPayload(BaseModel):
     """Canonical output from the lead orchestrator, consumed directly by the frontend."""
 
@@ -109,5 +115,7 @@ class SystemHealthPayload(BaseModel):
     triage_items: list[TriageItem] = Field(default_factory=list)
     roi_summary: ROISummary | None = None
     liaison_feedback: str | None = None
+    responding_agent: str | None = None
     behavioral_profiles: list[BehavioralProfile] = Field(default_factory=list)
     behavioral_summary: BehavioralSummary | None = None
+    active_pauses: list[ContactPause] = Field(default_factory=list)

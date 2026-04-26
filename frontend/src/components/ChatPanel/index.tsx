@@ -1,9 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+export type RespondingAgent =
+  | 'liaison'
+  | 'bio_archivist'
+  | 'logistics_fixer'
+  | 'relational_diplomat';
+
 export interface Message {
   role: 'user' | 'system';
   content: string;
+  agent?: RespondingAgent;
 }
+
+const AGENT_LABELS: Record<RespondingAgent, string> = {
+  liaison: 'SYSTEM READOUT',
+  bio_archivist: 'BIO ARCHIVIST',
+  logistics_fixer: 'LOGISTICS FIXER',
+  relational_diplomat: 'RELATIONAL DIPLOMAT',
+};
+
+const AGENT_COLORS: Record<RespondingAgent, string> = {
+  liaison: 'text-emerald-500',
+  bio_archivist: 'text-emerald-400',
+  logistics_fixer: 'text-amber-400',
+  relational_diplomat: 'text-blue-400',
+};
 
 interface ChatPanelProps {
   onSendMessage: (message: string) => void;
@@ -88,8 +109,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSendMessage, isLoading, 
               }`}
             >
               {msg.role === 'system' && (
-                <span className="block text-[10px] font-bold text-emerald-500 mb-1 uppercase tracking-widest">
-                  [SYSTEM READOUT]
+                <span
+                  className={`block text-[10px] font-bold mb-1 uppercase tracking-widest ${AGENT_COLORS[msg.agent ?? 'liaison']}`}
+                >
+                  [{AGENT_LABELS[msg.agent ?? 'liaison']}]
                 </span>
               )}
               {msg.content}

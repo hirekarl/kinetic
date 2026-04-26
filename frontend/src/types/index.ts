@@ -97,6 +97,12 @@ export interface BehavioralProfile {
   observation_count: number;
 }
 
+export interface ContactPause {
+  person: string;
+  paused_until: string; // ISO date "YYYY-MM-DD"
+  reason: string | null;
+}
+
 export interface SystemHealthPayload {
   overall_status: StatusLevel;
   bio: BioStatus | null;
@@ -105,8 +111,10 @@ export interface SystemHealthPayload {
   triage_items: TriageItem[];
   roi_summary: ROISummary | null;
   liaison_feedback: string | null;
+  responding_agent: string | null;
   behavioral_profiles: BehavioralProfile[];
   behavioral_summary: BehavioralSummary | null;
+  active_pauses: ContactPause[];
 }
 
 export interface CheckInRequest {

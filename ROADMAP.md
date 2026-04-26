@@ -307,6 +307,52 @@ Error handling, empty states, accessibility, demo script.
 
 ---
 
+## Sprint 6b — Dashboard Interactivity + Liaison Hardening 🔄
+**Dates:** 2026-04-26 → TBD · **Target version:** `v1.1.0`
+
+Conversational depth, specialist agent routing, contact pause lifecycle, task completion UI, and adversarial scenario coverage.
+
+### Implemented (2026-04-26)
+- [x] Conversational history threading: `history` forwarded `routes.py` → `orchestrate()` → `OperationalLiaison.process()`; LLM receives prior turns capped at 10
+- [x] Specialist routing: `LiaisonResponse.responding_agent` field; liaison routes to `bio_archivist`, `logistics_fixer`, `relational_diplomat`, or `liaison`; ChatPanel renders colored agent label per message
+- [x] Rich specialist context: orchestrator passes `bio_status`, `logistics_status`, `relational_status` to liaison so it grounds responses in live data
+- [x] Contact pause lifecycle: `ContactPauseDirective` extracted by liaison → persisted to `contact_pauses` SQLite table → active pauses filter triage items + relational status + interaction sprints
+- [x] `ContactPause` model added to `SystemHealthPayload.active_pauses`; Relational Diplomat card shows "On Break" section
+
+### Task A1 — Server-Persisted Task Completion (backend)
+- [ ] `source_id: str | None = None` on `TriageItem`
+- [ ] `LogisticsFixer` sets `source_id=task.name` on generated triage items
+- [ ] `SqliteClient.complete_task(task_name: str) -> None`
+- [ ] `LiaisonResponse.task_completions: list[str]` field
+- [ ] Orchestrator iterates `task_completions`, calls `db.complete_task()` for each
+- [ ] `PATCH /api/tasks/{task_name}/complete` endpoint (200 | 404 | 409)
+- [ ] TS type: `TriageItem.source_id: string | null`
+
+### Task A2 — Triage Completion UI (frontend)
+- [ ] Checkmark button on logistics triage items with non-null `source_id`
+- [ ] Optimistic removal on click; restore on API error
+- [ ] `TriageList` accepts `onCompleteTask?: (taskName: string) => Promise<void>`
+- [ ] `App.tsx` `handleCompleteTask` wired up
+- [ ] WCAG 2.1 AA compliance on new interactive elements
+
+### Task B1 — Liaison Prompt Hardening (backend)
+- [ ] SYNTHESIS rule: competing multi-domain crisis → unified sequenced protocol
+- [ ] IMPROVEMENT ACK rule: partial recovery → acknowledge delta, update forecast
+- [ ] EVENT ROUTING rule: upcoming deadline → one action per specialist domain
+- [ ] HISTORY RESOLUTION rule: pronoun references → resolve from last 3 turns
+- [ ] AGENCY rule: user overrides recommendation → pivot to risk mitigation only
+- [ ] Orchestrator processes `task_completions` directive (same pattern as contact pauses)
+
+### Task B2 — Scenario Test Suite + Live Runner (both)
+- [ ] `tests/scenarios/test_scenarios.py` — 5 deterministic mocked scenario fixtures
+- [ ] `scripts/run_scenarios.py` — live runner against `:8000`
+
+### Quality Gates
+- [ ] All prior sprint gates still passing
+- [ ] `v1.1.0` release ceremony complete
+
+---
+
 ## Architectural Decision: Behavioral Memory via SQLite
 
 **Decision (2026-04-25):** LadybugDB (embedded Graph+Vector DB) was attempted and abandoned due to native binary incompatibility on Windows. The same goal — the app accumulating knowledge of the user's behavioral patterns over time — is achieved via:
@@ -330,3 +376,4 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ✅ |
 | `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
+| `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | 🔄 In progress |

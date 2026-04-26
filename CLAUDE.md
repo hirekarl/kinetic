@@ -54,15 +54,15 @@ src/kinetic/
     bio_archivist.py       sleep/nutrition tracking + burnout forecast
     logistics_fixer.py     task triage + outsourcing ROI
     relational_diplomat.py connection margin + interaction sprints
-    operational_liaison.py tactical micro-tasking; accepts behavioral context to ground guidance in history
+    operational_liaison.py Instructor-based structured router; accepts behavioral context + live agent status; returns LiaisonResponse (text, responding_agent, contact_pauses)
   orchestrator/
-    lead.py                routing logic + status aggregation + behavioral memory wiring
+    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
     routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history, POST /api/debug/reset)
   db/
-    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile()
+    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses()
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
@@ -73,6 +73,7 @@ tests/
   unit/test_main.py        startup warning / lifespan tests
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/             end-to-end API tests (Phase 3+)
+  scenarios/               deterministic scenario fixtures for adversarial/multi-turn coverage (Sprint 6b)
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models
@@ -100,7 +101,8 @@ frontend/src/
 | Sprint 3 | `v0.4.0` | Frontend Core | ✅ |
 | Sprint 4 | `v0.5.0` | Integration + ROI | ✅ |
 | Sprint 5 | `v0.6.0` | Behavioral Memory | ✅ |
-| Sprint 6 | `v1.0.0` | Polish + Demo | 🔄 |
+| Sprint 6 | `v1.0.0` | Polish + Demo | ✅ |
+| Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | 🔄 |
 
 ---
 
@@ -265,8 +267,9 @@ The Python models in `src/kinetic/models/` are the single source of truth for da
 - Sub-models: `BioInput`, `LogisticsInput`, `RelationalInput`
 
 **Output contract:**
-- `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None` for frontend trend visualization
-- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`
+- `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None`, `responding_agent: str | None`, `active_pauses: list[ContactPause]`
+- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`, `ContactPause`
+- Internal agent model: `LiaisonResponse` (in `agents/operational_liaison.py`) — `text: str`, `responding_agent: RespondingAgent`, `contact_pauses: list[ContactPauseDirective]`
 
 ---
 

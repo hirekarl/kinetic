@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from kinetic.agents.operational_liaison import LiaisonResponse
 from kinetic.models.inputs import (
     BioInput,
     CheckInPayload,
@@ -37,6 +38,8 @@ def mock_db() -> MagicMock:
         client.get_recent_bio = AsyncMock(return_value=[])
         client.get_behavioral_summary = AsyncMock(return_value=_MOCK_SUMMARY)
         client.get_behavioral_profiles = AsyncMock(return_value=[])
+        client.upsert_contact_pause = AsyncMock(return_value=None)
+        client.get_active_pauses = AsyncMock(return_value=[])
         mock.return_value = client
         yield client
 
@@ -45,7 +48,7 @@ def mock_db() -> MagicMock:
 def mock_liaison() -> MagicMock:
     with patch("kinetic.orchestrator.lead.OperationalLiaison") as mock:
         instance = MagicMock()
-        instance.process = AsyncMock(return_value="Tactical feedback.")
+        instance.process = AsyncMock(return_value=LiaisonResponse(text="Tactical feedback."))
         mock.return_value = instance
         yield instance
 
@@ -246,3 +249,158 @@ async def test_behavioral_summary_failure_does_not_block(mock_db: MagicMock) -> 
     result = await orchestrate(CheckInPayload())
 
     assert result.overall_status in ("green", "yellow", "red")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_liaison_called_with_history(mock_liaison: MagicMock) -> None:
+    """Orchestrator forwards history to OperationalLiaison.process()."""
+    history = [
+        {"role": "user", "content": "Slept 5 hours."},
+        {"role": "system", "content": "Sleep deficit noted."},
+    ]
+    await orchestrate(CheckInPayload(), history=history)
+
+    call_kwargs = mock_liaison.process.call_args.kwargs
+    assert call_kwargs.get("history") == history
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_liaison_receives_none_history_by_default(mock_liaison: MagicMock) -> None:
+    """When no history is passed, liaison receives history=None."""
+    await orchestrate(CheckInPayload())
+
+    call_kwargs = mock_liaison.process.call_args.kwargs
+    assert call_kwargs.get("history") is None
+
+
+# ── Agent context forwarding ──────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_liaison_receives_agent_status_objects(mock_liaison: MagicMock) -> None:
+    """Orchestrator passes bio/logistics/relational status to the liaison."""
+    await orchestrate(CheckInPayload())
+
+    call_kwargs = mock_liaison.process.call_args.kwargs
+    assert "bio_status" in call_kwargs
+    assert "logistics_status" in call_kwargs
+    assert "relational_status" in call_kwargs
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_responding_agent_included_in_payload(mock_liaison: MagicMock) -> None:
+    """SystemHealthPayload.responding_agent reflects the liaison response."""
+    mock_liaison.process.return_value = LiaisonResponse(
+        text="Your burnout is at 72.", responding_agent="bio_archivist"
+    )
+    result = await orchestrate(CheckInPayload())
+
+    assert result.responding_agent == "bio_archivist"
+
+
+# ── Contact pause lifecycle ───────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_contact_pause_directive_is_persisted(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """When liaison returns a contact pause directive, upsert_contact_pause is called."""
+    from kinetic.agents.operational_liaison import ContactPauseDirective
+
+    mock_liaison.process.return_value = LiaisonResponse(
+        text="Pause noted.",
+        contact_pauses=[ContactPauseDirective(person="Marcus", pause_days=14)],
+    )
+    await orchestrate(CheckInPayload(), message="Marcus and I are on a break.")
+
+    mock_db.upsert_contact_pause.assert_called_once()
+    call_args = mock_db.upsert_contact_pause.call_args
+    assert call_args.args[0] == "Marcus"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_paused_contact_removed_from_triage(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """Triage items whose description/action contain a paused contact name are filtered out."""
+    from datetime import date, timedelta
+
+    mock_db.get_active_pauses.return_value = [
+        {
+            "person": "Marcus",
+            "paused_until": (date.today() + timedelta(days=14)).isoformat(),
+            "reason": None,
+        }
+    ]
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=3, days_since_contact=15)]
+        )
+    )
+    result = await orchestrate(payload)
+
+    assert not any("Marcus" in item.description for item in result.triage_items)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_paused_contact_removed_from_relational_status(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """at_risk_relationships and interaction_sprints exclude paused contacts."""
+    from datetime import date, timedelta
+
+    mock_db.get_active_pauses.return_value = [
+        {
+            "person": "Marcus",
+            "paused_until": (date.today() + timedelta(days=14)).isoformat(),
+            "reason": None,
+        }
+    ]
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=3, days_since_contact=15)]
+        )
+    )
+    result = await orchestrate(payload)
+
+    assert result.relational is not None
+    assert "Marcus" not in result.relational.at_risk_relationships
+    assert not any("Marcus" in s for s in result.relational.interaction_sprints)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_active_pauses_included_in_payload(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """SystemHealthPayload.active_pauses is populated from DB active pauses."""
+    from datetime import date, timedelta
+
+    mock_db.get_active_pauses.return_value = [
+        {
+            "person": "Marcus",
+            "paused_until": (date.today() + timedelta(days=7)).isoformat(),
+            "reason": "break",
+        }
+    ]
+    result = await orchestrate(CheckInPayload())
+
+    assert len(result.active_pauses) == 1
+    assert result.active_pauses[0].person == "Marcus"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_no_directives_skips_upsert(mock_db: MagicMock, mock_liaison: MagicMock) -> None:
+    """When liaison returns no contact pauses, upsert_contact_pause is never called."""
+    await orchestrate(CheckInPayload(), message="Slept 7 hours.")
+
+    mock_db.upsert_contact_pause.assert_not_called()

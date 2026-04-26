@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from datetime import date, timedelta
 from typing import Any
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
@@ -22,6 +23,7 @@ from kinetic.models.outputs import (
     BehavioralProfile,
     BehavioralSummary,
     BioStatus,
+    ContactPause,
     LogisticsStatus,
     RelationalStatus,
     ROISummary,
@@ -106,6 +108,44 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
     return result
 
 
+def _filter_paused_contacts(
+    triage_items: list[TriageItem],
+    active_pauses: list[ContactPause],
+) -> list[TriageItem]:
+    if not active_pauses:
+        return triage_items
+    paused_lower = {p.person.lower() for p in active_pauses}
+    return [
+        item
+        for item in triage_items
+        if not (
+            item.domain == "relational"
+            and any(name in f"{item.description} {item.action}".lower() for name in paused_lower)
+        )
+    ]
+
+
+def _filter_paused_relational_status(
+    relational: RelationalStatus | None,
+    active_pauses: list[ContactPause],
+) -> RelationalStatus | None:
+    if relational is None or not active_pauses:
+        return relational
+    paused_lower = {p.person.lower() for p in active_pauses}
+    return relational.model_copy(
+        update={
+            "at_risk_relationships": [
+                p for p in relational.at_risk_relationships if p.lower() not in paused_lower
+            ],
+            "interaction_sprints": [
+                s
+                for s in relational.interaction_sprints
+                if not any(name in s.lower() for name in paused_lower)
+            ],
+        }
+    )
+
+
 async def _merge_history(payload: CheckInPayload, db: SqliteClient) -> CheckInPayload:
     """Populate missing fields in payload with the latest known data from DB."""
     # 1. Bio
@@ -146,22 +186,26 @@ async def _merge_history(payload: CheckInPayload, db: SqliteClient) -> CheckInPa
     return payload
 
 
-async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealthPayload:
+async def orchestrate(
+    payload: CheckInPayload,
+    message: str = "",
+    history: list[dict[str, str]] | None = None,
+) -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
     db = get_db()
 
     # 1. Merge history into payload to maintain system context
     payload = await _merge_history(payload, db)
 
-    # 2. Fetch history for context (rolling metrics)
-    history: dict[str, Any] = {
+    # 2. Fetch rolling metrics for agent context
+    rolling_metrics: dict[str, Any] = {
         "bio": await db.get_recent_bio(limit=7),
     }
 
     # 3. Fire agents in parallel
-    bio_task = asyncio.create_task(BioArchivist().process(payload, history))
-    logistics_task = asyncio.create_task(LogisticsFixer().process(payload, history))
-    relational_task = asyncio.create_task(RelationalDiplomat().process(payload, history))
+    bio_task = asyncio.create_task(BioArchivist().process(payload, rolling_metrics))
+    logistics_task = asyncio.create_task(LogisticsFixer().process(payload, rolling_metrics))
+    relational_task = asyncio.create_task(RelationalDiplomat().process(payload, rolling_metrics))
 
     # Wait for all tasks to complete
     results = await asyncio.gather(
@@ -241,20 +285,40 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
     except Exception:
         logger.exception("Failed to fetch behavioral context — proceeding without it")
 
-    # 5. Formulate tactical liaison feedback (enriched with behavioral context)
-    liaison_feedback = await OperationalLiaison().process(
+    # 5. Formulate tactical liaison feedback (enriched with all agent context)
+    liaison_response = await OperationalLiaison().process(
         message=message,
         overall_status=overall,
         triage_items=triage_items,
         behavioral_summary=behavioral_summary,
         behavioral_profiles=behavioral_profiles,
+        history=history,
+        bio_status=bio_status,
+        logistics_status=logistics_status,
+        relational_status=relational_status,
     )
 
-    # 6. Persist the current check-in (including feedback)
-    if message:
-        await db.insert_checkin(payload, message, liaison_feedback)
+    # 6. Persist any contact pauses the liaison extracted, then load all active pauses
+    for directive in liaison_response.contact_pauses:
+        paused_until = date.today() + timedelta(days=directive.pause_days)
+        await db.upsert_contact_pause(directive.person, paused_until.isoformat(), directive.reason)
 
-    # 7. Fire pattern detection as a non-blocking background task
+    active_pauses: list[ContactPause] = []
+    try:
+        raw_pauses = await db.get_active_pauses()
+        active_pauses = [ContactPause(**r) for r in raw_pauses]
+    except Exception:
+        logger.exception("Failed to load active contact pauses — proceeding without filtering")
+
+    # 7. Apply contact-pause filtering to triage items and relational status
+    triage_items = _filter_paused_contacts(triage_items, active_pauses)
+    relational_status = _filter_paused_relational_status(relational_status, active_pauses)
+
+    # 8. Persist the current check-in (including feedback)
+    if message:
+        await db.insert_checkin(payload, message, liaison_response.text)
+
+    # 9. Fire pattern detection as a non-blocking background task
     api_key = os.environ.get("GEMINI_API_KEY")
     if behavioral_summary is not None:
         task = asyncio.create_task(
@@ -270,9 +334,11 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         relational=relational_status,
         triage_items=triage_items,
         roi_summary=roi,
-        liaison_feedback=liaison_feedback,
+        liaison_feedback=liaison_response.text,
+        responding_agent=liaison_response.responding_agent,
         behavioral_profiles=behavioral_profiles,
         behavioral_summary=behavioral_summary,
+        active_pauses=active_pauses,
     )
 
 
