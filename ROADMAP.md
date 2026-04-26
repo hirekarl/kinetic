@@ -221,10 +221,52 @@ Full frontend–backend integration, streaming responses, ROI calculator, and th
 
 ---
 
-## Sprint 5 — Polish & Demo Prep ⬜
-**Dates:** 2026-05-04 → 2026-05-05 · **Target version:** `v1.0.0` · **PRD ref:** Phase 4
+## Sprint 5 — Behavioral Memory ⬜
+**Dates:** 2026-04-26 → 2026-04-30 · **Target version:** `v0.6.0` · **PRD ref:** Phase 3+
 
-Error handling, empty states, onboarding, accessibility, demo script.
+Persistent, accumulating behavioral understanding of the user. The app gets to know patterns over time and uses them to ground the OperationalLiaison's tactical guidance.
+
+### Data Layer (backend)
+- [x] New Pydantic output models: `BioTrend`, `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`
+- [x] `behavioral_profiles` table added to SQLite schema (idempotent migration in `_init_db()`)
+- [x] `SqliteClient.get_behavioral_summary(days: int = 14) -> BehavioralSummary` — queries 7–14 days of bio_metrics, checkin_tasks, vibe_checks; computes sleep slope via `statistics.linear_regression`, recurring task detection, relational drift velocity
+- [x] `SqliteClient.get_behavioral_profiles() -> list[BehavioralProfile]`
+- [x] `SqliteClient.upsert_behavioral_profile(profile: BehavioralProfile) -> None`
+- [x] `SystemHealthPayload` gains field: `behavioral_profiles: list[BehavioralProfile]`
+- [x] `frontend/src/types/index.ts` updated to mirror all new models
+
+### Pattern Detector Service (backend)
+- [ ] New file: `src/kinetic/services/pattern_detector.py`
+- [ ] `detect_and_update_patterns(db, behavioral_summary, current_profiles, api_key) -> None`
+- [ ] Rate-limit guard: no-op if `days_analyzed < 3` or any profile updated within 20 hours
+- [ ] Gemini call to derive behavioral patterns from summary; upserts profiles via db
+- [ ] All exceptions caught and logged — never propagates (background task safety)
+
+### Orchestrator + Liaison Integration (backend)
+- [ ] `orchestrate()` calls `get_behavioral_summary()` and `get_behavioral_profiles()` after agents fire
+- [ ] `OperationalLiaison.process()` signature updated to accept `behavioral_summary` and `behavioral_profiles`
+- [ ] System prompt gains BEHAVIORAL CONTEXT section and 14-day trend summary
+- [ ] `asyncio.create_task(detect_and_update_patterns(...))` fires non-blocking after Liaison responds
+- [ ] All existing orchestrator tests still pass
+
+### Frontend — Behavioral Profile Panel (stretch)
+- [ ] `BehavioralProfilePanel` component (collapsible disclosure, keyboard-navigable)
+- [ ] Empty state: "Building your profile — check in again tomorrow."
+- [ ] Vitest + Playwright + axe coverage
+
+### Quality Gates
+- [ ] All prior sprint gates still passing
+- [ ] `uv run pytest --cov-fail-under=80` passes
+- [ ] `uv run mypy src/kinetic --strict` → 0 errors
+- [ ] `npm run typecheck` → 0 errors
+- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+
+---
+
+## Sprint 6 — Polish & Demo Prep ⬜
+**Dates:** 2026-05-01 → 2026-05-05 · **Target version:** `v1.0.0` · **PRD ref:** Phase 4
+
+Error handling, empty states, accessibility, demo script.
 
 ### Error & Empty States
 - [ ] Agent failure fallback: degraded status card with "Agent unavailable" message + retry CTA
@@ -250,7 +292,8 @@ Error handling, empty states, onboarding, accessibility, demo script.
 
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
-- [x] **LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.
+- ~~**LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.~~ (superseded by Behavioral Memory — Sprint 5, which achieves the same goal via SQLite + Gemini pattern synthesis)
+- [ ] **Behavioral Profile Panel** (if not completed in Sprint 5): collapsible UI showing accumulated behavioral insights
 - [ ] Burnout trend chart (7-day sparkline)
 - [ ] Agent log / history panel (collapsible sidebar)
 - [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
@@ -265,17 +308,15 @@ Error handling, empty states, onboarding, accessibility, demo script.
 
 ---
 
-## Vector DB Audit & Migration Path (LadybugDB) 🔷
+## Architectural Decision: Behavioral Memory via SQLite
 
-If transitioning from stateless check-ins to a vector-native memory layer, the following architectural audit is required:
+**Decision (2026-04-25):** LadybugDB (embedded Graph+Vector DB) was attempted and abandoned due to native binary incompatibility on Windows. The same goal — the app accumulating knowledge of the user's behavioral patterns over time — is achieved via:
 
-1.  **Embedding Pipeline:** Integrate `sentence-transformers` or Gemini `text-embedding-004` into the `llm_parser.py`.
-2.  **Schema Evolution:** Update `SystemHealthPayload` to include `context_snippets` or `historical_insights` derived from the graph query.
-3.  **Agent Logic Update:**
-    - `BioArchivist`: Query for 30-day sleep/energy trends to contextualize current burnout.
-    - `RelationalDiplomat`: Query for "last contact" and "relationship history" nodes rather than relying on current payload only.
-4.  **Privacy Audit:** Ensure local vector storage is encrypted at rest, as it will contain a high-density "life log."
-5.  **State Management:** Move from "CheckIn-only" state to "CheckIn + Retrieved Context" in the Lead Orchestrator.
+1. **SQLite time-series queries** for 7–14 day trend computation (sleep slope, recurring task detection, relational drift velocity)
+2. **`behavioral_profiles` table** for Gemini-derived insights that persist and accumulate across check-ins
+3. **`OperationalLiaison` context injection** so pattern awareness directly informs tactical guidance
+
+The data is time-series shaped, not graph-shaped. SQLite handles all required queries cleanly without additional dependencies.
 
 ---
 
@@ -288,4 +329,5 @@ If transitioning from stateless check-ins to a vector-native memory layer, the f
 | `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ✅ |
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ✅ |
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | 🔄 |
-| `v1.0.0` | Sprint 5 — Polish | Phase 4 | ⬜ |
+| `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ⬜ |
+| `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ⬜ |

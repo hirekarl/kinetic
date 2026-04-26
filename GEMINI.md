@@ -106,7 +106,10 @@ src/kinetic/
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
-    routes.py              FastAPI APIRouter (POST /api/checkin)
+    routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history)
+  db/
+    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles
+  services/                (Sprint 5) pattern detection and background analysis tasks
 
 tests/
   conftest.py              shared fixtures (sample payloads, health objects)
@@ -133,11 +136,12 @@ frontend/src/
 | Sprint | Version | Focus | Status |
 |--------|---------|-------|--------|
 | Sprint 0 | `v0.1.0` | Bootstrap | ✅ |
-| Sprint 1 | `v0.2.0` | Agent Logic | ⬜ |
-| Sprint 2 | `v0.3.0` | LLM Parsing | ⬜ |
-| Sprint 3 | `v0.4.0` | Frontend Core | ⬜ |
-| Sprint 4 | `v0.5.0` | Integration + ROI | ⬜ |
-| Sprint 5 | `v1.0.0` | Polish + Demo | ⬜ |
+| Sprint 1 | `v0.2.0` | Agent Logic | ✅ |
+| Sprint 2 | `v0.3.0` | LLM Parsing | ✅ |
+| Sprint 3 | `v0.4.0` | Frontend Core | ✅ |
+| Sprint 4 | `v0.5.0` | Integration + ROI | 🔄 |
+| Sprint 5 | `v0.6.0` | Behavioral Memory | ⬜ |
+| Sprint 6 | `v1.0.0` | Polish + Demo | ⬜ |
 
 ---
 

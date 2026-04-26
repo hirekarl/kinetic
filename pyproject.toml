@@ -91,6 +91,14 @@ ignore_missing_imports = true
 module = "instructor.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "aiosqlite"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "dotenv"
+ignore_missing_imports = true
+
 # ── Pytest ────────────────────────────────────────────────────────────────────
 
 [tool.pytest.ini_options]

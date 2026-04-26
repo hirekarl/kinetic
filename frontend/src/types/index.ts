@@ -56,6 +56,46 @@ export interface RelationalStatus {
   error_message?: string;
 }
 
+export interface BioTrend {
+  avg_sleep_hours: number;
+  sleep_slope: number; // negative = declining, positive = improving
+  avg_nutrition: number;
+  avg_energy: number;
+  worst_sleep_day: string | null; // ISO date "YYYY-MM-DD"
+  days_analyzed: number;
+}
+
+export interface RecurringTask {
+  name: string;
+  times_overdue: number;
+  avg_days_overdue: number;
+  priority: string;
+}
+
+export interface RelationalDrift {
+  person: string;
+  contact_trend: number; // avg daily increase in days_since_contact
+  avg_vibe_score: number;
+  last_known_days_since_contact: number;
+}
+
+export interface BehavioralSummary {
+  bio_trend: BioTrend | null;
+  recurring_tasks: RecurringTask[];
+  relational_drifts: RelationalDrift[];
+  days_analyzed: number;
+  generated_at: string; // ISO 8601 datetime
+}
+
+export interface BehavioralProfile {
+  profile_key: string;
+  insight: string;
+  evidence: Record<string, unknown>;
+  first_observed: string; // ISO 8601 datetime
+  last_updated: string; // ISO 8601 datetime
+  observation_count: number;
+}
+
 export interface SystemHealthPayload {
   overall_status: StatusLevel;
   bio: BioStatus | null;
@@ -64,6 +104,7 @@ export interface SystemHealthPayload {
   triage_items: TriageItem[];
   roi_summary: ROISummary | null;
   liaison_feedback: string | null;
+  behavioral_profiles: BehavioralProfile[];
 }
 
 export interface CheckInRequest {

@@ -7,6 +7,19 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- **Behavioral Memory data layer:** Five new Pydantic output models (`BioTrend`, `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`) enabling the app to accumulate and expose structured knowledge of the user's behavioral patterns over time.
+- `behavioral_profiles` SQLite table for persisting Gemini-derived pattern insights across sessions; supports upsert with `first_observed` immutability and `observation_count` tracking.
+- `SqliteClient.get_behavioral_summary()`: queries 7–14 days of stored bio, logistics, and relational data to compute sleep slope (stdlib `statistics.linear_regression`), recurring overdue tasks, and relational drift velocity — all returned as typed Pydantic models.
+- `SystemHealthPayload.behavioral_profiles` field: accumulated behavioral profiles are now included in every API response, available for frontend rendering.
+- TypeScript mirror interfaces for all new models in `frontend/src/types/index.ts`.
+- SQLite column migration guard for existing databases missing the `liaison_feedback` column.
+
+### Fixed
+- Integration test `test_checkin_success_path` now verifies response shape rather than asserting a specific status value, preventing false failures when the local database contains historical data.
+- `SqliteClient.get_embedding()` now correctly guards against `None` embeddings and `None` values from the Gemini API response.
+- Removed stale `# type: ignore` comments on `aiosqlite` and `python-dotenv` imports now that both packages ship type stubs.
+
+### Added
 - `ROISummaryCard`: New frontend component for visualizing time reclaimed, system margin, and burnout risk delta.
 - ROI Calculation logic in Lead Orchestrator: Quantifies operational yield based on logistics outsourcing and relational health.
 - React Mission Control Dashboard: High-fidelity split-panel UI with sector-specific status cards (`Bio`, `Logistics`, `Relational`).

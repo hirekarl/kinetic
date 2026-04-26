@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dotenv import load_dotenv  # type: ignore
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

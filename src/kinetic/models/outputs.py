@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -53,6 +53,48 @@ class RelationalStatus(BaseModel):
     error_message: str | None = None
 
 
+class BioTrend(BaseModel):
+    avg_sleep_hours: float
+    sleep_slope: float = Field(description="Negative = declining nightly, positive = improving")
+    avg_nutrition: float
+    avg_energy: float
+    worst_sleep_day: str | None = Field(default=None, description='ISO date "YYYY-MM-DD"')
+    days_analyzed: int
+
+
+class RecurringTask(BaseModel):
+    name: str
+    times_overdue: int = Field(description="Count of check-ins where task appeared overdue")
+    avg_days_overdue: float
+    priority: str
+
+
+class RelationalDrift(BaseModel):
+    person: str
+    contact_trend: float = Field(
+        description="Avg daily increase in days_since_contact across check-ins"
+    )
+    avg_vibe_score: float
+    last_known_days_since_contact: int
+
+
+class BehavioralSummary(BaseModel):
+    bio_trend: BioTrend | None = None
+    recurring_tasks: list[RecurringTask] = Field(default_factory=list)
+    relational_drifts: list[RelationalDrift] = Field(default_factory=list)
+    days_analyzed: int
+    generated_at: datetime
+
+
+class BehavioralProfile(BaseModel):
+    profile_key: str = Field(description='e.g. "sleep_deficit_pattern", "work_boundary_violation"')
+    insight: str = Field(description="LLM-generated plain-language description of the pattern")
+    evidence: dict[str, Any] = Field(description="Structured data points supporting the insight")
+    first_observed: datetime
+    last_updated: datetime
+    observation_count: int
+
+
 class SystemHealthPayload(BaseModel):
     """Canonical output from the lead orchestrator, consumed directly by the frontend."""
 
@@ -63,3 +105,4 @@ class SystemHealthPayload(BaseModel):
     triage_items: list[TriageItem] = Field(default_factory=list)
     roi_summary: ROISummary | None = None
     liaison_feedback: str | None = None
+    behavioral_profiles: list[BehavioralProfile] = Field(default_factory=list)

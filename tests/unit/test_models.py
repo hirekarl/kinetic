@@ -1,5 +1,7 @@
 """Bootstrap smoke tests — verifies Pydantic models instantiate and validate correctly."""
 
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
 
@@ -10,7 +12,13 @@ from kinetic.models.inputs import (
     RelationalInput,
     VibeCheck,
 )
-from kinetic.models.outputs import SystemHealthPayload, TriageItem
+from kinetic.models.outputs import (
+    BehavioralProfile,
+    BehavioralSummary,
+    BioTrend,
+    SystemHealthPayload,
+    TriageItem,
+)
 
 
 @pytest.mark.unit
@@ -81,3 +89,60 @@ def test_checkin_payload_partial_relational_only() -> None:
     assert payload.logistics is None
     assert payload.relational is not None
     assert payload.relational.vibe_checks[0].person == "Alex"
+
+
+@pytest.mark.unit
+def test_behavioral_profile_requires_all_fields() -> None:
+    now = datetime.now()
+    with pytest.raises(ValidationError):
+        BehavioralProfile(  # type: ignore[call-arg]
+            profile_key="sleep_pattern",
+            # insight missing
+            evidence={},
+            first_observed=now,
+            last_updated=now,
+            observation_count=1,
+        )
+
+
+@pytest.mark.unit
+def test_behavioral_summary_json_roundtrip() -> None:
+    now = datetime.now()
+    summary = BehavioralSummary(
+        bio_trend=BioTrend(
+            avg_sleep_hours=6.5,
+            sleep_slope=-0.25,
+            avg_nutrition=7.0,
+            avg_energy=6.0,
+            worst_sleep_day="2026-04-23",
+            days_analyzed=7,
+        ),
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=7,
+        generated_at=now,
+    )
+    restored = BehavioralSummary.model_validate(summary.model_dump())
+    assert restored.bio_trend is not None
+    assert restored.bio_trend.sleep_slope == pytest.approx(-0.25)
+    assert restored.bio_trend.worst_sleep_day == "2026-04-23"
+    assert restored.days_analyzed == 7
+
+
+@pytest.mark.unit
+def test_system_health_payload_accepts_behavioral_profiles() -> None:
+    now = datetime.now()
+    profile = BehavioralProfile(
+        profile_key="work_boundary_violation",
+        insight="Frequently works past 10pm.",
+        evidence={"late_sessions": 4},
+        first_observed=now,
+        last_updated=now,
+        observation_count=3,
+    )
+    payload = SystemHealthPayload(
+        overall_status="yellow",
+        behavioral_profiles=[profile],
+    )
+    assert len(payload.behavioral_profiles) == 1
+    assert payload.behavioral_profiles[0].profile_key == "work_boundary_violation"

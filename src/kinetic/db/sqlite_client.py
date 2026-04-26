@@ -1,16 +1,26 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
+import statistics
 import uuid
 from datetime import datetime
+from itertools import groupby
 from typing import Any
 
-import aiosqlite  # type: ignore
+import aiosqlite
 from google import genai
 
 from kinetic.models.inputs import CheckInPayload
+from kinetic.models.outputs import (
+    BehavioralProfile,
+    BehavioralSummary,
+    BioTrend,
+    RecurringTask,
+    RelationalDrift,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +92,22 @@ class SqliteClient:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS behavioral_profiles (
+                profile_key TEXT PRIMARY KEY,
+                insight TEXT NOT NULL,
+                evidence TEXT NOT NULL,
+                first_observed DATETIME NOT NULL,
+                last_updated DATETIME NOT NULL,
+                observation_count INTEGER NOT NULL DEFAULT 1
+            )
+            """
+        )
+        # Column migration: swallow error when column already exists
+        # (SQLite has no ALTER TABLE ... ADD COLUMN IF NOT EXISTS)
+        with contextlib.suppress(Exception):
+            await db.execute("ALTER TABLE checkins ADD COLUMN liaison_feedback TEXT")
         await db.commit()
 
     def get_embedding(self, text: str) -> list[float]:
@@ -93,7 +119,11 @@ class SqliteClient:
                 model="text-embedding-004",
                 contents=text,
             )
-            return [float(x) for x in result.embeddings[0].values]
+            embeddings = result.embeddings
+            values = embeddings[0].values if embeddings else None
+            if not values:
+                return [0.0] * 768
+            return [float(x) for x in values]
         except Exception as e:
             logger.error(f"Embedding failed: {e}")
             return [0.0] * 768
@@ -233,6 +263,172 @@ class SqliteClient:
                     if r["liaison_feedback"]:
                         messages.append({"role": "system", "content": r["liaison_feedback"]})
                 return messages
+
+    async def get_behavioral_summary(self, days: int = 14) -> BehavioralSummary:
+        """Compute a structured behavioral summary from the last `days` days of check-ins."""
+        offset = f"-{days} days"
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+
+            # Total distinct check-in days in window
+            async with db.execute(
+                "SELECT COUNT(DISTINCT DATE(timestamp)) FROM checkins"
+                " WHERE timestamp >= datetime('now', ?)",
+                (offset,),
+            ) as cur:
+                row = await cur.fetchone()
+                days_analyzed: int = int(row[0]) if row and row[0] else 0
+
+            if days_analyzed == 0:
+                return BehavioralSummary(
+                    days_analyzed=0,
+                    generated_at=datetime.now(),
+                )
+
+            # Bio trend
+            bio_trend: BioTrend | None = None
+            async with db.execute(
+                "SELECT bm.sleep_hours, bm.nutrition_quality, bm.energy_level,"
+                " DATE(c.timestamp) as check_date"
+                " FROM bio_metrics bm"
+                " JOIN checkins c ON bm.checkin_id = c.id"
+                " WHERE c.timestamp >= datetime('now', ?)"
+                " ORDER BY c.timestamp ASC",
+                (offset,),
+            ) as cur:
+                bio_rows = await cur.fetchall()
+
+            if bio_rows:
+                sleep_vals = [float(r[0]) for r in bio_rows if r[0] is not None]
+                nutrition_vals = [float(r[1]) for r in bio_rows if r[1] is not None]
+                energy_vals = [float(r[2]) for r in bio_rows if r[2] is not None]
+                dates = [str(r[3]) for r in bio_rows]
+
+                n = len(sleep_vals)
+                slope = statistics.linear_regression(range(n), sleep_vals).slope if n >= 2 else 0.0
+                worst_day = dates[sleep_vals.index(min(sleep_vals))] if sleep_vals else None
+                bio_trend = BioTrend(
+                    avg_sleep_hours=round(statistics.mean(sleep_vals), 2) if sleep_vals else 0.0,
+                    sleep_slope=round(slope, 4),
+                    avg_nutrition=round(statistics.mean(nutrition_vals), 2)
+                    if nutrition_vals
+                    else 0.0,
+                    avg_energy=round(statistics.mean(energy_vals), 2) if energy_vals else 0.0,
+                    worst_sleep_day=worst_day,
+                    days_analyzed=len(set(dates)),
+                )
+
+            # Recurring overdue tasks (appeared overdue in ≥2 check-ins)
+            recurring: list[RecurringTask] = []
+            async with db.execute(
+                "SELECT ct.task_name, COUNT(*) as times_overdue,"
+                " AVG(CAST(ct.days_overdue AS REAL)) as avg_days_overdue,"
+                " t.priority"
+                " FROM checkin_tasks ct"
+                " JOIN tasks t ON ct.task_name = t.name"
+                " JOIN checkins c ON ct.checkin_id = c.id"
+                " WHERE ct.days_overdue > 0"
+                " AND c.timestamp >= datetime('now', ?)"
+                " GROUP BY ct.task_name"
+                " HAVING COUNT(*) > 1"
+                " ORDER BY times_overdue DESC",
+                (offset,),
+            ) as cur:
+                task_rows = await cur.fetchall()
+
+            for r in task_rows:
+                recurring.append(
+                    RecurringTask(
+                        name=str(r[0]),
+                        times_overdue=int(r[1]),
+                        avg_days_overdue=round(float(r[2]), 2),
+                        priority=str(r[3]),
+                    )
+                )
+
+            # Relational drift (people whose days_since_contact is trending upward)
+            drifts: list[RelationalDrift] = []
+            async with db.execute(
+                "SELECT vc.person, vc.score, vc.days_since_contact"
+                " FROM vibe_checks vc"
+                " JOIN checkins c ON vc.checkin_id = c.id"
+                " WHERE c.timestamp >= datetime('now', ?)"
+                " ORDER BY vc.person ASC, c.timestamp ASC",
+                (offset,),
+            ) as cur:
+                vibe_rows = await cur.fetchall()
+
+            for person, group in groupby(vibe_rows, key=lambda r: r[0]):
+                entries = list(group)
+                if len(entries) < 2:
+                    continue
+                contact_vals = [int(e[2]) for e in entries]
+                score_vals = [float(e[1]) for e in entries]
+                drift_slope = statistics.linear_regression(
+                    range(len(contact_vals)), contact_vals
+                ).slope
+                drifts.append(
+                    RelationalDrift(
+                        person=str(person),
+                        contact_trend=round(drift_slope, 4),
+                        avg_vibe_score=round(statistics.mean(score_vals), 2),
+                        last_known_days_since_contact=contact_vals[-1],
+                    )
+                )
+
+            return BehavioralSummary(
+                bio_trend=bio_trend,
+                recurring_tasks=recurring,
+                relational_drifts=drifts,
+                days_analyzed=days_analyzed,
+                generated_at=datetime.now(),
+            )
+
+    async def get_behavioral_profiles(self) -> list[BehavioralProfile]:
+        """Return all accumulated behavioral profiles, newest-updated first."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            async with db.execute(
+                "SELECT profile_key, insight, evidence, first_observed,"
+                " last_updated, observation_count"
+                " FROM behavioral_profiles ORDER BY last_updated DESC"
+            ) as cur:
+                rows = await cur.fetchall()
+
+            return [
+                BehavioralProfile(
+                    profile_key=str(r[0]),
+                    insight=str(r[1]),
+                    evidence=json.loads(str(r[2])),
+                    first_observed=datetime.fromisoformat(str(r[3])),
+                    last_updated=datetime.fromisoformat(str(r[4])),
+                    observation_count=int(r[5]),
+                )
+                for r in rows
+            ]
+
+    async def upsert_behavioral_profile(self, profile: BehavioralProfile) -> None:
+        """Insert or update a behavioral profile. first_observed is never overwritten."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            await db.execute(
+                "INSERT INTO behavioral_profiles"
+                " (profile_key, insight, evidence, first_observed, last_updated, observation_count)"
+                " VALUES (?, ?, ?, ?, ?, 1)"
+                " ON CONFLICT(profile_key) DO UPDATE SET"
+                "   insight = excluded.insight,"
+                "   evidence = excluded.evidence,"
+                "   last_updated = excluded.last_updated,"
+                "   observation_count = observation_count + 1",
+                (
+                    profile.profile_key,
+                    profile.insight,
+                    json.dumps(profile.evidence),
+                    profile.first_observed.isoformat(),
+                    profile.last_updated.isoformat(),
+                ),
+            )
+            await db.commit()
 
     async def clear_database(self) -> None:
         async with aiosqlite.connect(self.db_path) as db:
