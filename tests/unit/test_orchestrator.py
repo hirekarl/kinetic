@@ -229,6 +229,16 @@ async def test_detect_patterns_fires_as_background_task() -> None:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
+async def test_behavioral_summary_included_in_payload(mock_db: MagicMock) -> None:
+    """SystemHealthPayload includes behavioral_summary from the DB."""
+    result = await orchestrate(CheckInPayload())
+
+    assert result.behavioral_summary is not None
+    assert result.behavioral_summary == _MOCK_SUMMARY
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
 async def test_behavioral_summary_failure_does_not_block(mock_db: MagicMock) -> None:
     """If get_behavioral_summary raises, orchestrate still returns a valid payload."""
     mock_db.get_behavioral_summary.side_effect = OSError("DB read failed")

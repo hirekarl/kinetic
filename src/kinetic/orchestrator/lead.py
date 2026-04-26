@@ -272,6 +272,7 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         roi_summary=roi,
         liaison_feedback=liaison_feedback,
         behavioral_profiles=behavioral_profiles,
+        behavioral_summary=behavioral_summary,
     )
 
 

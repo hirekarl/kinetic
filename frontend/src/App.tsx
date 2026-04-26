@@ -181,7 +181,11 @@ function App() {
                   Sector Status
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <BioStatusCard data={health.bio} isLoading={isLoading} />
+                  <BioStatusCard
+                    data={health.bio}
+                    isLoading={isLoading}
+                    behavioralSummary={health.behavioral_summary ?? null}
+                  />
                   <LogisticsStatusCard data={health.logistics} isLoading={isLoading} />
                   <RelationalStatusCard data={health.relational} isLoading={isLoading} />
                 </div>

@@ -4,8 +4,15 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
 
 ### Added
+- 7-day sleep sparkline on `BioStatusCard`: pure SVG polyline (no chart library) showing per-day sleep hours oldest→newest; amber stroke when declining, emerald when improving; `aria-hidden="true"` (decorative); degrades gracefully when fewer than 2 data points are available
+- `BioTrend.sleep_series: list[float]` — per-day sleep hours populated by `get_behavioral_summary()` and surfaced in `SystemHealthPayload.behavioral_summary`
+- `SystemHealthPayload.behavioral_summary: BehavioralSummary | None` — full trend data now included in the API response, enabling frontend visualization
+
+
+### Added (bootstrap)
 - Project bootstrap: `pyproject.toml` with uv, ruff, mypy strict, pytest, commitizen
 - Pydantic v2 input models: `CheckInPayload`, `BioInput`, `LogisticsInput`, `RelationalInput`
 - Pydantic v2 output models: `SystemHealthPayload`, `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`

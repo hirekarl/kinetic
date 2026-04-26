@@ -60,6 +60,10 @@ class BioTrend(BaseModel):
     avg_energy: float
     worst_sleep_day: str | None = Field(default=None, description='ISO date "YYYY-MM-DD"')
     days_analyzed: int
+    sleep_series: list[float] = Field(
+        default_factory=list,
+        description="Per-day sleep hours, oldest→newest, same window as days_analyzed",
+    )
 
 
 class RecurringTask(BaseModel):
@@ -106,3 +110,4 @@ class SystemHealthPayload(BaseModel):
     roi_summary: ROISummary | None = None
     liaison_feedback: str | None = None
     behavioral_profiles: list[BehavioralProfile] = Field(default_factory=list)
+    behavioral_summary: BehavioralSummary | None = None

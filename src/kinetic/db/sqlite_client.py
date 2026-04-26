@@ -293,6 +293,7 @@ class SqliteClient:
                     avg_energy=round(statistics.mean(energy_vals), 2) if energy_vals else 0.0,
                     worst_sleep_day=worst_day,
                     days_analyzed=len(set(dates)),
+                    sleep_series=sleep_vals,
                 )
 
             # Recurring overdue tasks (appeared overdue in ≥2 check-ins)

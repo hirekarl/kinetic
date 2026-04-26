@@ -55,6 +55,21 @@ const FULL_HEALTH_RESPONSE = {
       observation_count: 5,
     },
   ],
+  behavioral_summary: {
+    bio_trend: {
+      avg_sleep_hours: 6.1,
+      sleep_slope: -0.32,
+      avg_nutrition: 7.0,
+      avg_energy: 6.0,
+      worst_sleep_day: '2026-04-24',
+      days_analyzed: 7,
+      sleep_series: [7.5, 7.0, 6.5, 6.0, 5.5, 5.5, 5.0],
+    },
+    recurring_tasks: [],
+    relational_drifts: [],
+    days_analyzed: 7,
+    generated_at: '2026-04-26T08:00:00',
+  },
 };
 
 test.describe('Kinetic — Accessibility Final Audit', () => {

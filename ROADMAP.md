@@ -263,7 +263,7 @@ Persistent, accumulating behavioral understanding of the user. The app gets to k
 
 ---
 
-## Sprint 6 — Polish & Demo Prep 🔄
+## Sprint 6 — Polish & Demo Prep ✅
 **Dates:** 2026-05-01 → 2026-05-05 · **Target version:** `v1.0.0` · **PRD ref:** Phase 4
 
 Error handling, empty states, accessibility, demo script.
@@ -294,14 +294,14 @@ Error handling, empty states, accessibility, demo script.
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
 - ~~**LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.~~ (superseded by Behavioral Memory — Sprint 5, which achieves the same goal via SQLite + Gemini pattern synthesis)
 - [x] ~~**Behavioral Profile Panel** (if not completed in Sprint 5)~~ (completed in Sprint 5)
-- [ ] Burnout trend chart (7-day sparkline)
+- [x] Burnout trend chart (7-day sparkline)
 - [ ] Agent log / history panel (collapsible sidebar)
 - [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
 
 ### Quality Gates
-- [ ] All prior sprint gates still passing
-- [ ] `v1.0.0` release ceremony complete (`./scripts/release.sh`)
-- [ ] Local demo run rehearsed end-to-end
+- [x] All prior sprint gates still passing
+- [x] `v1.0.0` release ceremony complete (`./scripts/release.sh`)
+- [x] Local demo run rehearsed end-to-end
 
 > **Critical milestone: fully functional MVP by 2026-05-05 (Day 10)**
 
@@ -329,4 +329,4 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ✅ |
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ✅ |
 | `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
-| `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ⬜ |
+| `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |

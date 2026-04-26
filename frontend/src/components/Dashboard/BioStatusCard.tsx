@@ -1,14 +1,20 @@
 import React from 'react';
-import { BioStatus } from '../../types';
+import { BehavioralSummary, BioStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
+import { SleepSparkline } from './SleepSparkline';
 
 interface BioStatusCardProps {
   data: BioStatus | null;
   isLoading?: boolean;
+  behavioralSummary?: BehavioralSummary | null;
 }
 
-export const BioStatusCard: React.FC<BioStatusCardProps> = ({ data, isLoading }) => {
+export const BioStatusCard: React.FC<BioStatusCardProps> = ({
+  data,
+  isLoading,
+  behavioralSummary,
+}) => {
   if (isLoading) return <CardSkeleton />;
 
   if (!data) {
@@ -48,6 +54,21 @@ export const BioStatusCard: React.FC<BioStatusCardProps> = ({ data, isLoading })
           <div className="text-2xl font-bold text-zinc-100">{data.sleep_debt_hours}h</div>
         </div>
       </div>
+
+      {behavioralSummary?.bio_trend?.sleep_series &&
+        behavioralSummary.bio_trend.sleep_series.length >= 2 && (
+          <div className="mb-6">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+              7-Day Sleep Trend
+            </div>
+            <SleepSparkline
+              series={behavioralSummary.bio_trend.sleep_series}
+              declining={behavioralSummary.bio_trend.sleep_slope < 0}
+              width={160}
+              height={32}
+            />
+          </div>
+        )}
 
       <div className="mb-6 p-3 rounded-lg bg-zinc-950/50 border border-zinc-800/50">
         <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2">Forecast</div>

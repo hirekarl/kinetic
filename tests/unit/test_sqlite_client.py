@@ -195,6 +195,32 @@ async def test_behavioral_summary_relational_drift_detected(
     assert marcus.contact_trend > 0
 
 
+# ── sleep_series in BioTrend ─────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_bio_trend_sleep_series_populated(tmp_path: pytest.TempPathFactory) -> None:
+    client = _make_client(tmp_path)
+    # Insert 3 days oldest→newest: 7.5, 7.0, 6.5
+    for offset, sleep in [(2, 7.5), (1, 7.0), (0, 6.5)]:
+        payload = CheckInPayload(
+            bio=BioInput(sleep_hours=sleep, nutrition_quality=7, energy_level=7)
+        )
+        await _seed_checkin(client, payload, ts=datetime.now() - timedelta(days=offset))
+
+    summary = await client.get_behavioral_summary()
+    assert summary.bio_trend is not None
+    assert summary.bio_trend.sleep_series == [7.5, 7.0, 6.5]
+
+
+@pytest.mark.unit
+async def test_bio_trend_sleep_series_empty_when_no_bio(tmp_path: pytest.TempPathFactory) -> None:
+    client = _make_client(tmp_path)
+    summary = await client.get_behavioral_summary()
+    # Empty DB → bio_trend is None; sleep_series is not accessible but the model default is []
+    assert summary.bio_trend is None
+
+
 # ── get_behavioral_profiles + upsert_behavioral_profile ─────────────────────
 
 

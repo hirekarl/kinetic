@@ -79,7 +79,8 @@ frontend/src/
   App.tsx                  split-panel root component; first-visit onboarding gate via localStorage
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display
-  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline
+    SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
   hooks/                   useCheckin, useSystemHealth, etc.
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core accessibility specs
@@ -264,8 +265,8 @@ The Python models in `src/kinetic/models/` are the single source of truth for da
 - Sub-models: `BioInput`, `LogisticsInput`, `RelationalInput`
 
 **Output contract:**
-- `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired
-- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend`, `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`
+- `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None` for frontend trend visualization
+- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`
 
 ---
 

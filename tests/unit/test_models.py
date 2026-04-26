@@ -130,6 +130,58 @@ def test_behavioral_summary_json_roundtrip() -> None:
 
 
 @pytest.mark.unit
+def test_bio_trend_default_sleep_series() -> None:
+    trend = BioTrend(
+        avg_sleep_hours=7.0,
+        sleep_slope=-0.1,
+        avg_nutrition=7.0,
+        avg_energy=7.0,
+        days_analyzed=3,
+    )
+    assert trend.sleep_series == []
+
+
+@pytest.mark.unit
+def test_bio_trend_sleep_series_stored() -> None:
+    trend = BioTrend(
+        avg_sleep_hours=6.5,
+        sleep_slope=-0.25,
+        avg_nutrition=7.0,
+        avg_energy=6.0,
+        days_analyzed=3,
+        sleep_series=[7.0, 6.5, 6.0],
+    )
+    assert trend.sleep_series == [7.0, 6.5, 6.0]
+
+
+@pytest.mark.unit
+def test_system_health_payload_behavioral_summary_defaults_none() -> None:
+    payload = SystemHealthPayload(overall_status="green")
+    assert payload.behavioral_summary is None
+
+
+@pytest.mark.unit
+def test_system_health_payload_accepts_behavioral_summary() -> None:
+    now = datetime.now()
+    summary = BehavioralSummary(
+        bio_trend=BioTrend(
+            avg_sleep_hours=6.5,
+            sleep_slope=-0.25,
+            avg_nutrition=7.0,
+            avg_energy=6.0,
+            days_analyzed=3,
+            sleep_series=[7.0, 6.5, 6.0],
+        ),
+        days_analyzed=3,
+        generated_at=now,
+    )
+    payload = SystemHealthPayload(overall_status="green", behavioral_summary=summary)
+    assert payload.behavioral_summary is not None
+    assert payload.behavioral_summary.bio_trend is not None
+    assert payload.behavioral_summary.bio_trend.sleep_series == [7.0, 6.5, 6.0]
+
+
+@pytest.mark.unit
 def test_system_health_payload_accepts_behavioral_profiles() -> None:
     now = datetime.now()
     profile = BehavioralProfile(

@@ -44,6 +44,7 @@ const mockHealth: SystemHealthPayload = {
   },
   liaison_feedback: 'Focus on sleep first.',
   behavioral_profiles: [],
+  behavioral_summary: null,
 };
 
 const mockFetchHistory = vi.fn();
