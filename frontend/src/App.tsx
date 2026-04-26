@@ -8,7 +8,7 @@ import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfilePanel';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
-import { fetchCheckin, fetchHistory } from './api/client';
+import { fetchCheckin, fetchHistory, completeTask } from './api/client';
 import { SystemHealthPayload } from './types';
 
 function App() {
@@ -61,7 +61,7 @@ function App() {
           const systemMsg: Message = {
             role: 'system',
             content: result.liaison_feedback,
-            agent: (result.responding_agent as RespondingAgent) ?? 'liaison',
+            agent: (result.responding_agent as RespondingAgent | null) ?? 'liaison',
           };
           setMessages((prev) => [...prev, systemMsg]);
         }
@@ -84,6 +84,10 @@ function App() {
       setError(null);
       handleSendMessage(lastMessage);
     }
+  };
+
+  const handleCompleteTask = async (taskName: string) => {
+    await completeTask(taskName);
   };
 
   const handleReset = async () => {
@@ -194,14 +198,18 @@ function App() {
                   <RelationalStatusCard
                     data={health.relational}
                     isLoading={isLoading}
-                    activePauses={health.active_pauses ?? []}
+                    activePauses={health.active_pauses}
                   />
                 </div>
               </section>
 
               {/* Triage Section */}
               <section>
-                <TriageList items={health.triage_items} isLoading={isLoading} />
+                <TriageList
+                  items={health.triage_items}
+                  isLoading={isLoading}
+                  onCompleteTask={handleCompleteTask}
+                />
               </section>
 
               {/* ROI Section */}

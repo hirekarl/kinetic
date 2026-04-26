@@ -52,18 +52,22 @@ const mockHealth: SystemHealthPayload = {
 
 const mockFetchHistory = vi.fn();
 const mockFetchCheckin = vi.fn();
+const mockCompleteTask = vi.fn();
 
 vi.mock('./api/client', () => ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchHistory: () => mockFetchHistory(),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchCheckin: (...args: unknown[]) => mockFetchCheckin(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  completeTask: (...args: unknown[]) => mockCompleteTask(...args),
 }));
 
 describe('App — split-panel shell', () => {
   beforeEach(() => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
+    mockCompleteTask.mockReset();
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     // Suppress onboarding so these tests stay focused on the dashboard shell
     vi.stubGlobal('localStorage', {
@@ -231,6 +235,35 @@ describe('App — split-panel shell', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(/critical error/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('App calls completeTask API when a triage item complete button is clicked', async () => {
+    const healthWithLogisticsItem = {
+      ...mockHealth,
+      triage_items: [
+        {
+          id: 'logistics-001',
+          priority: 8,
+          domain: 'logistics' as const,
+          description: 'Laundry critically overdue',
+          action: 'Handle laundry today.',
+          snooze_until: null,
+          completed: false,
+          source_id: 'laundry',
+        },
+      ],
+    };
+    mockFetchHistory.mockResolvedValue({ health: healthWithLogisticsItem, messages: [] });
+    mockCompleteTask.mockResolvedValue(undefined);
+
+    render(<App />);
+    await waitFor(() => screen.getByRole('button', { name: /mark laundry complete/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /mark laundry complete/i }));
+
+    await waitFor(() => {
+      expect(mockCompleteTask).toHaveBeenCalledWith('laundry');
     });
   });
 });

@@ -33,6 +33,19 @@ export async function fetchCheckin(
 }
 
 /**
+ * Marks a logistics task as completed on the server.
+ */
+export async function completeTask(taskName: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/tasks/${encodeURIComponent(taskName)}/complete`,
+    { method: 'PATCH' }
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to complete task '${taskName}': ${response.statusText}`);
+  }
+}
+
+/**
  * Fetches the current system health and message history.
  */
 export async function fetchHistory(): Promise<{
