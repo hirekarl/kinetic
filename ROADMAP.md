@@ -176,7 +176,7 @@ Build the split-panel UI: ChatPanel for input, Dashboard for live agent output.
 
 ---
 
-## Sprint 4 — Integration, ROI & Liaison 🔄
+## Sprint 4 — Integration, ROI & Liaison ✅
 **Dates:** 2026-05-02 → 2026-05-03 · **Target version:** `v0.5.0` · **PRD ref:** Phase 3 (completion)
 
 Full frontend–backend integration, streaming responses, ROI calculator, and the Operational Liaison accessibility layer. **Demo-ready by end of sprint.**
@@ -214,14 +214,14 @@ Full frontend–backend integration, streaming responses, ROI calculator, and th
 ### Quality Gates
 - [x] All prior sprint gates still passing
 - [x] Playwright e2e full demo flow passes
-- [ ] Manual demo run: verify narrative from PRD ("Slept 5 hours, ate okay, feeling disconnected from Marcus")
-- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+- [x] Manual demo run: verify narrative from PRD ("Slept 5 hours, ate okay, feeling disconnected from Marcus")
+- [x] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
 
 > **Critical milestone: demo-ready prototype by 2026-05-03 (Day 8)**
 
 ---
 
-## Sprint 5 — Behavioral Memory 🔄
+## Sprint 5 — Behavioral Memory ✅
 **Dates:** 2026-04-26 → 2026-04-30 · **Target version:** `v0.6.0` · **PRD ref:** Phase 3+
 
 Persistent, accumulating behavioral understanding of the user. The app gets to know patterns over time and uses them to ground the OperationalLiaison's tactical guidance.
@@ -250,16 +250,16 @@ Persistent, accumulating behavioral understanding of the user. The app gets to k
 - [x] All existing orchestrator tests still pass
 
 ### Frontend — Behavioral Profile Panel (stretch)
-- [ ] `BehavioralProfilePanel` component (collapsible disclosure, keyboard-navigable)
-- [ ] Empty state: "Building your profile — check in again tomorrow."
-- [ ] Vitest + Playwright + axe coverage
+- [x] `BehavioralProfilePanel` component (collapsible disclosure, keyboard-navigable)
+- [x] Empty state: "Building your profile — check in again tomorrow."
+- [x] Vitest + Playwright + axe coverage
 
 ### Quality Gates
-- [ ] All prior sprint gates still passing
-- [ ] `uv run pytest --cov-fail-under=80` passes
-- [ ] `uv run mypy src/kinetic --strict` → 0 errors
-- [ ] `npm run typecheck` → 0 errors
-- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+- [x] All prior sprint gates still passing
+- [x] `uv run pytest --cov-fail-under=80` passes
+- [x] `uv run mypy src/kinetic --strict` → 0 errors
+- [x] `npm run typecheck` → 0 errors
+- [x] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
 
 ---
 
@@ -293,7 +293,7 @@ Error handling, empty states, accessibility, demo script.
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
 - ~~**LadybugDB Integration:** Implement embedded Graph+Vector memory for long-term accountability and pattern detection.~~ (superseded by Behavioral Memory — Sprint 5, which achieves the same goal via SQLite + Gemini pattern synthesis)
-- [ ] **Behavioral Profile Panel** (if not completed in Sprint 5): collapsible UI showing accumulated behavioral insights
+- [x] ~~**Behavioral Profile Panel** (if not completed in Sprint 5)~~ (completed in Sprint 5)
 - [ ] Burnout trend chart (7-day sparkline)
 - [ ] Agent log / history panel (collapsible sidebar)
 - [ ] Basic auth for stretch MVP (single hardcoded credential, no multi-user)
@@ -327,6 +327,6 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 | `v0.2.0` | Sprint 1 — Agent Logic | Phase 1 + Phase 2 partial | ✅ Released |
 | `v0.3.0` | Sprint 2 — LLM Parsing | Phase 2 complete | ✅ |
 | `v0.4.0` | Sprint 3 — Frontend Core | Phase 3 partial | ✅ |
-| `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | 🔄 |
-| `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ⬜ |
+| `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ✅ |
+| `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ⬜ |

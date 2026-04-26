@@ -77,7 +77,7 @@ frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models
   App.tsx                  split-panel root component
   components/ChatPanel/    natural-language input + streaming display
-  components/Dashboard/    status cards, triage list, ROI summary
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel
   hooks/                   useCheckin, useSystemHealth, etc.
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core accessibility specs
