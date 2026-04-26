@@ -307,7 +307,7 @@ Error handling, empty states, accessibility, demo script.
 
 ---
 
-## Sprint 6b — Dashboard Interactivity + Liaison Hardening 🔄
+## Sprint 6b — Dashboard Interactivity + Liaison Hardening ✅
 **Dates:** 2026-04-26 → TBD · **Target version:** `v1.1.0`
 
 Conversational depth, specialist agent routing, contact pause lifecycle, task completion UI, and adversarial scenario coverage.
@@ -349,7 +349,7 @@ Conversational depth, specialist agent routing, contact pause lifecycle, task co
 
 ### Quality Gates
 - [x] All prior sprint gates still passing (86% backend coverage, 124 frontend tests)
-- [ ] `v1.1.0` release ceremony complete
+- [x] `v1.1.0` release ceremony complete
 
 ---
 
@@ -376,4 +376,4 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 | `v0.5.0` | Sprint 4 — Integration | Phase 3 complete | ✅ |
 | `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
-| `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | 🔄 In progress |
+| `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
