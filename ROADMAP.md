@@ -281,9 +281,9 @@ Error handling, empty states, accessibility, demo script.
 
 ### Accessibility Final Audit
 - [x] Full axe WCAG 2.1 AA audit on: empty state, loaded state, error state, onboarding
-- [ ] Keyboard navigation: all interactive elements reachable and operable without mouse
-- [ ] Color contrast: all status colors meet 4.5:1 ratio (green/yellow/red on dark bg)
-- [ ] Screen reader smoke test: status cards announce meaningful content
+- [x] Keyboard navigation: all interactive elements reachable and operable without mouse
+- [x] Color contrast: all status colors meet 4.5:1 ratio (green/yellow/red on dark bg)
+- [x] Screen reader smoke test: status cards announce meaningful content
 
 ### Demo Preparation
 - [ ] Demo script written (step-by-step walkthrough of PRD narrative)

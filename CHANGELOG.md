@@ -44,6 +44,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - `render.yaml` — Render deployment config removed; MVP targets local demo only.
 
 ### Fixed
+- **Accessibility final audit — contrast & screen reader:** `BehavioralProfilePanel` "Last updated" text changed from `text-zinc-500` (4.12:1 — failing) to `text-zinc-400` (7.76:1 — passing WCAG AA). Decorative color indicator dots in `StatusBadge` and `ROISummaryCard` marked `aria-hidden="true"` so screen readers rely on the adjacent text label. `TriageList` items converted from `<div>` to `<ul>/<li>` for semantic list announcement. Task progress bars in `LogisticsStatusCard` wired with `role="progressbar"` and `aria-valuenow/min/max`. Keyboard tab-order verified across all 6 focusable stops; zero WCAG 2.1 AA violations with `BehavioralProfilePanel` expanded.
 - `clear_database()` now deletes from `behavioral_profiles` — previously left stale profiles after `/api/debug/reset`.
 - `_parse_patterns()` uses bracket-depth matching instead of a greedy regex, correctly handling nested arrays in `evidence` payloads and prose commentary containing brackets before the JSON array.
 - Integration test `test_checkin_success_path` now verifies response shape rather than asserting a specific status value, preventing false failures when the local database contains historical data.
