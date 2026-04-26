@@ -5,6 +5,7 @@ import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard'
 import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
 import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
+import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfilePanel';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { fetchCheckin, fetchHistory } from './api/client';
 import { SystemHealthPayload } from './types';
@@ -156,6 +157,14 @@ function App() {
                   <ROISummaryCard data={health.roi_summary} isLoading={isLoading} />
                 </section>
               )}
+
+              {/* Behavioral Profile Section */}
+              <section>
+                <BehavioralProfilePanel
+                  profiles={health.behavioral_profiles}
+                  isLoading={isLoading}
+                />
+              </section>
             </div>
           )}
         </div>

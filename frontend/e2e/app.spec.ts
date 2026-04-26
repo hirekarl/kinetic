@@ -62,7 +62,16 @@ const FULL_HEALTH_RESPONSE = {
     burnout_risk_delta: -5.0,
   },
   liaison_feedback: 'Focus on sleep first — everything else compounds from there.',
-  behavioral_profiles: [],
+  behavioral_profiles: [
+    {
+      profile_key: 'chronic_sleep_deficit',
+      insight: 'Sleep consistently falls below 6 hours on weekdays.',
+      evidence: { avg_weekday_sleep: 5.4 },
+      first_observed: '2026-04-20T08:00:00',
+      last_updated: '2026-04-25T08:00:00',
+      observation_count: 5,
+    },
+  ],
 };
 
 test.describe('Kinetic — Mission Control', () => {
@@ -166,6 +175,41 @@ test.describe('Kinetic — Mission Control', () => {
     await expect(page.getByText('Sleep debt accumulating')).toBeVisible();
     await expect(page.getByText('Laundry overdue 3 days')).toBeVisible();
     await expect(page.getByText('Marcus: contact drift detected')).toBeVisible();
+  });
+
+  test('behavioral profile panel is collapsed by default', async ({ page }) => {
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: FULL_HEALTH_RESPONSE, messages: [] } });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText(/sector status/i)).toBeVisible();
+
+    const trigger = page.getByRole('button', { name: /behavioral profile/i });
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(
+      page.getByText('Sleep consistently falls below 6 hours on weekdays.')
+    ).not.toBeVisible();
+  });
+
+  test('behavioral profile panel expands on click and shows insights', async ({ page }) => {
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: FULL_HEALTH_RESPONSE, messages: [] } });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText(/sector status/i)).toBeVisible();
+
+    const trigger = page.getByRole('button', { name: /behavioral profile/i });
+    await trigger.click();
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(
+      page.getByText('Sleep consistently falls below 6 hours on weekdays.')
+    ).toBeVisible();
+    await expect(page.getByText('chronic_sleep_deficit')).toBeVisible();
+    await expect(page.getByText('5 observations')).toBeVisible();
   });
 
   test('populated dashboard state passes axe accessibility audit', async ({ page }) => {
