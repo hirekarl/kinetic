@@ -99,18 +99,20 @@ function App() {
               onClick={() => {
                 void handleReset();
               }}
-              className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-rose-500 transition-colors"
+              className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-rose-500 transition-colors"
             >
               Reset System
             </button>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase">
+            <div className="text-[10px] font-mono text-zinc-400 uppercase">
               System Time: {new Date().toLocaleTimeString()}
             </div>
           </div>
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-8">
+        {/* tabIndex={0} is required to satisfy axe scrollable-region-focusable on content-only regions */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+        <div className="flex-1 overflow-y-auto p-8" tabIndex={0}>
           {error && (
             <div className="mb-8 rounded-lg border border-status-red/20 bg-status-red/5 p-4 text-sm text-status-red">
               <span className="font-bold">SYSTEM ERROR:</span> {error}
@@ -123,7 +125,7 @@ function App() {
                 <div className="h-2 w-2 rounded-full bg-zinc-700 animate-pulse" />
               </div>
               <h3 className="text-lg font-medium text-zinc-100">System Idle</h3>
-              <p className="max-w-xs text-sm text-zinc-500 mt-2 leading-relaxed">
+              <p className="max-w-xs text-sm text-zinc-400 mt-2 leading-relaxed">
                 Brief Kinetic via the panel to the left to begin personal infrastructure triage.
               </p>
             </div>
@@ -133,7 +135,7 @@ function App() {
             <div className="mx-auto max-w-5xl space-y-12">
               {/* Status Grid */}
               <section>
-                <div className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                <div className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-400">
                   Sector Status
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

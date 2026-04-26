@@ -23,7 +23,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-safari',
-      use: { ...devices['iPhone 14'] },
+      use: { ...devices['iPad Pro 11'], browserName: 'webkit' },
     },
   ],
   webServer: {

@@ -476,3 +476,7 @@ $RECYCLE.BIN/
 
 # Database
 kinetic.db*
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/

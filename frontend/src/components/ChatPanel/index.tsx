@@ -56,7 +56,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSendMessage, isLoading, 
 
         {messages.length === 0 && (
           <div className="space-y-4">
-            <div className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-wider text-zinc-400">
               Suggested Briefs
             </div>
             <div className="flex flex-wrap gap-2">

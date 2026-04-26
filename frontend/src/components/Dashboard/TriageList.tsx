@@ -13,7 +13,7 @@ export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
         <h2 className="text-sm font-semibold text-zinc-100 uppercase tracking-wider">
           Prioritized Triage
         </h2>
-        <span className="text-[10px] text-zinc-500">
+        <span className="text-[10px] text-zinc-400">
           {isLoading ? 'Analyzing...' : `${items.length.toString()} items pending`}
         </span>
       </div>
@@ -26,7 +26,7 @@ export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center">
-          <p className="text-sm text-zinc-500">All systems nominal. No triage items pending.</p>
+          <p className="text-sm text-zinc-400">All systems nominal. No triage items pending.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -54,7 +54,7 @@ export const TriageList: React.FC<TriageListProps> = ({ items, isLoading }) => {
                   <p className="text-sm font-medium text-zinc-200">{item.description}</p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <span className="text-zinc-600 font-bold">NEXT:</span>
+                  <span className="text-zinc-400 font-bold">NEXT:</span>
                   <span>{item.action}</span>
                 </div>
               </div>

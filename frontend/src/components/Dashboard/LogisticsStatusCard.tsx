@@ -16,9 +16,9 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 opacity-50">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-zinc-400">Logistics Fixer</h3>
-          <span className="text-[10px] uppercase text-zinc-600">No Data</span>
+          <span className="text-[10px] uppercase text-zinc-400">No Data</span>
         </div>
-        <div className="text-sm text-zinc-500">Mention domestic tasks or chores to triage.</div>
+        <div className="text-sm text-zinc-400">Mention domestic tasks or chores to triage.</div>
       </div>
     );
   }
@@ -38,13 +38,13 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
 
       <div className="mb-6 grid grid-cols-2 gap-4">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
             Critical Tasks
           </div>
           <div className="text-2xl font-bold text-zinc-100">{data.critical_tasks.length}</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
             Resolve Time
           </div>
           <div className="text-2xl font-bold text-zinc-100">{data.time_to_resolve_minutes}m</div>
@@ -53,14 +53,14 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
 
       {data.tasks_with_steps.length > 0 && (
         <div className="mb-6 space-y-4">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2">
             Task Progress
           </div>
           {data.tasks_with_steps.map((task) => (
             <div key={task.name} className="space-y-1">
               <div className="flex justify-between text-xs font-medium">
                 <span className="text-zinc-200">{task.name}</span>
-                <span className="text-zinc-500">
+                <span className="text-zinc-400">
                   {task.completed_subtasks.length.toString()}/{task.subtasks.length.toString()}{' '}
                   steps
                 </span>
@@ -82,14 +82,14 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
 
       {data.critical_tasks.length > 0 && (
         <div className="mb-6">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2 text-status-red">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2 text-status-red">
             Active Blockers
           </div>
           <div className="flex flex-wrap gap-2">
             {data.critical_tasks.map((task) => (
               <span
                 key={task}
-                className="rounded border border-status-red/30 bg-status-red/10 px-2 py-0.5 text-[10px] font-medium text-status-red uppercase tracking-tight"
+                className="rounded border border-status-red/30 bg-status-red/5 px-2 py-0.5 text-[10px] font-medium text-status-red uppercase tracking-tight"
               >
                 {task}
               </span>
@@ -114,7 +114,7 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
       )}
 
       {data.status === 'green' && (
-        <p className="text-sm text-zinc-500 italic">
+        <p className="text-sm text-zinc-400 italic">
           All logistical systems nominal. No critical tasks pending.
         </p>
       )}

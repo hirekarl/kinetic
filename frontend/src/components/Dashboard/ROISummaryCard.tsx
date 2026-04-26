@@ -44,32 +44,32 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         {/* Time Recovered */}
         <div className="space-y-1">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Time Recovered
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-3xl font-bold text-white">{data.time_recovered_minutes}</span>
             <span className="text-sm font-medium text-zinc-400">min</span>
           </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+          <p className="text-xs text-zinc-400 leading-relaxed">
             Potential focus time reclaimed through suggested outsourcing.
           </p>
         </div>
 
         {/* System Margin */}
         <div className="space-y-1 border-l border-zinc-800/50 pl-12 md:border-l">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             System Margin
           </div>
           <div className="text-3xl font-bold text-emerald-400">{data.margin_recovered}</div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+          <p className="text-xs text-zinc-400 leading-relaxed">
             Aggregate increase in operational capacity and connection margin.
           </p>
         </div>
 
         {/* Burnout Risk Delta */}
         <div className="space-y-1 border-l border-zinc-800/50 pl-12">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Burnout Risk Delta
           </div>
           <div className="flex items-baseline gap-2">
@@ -79,7 +79,7 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
             </span>
             <span className="text-xs font-bold uppercase text-emerald-500">Projected</span>
           </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+          <p className="text-xs text-zinc-400 leading-relaxed">
             Forecasted impact on burnout score if recommendations are resolved.
           </p>
         </div>

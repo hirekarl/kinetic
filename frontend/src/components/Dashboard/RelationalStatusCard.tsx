@@ -16,9 +16,9 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 opacity-50">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-zinc-400">Relational Diplomat</h3>
-          <span className="text-[10px] uppercase text-zinc-600">No Data</span>
+          <span className="text-[10px] uppercase text-zinc-400">No Data</span>
         </div>
-        <div className="text-sm text-zinc-500">Perform vibe checks on key relationships.</div>
+        <div className="text-sm text-zinc-400">Perform vibe checks on key relationships.</div>
       </div>
     );
   }
@@ -37,7 +37,7 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
       )}
 
       <div className="mb-6">
-        <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
+        <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
           Connection Margin
         </div>
         <div className="text-2xl font-bold text-zinc-100">
@@ -47,7 +47,7 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
 
       {data.at_risk_relationships.length > 0 && (
         <div className="mb-6">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2">
             Degraded Links
           </div>
           <div className="flex flex-wrap gap-2">
@@ -65,7 +65,7 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
 
       {data.interaction_sprints.length > 0 && (
         <div className="space-y-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
             Interaction Sprints
           </div>
           {data.interaction_sprints.map((sprint, i) => (
@@ -73,7 +73,7 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
               key={i}
               className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400 flex items-start gap-3"
             >
-              <span className="text-zinc-600 font-mono text-xs mt-0.5">[{i + 1}]</span>
+              <span className="text-zinc-400 font-mono text-xs mt-0.5">[{i + 1}]</span>
               <p className="leading-relaxed">{sprint}</p>
             </div>
           ))}
@@ -81,7 +81,7 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({ data
       )}
 
       {data.status === 'green' && (
-        <p className="text-sm text-zinc-500 italic">
+        <p className="text-sm text-zinc-400 italic">
           Relationship margins healthy. Connections maintained.
         </p>
       )}
