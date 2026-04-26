@@ -25,6 +25,9 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Changed
 - Refactored LLM Parser to use the modern `google-genai` SDK (v1.0), removing the deprecated `google-generativeai` package.
 - Updated `App.tsx` and `App.test.tsx` to support the new semantic structure and ROI integration.
+- WCAG 2.1 AA color contrast remediation: all `text-zinc-500` and `text-zinc-600` occurrences across Dashboard components, `App.tsx`, and `ChatPanel` changed to `text-zinc-400` (7–8:1 ratio vs. 4.11:1 minimum). Active Blockers badge lightened from `bg-status-red/10` to `bg-status-red/5` for 5.5:1 contrast on red text.
+- Playwright mobile-safari project updated to iPad Pro 11 viewport (1024px) from iPhone 14 (390px) — the fixed 420px left panel was clipped on narrow viewports, hiding the dashboard panel from tests.
+- Added `tabIndex={0}` to main scrollable content region in `App.tsx` to satisfy the axe `scrollable-region-focusable` rule.
 
 ### Removed
 - `render.yaml` — Render deployment config removed; MVP targets local demo only.
@@ -37,6 +40,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Removed stale `# type: ignore` comments on `aiosqlite` and `python-dotenv` imports now that both packages ship type stubs.
 - Resolved multiple ESLint and TypeScript issues in the frontend components (misused promises, unsafe any, Confusing void expressions).
 - Added robust error handling for API failures, including 503 fallback for missing Gemini credentials.
+- Two new Playwright e2e tests: full check-in flow verifying all three sector cards and triage list populate, and axe WCAG 2.1 AA audit on fully-populated dashboard state.
+- 54 new Vitest component unit tests across all Dashboard components, `ChatPanel`, `App`, and API client; overall frontend coverage: 98% lines, 92% branches, 100% functions.
+- `bandit` and `pip-audit` added to dev dependencies for security scanning.
+- `frontend/playwright-report/` and `frontend/test-results/` excluded from git via `.gitignore`.
 
 ## [0.2.0] — 2026-04-25
 

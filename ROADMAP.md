@@ -208,12 +208,12 @@ Full frontend–backend integration, streaming responses, ROI calculator, and th
 ### End-to-End Demo Flow
 - [x] Persistence: Pivot from LadybugDB to SQLite for stability on Windows.
 - [x] Hydration: Page refresh preserves dashboard state and dialogue history.
-- [ ] Playwright e2e: full check-in message → all three agent cards update → triage list populates
-- [ ] Axe audit on fully-populated dashboard state (not just empty shell)
+- [x] Playwright e2e: full check-in message → all three agent cards update → triage list populates
+- [x] Axe audit on fully-populated dashboard state (not just empty shell)
 
 ### Quality Gates
-- [ ] All prior sprint gates still passing
-- [ ] Playwright e2e full demo flow passes
+- [x] All prior sprint gates still passing
+- [x] Playwright e2e full demo flow passes
 - [ ] Manual demo run: verify narrative from PRD ("Slept 5 hours, ate okay, feeling disconnected from Marcus")
 - [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
 
