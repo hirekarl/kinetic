@@ -19,6 +19,8 @@ from kinetic.models.inputs import (
     VibeCheck,
 )
 from kinetic.models.outputs import (
+    BehavioralProfile,
+    BehavioralSummary,
     BioStatus,
     LogisticsStatus,
     RelationalStatus,
@@ -27,8 +29,12 @@ from kinetic.models.outputs import (
     SystemHealthPayload,
     TriageItem,
 )
+from kinetic.services.pattern_detector import detect_and_update_patterns
 
 logger = logging.getLogger(__name__)
+
+# Holds references to fire-and-forget background tasks to prevent GC before completion
+_background_tasks: set[asyncio.Task[None]] = set()
 
 # Global DB Client
 _db_client: SqliteClient | None = None
@@ -226,16 +232,36 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
 
     roi = _calculate_roi(bio_status, logistics_status, relational_status)
 
-    # 4. Formulate tactical liaison feedback
+    # 4. Fetch behavioral context (non-fatal — defaults to empty on failure)
+    behavioral_summary: BehavioralSummary | None = None
+    behavioral_profiles: list[BehavioralProfile] = []
+    try:
+        behavioral_summary = await db.get_behavioral_summary()
+        behavioral_profiles = await db.get_behavioral_profiles()
+    except Exception:
+        logger.exception("Failed to fetch behavioral context — proceeding without it")
+
+    # 5. Formulate tactical liaison feedback (enriched with behavioral context)
     liaison_feedback = await OperationalLiaison().process(
         message=message,
         overall_status=overall,
         triage_items=triage_items,
+        behavioral_summary=behavioral_summary,
+        behavioral_profiles=behavioral_profiles,
     )
 
-    # 5. Persist the current check-in (including feedback)
+    # 6. Persist the current check-in (including feedback)
     if message:
         await db.insert_checkin(payload, message, liaison_feedback)
+
+    # 7. Fire pattern detection as a non-blocking background task
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if behavioral_summary is not None:
+        task = asyncio.create_task(
+            detect_and_update_patterns(db, behavioral_summary, behavioral_profiles, api_key=api_key)
+        )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
     return SystemHealthPayload(
         overall_status=overall,
@@ -245,6 +271,7 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         triage_items=triage_items,
         roi_summary=roi,
         liaison_feedback=liaison_feedback,
+        behavioral_profiles=behavioral_profiles,
     )
 
 

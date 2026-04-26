@@ -1,5 +1,7 @@
 """Unit tests for the lead orchestrator."""
 
+import asyncio
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -12,7 +14,16 @@ from kinetic.models.inputs import (
     RelationalInput,
     VibeCheck,
 )
+from kinetic.models.outputs import BehavioralSummary
 from kinetic.orchestrator.lead import orchestrate
+
+_MOCK_SUMMARY = BehavioralSummary(
+    bio_trend=None,
+    recurring_tasks=[],
+    relational_drifts=[],
+    days_analyzed=5,
+    generated_at=datetime(2026, 4, 26, 12, 0, 0),
+)
 
 
 @pytest.fixture(autouse=True)
@@ -24,6 +35,8 @@ def mock_db() -> MagicMock:
         client.get_all_tasks = AsyncMock(return_value=[])
         client.get_all_vibes = AsyncMock(return_value=[])
         client.get_recent_bio = AsyncMock(return_value=[])
+        client.get_behavioral_summary = AsyncMock(return_value=_MOCK_SUMMARY)
+        client.get_behavioral_profiles = AsyncMock(return_value=[])
         mock.return_value = client
         yield client
 
@@ -161,3 +174,65 @@ async def test_roi_calculation_on_full_payload(full_checkin_payload: CheckInPayl
     assert result.roi_summary.time_recovered_minutes >= 0
     assert "capacity reclaimed" in result.roi_summary.margin_recovered
     assert result.roi_summary.burnout_risk_delta <= 0.0
+
+
+# ── Behavioral memory integration ─────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_behavioral_profiles_included_in_payload() -> None:
+    """SystemHealthPayload always includes behavioral_profiles (list, may be empty)."""
+    result = await orchestrate(CheckInPayload())
+
+    assert hasattr(result, "behavioral_profiles")
+    assert isinstance(result.behavioral_profiles, list)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_liaison_called_with_behavioral_summary(mock_liaison: MagicMock) -> None:
+    """Orchestrator passes behavioral_summary to OperationalLiaison.process()."""
+    await orchestrate(CheckInPayload())
+
+    call_kwargs = mock_liaison.process.call_args.kwargs
+    assert "behavioral_summary" in call_kwargs
+    assert call_kwargs["behavioral_summary"] == _MOCK_SUMMARY
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_liaison_called_with_behavioral_profiles(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """Orchestrator passes behavioral_profiles to OperationalLiaison.process()."""
+    await orchestrate(CheckInPayload())
+
+    call_kwargs = mock_liaison.process.call_args.kwargs
+    assert "behavioral_profiles" in call_kwargs
+    assert call_kwargs["behavioral_profiles"] == []
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_detect_patterns_fires_as_background_task() -> None:
+    """detect_and_update_patterns is scheduled as an asyncio task after liaison runs."""
+    with patch(
+        "kinetic.orchestrator.lead.detect_and_update_patterns",
+        new_callable=AsyncMock,
+    ) as mock_detect:
+        await orchestrate(CheckInPayload(), message="hello")
+        await asyncio.sleep(0)
+
+    mock_detect.assert_called_once()
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_behavioral_summary_failure_does_not_block(mock_db: MagicMock) -> None:
+    """If get_behavioral_summary raises, orchestrate still returns a valid payload."""
+    mock_db.get_behavioral_summary.side_effect = OSError("DB read failed")
+
+    result = await orchestrate(CheckInPayload())
+
+    assert result.overall_status in ("green", "yellow", "red")
