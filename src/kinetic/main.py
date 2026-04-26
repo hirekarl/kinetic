@@ -1,18 +1,33 @@
 from __future__ import annotations
 
+import logging
+import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from kinetic.api.routes import router
 
-# Load environment variables from .env at startup
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    if not os.environ.get("GEMINI_API_KEY"):
+        logger.warning("GEMINI_API_KEY is not set — LLM features will return 503")
+    yield
+
 
 app = FastAPI(
     title="Kinetic",
     description="Bio-Operational Triage Engine",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
