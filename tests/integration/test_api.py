@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from kinetic.main import app
 from kinetic.models.inputs import BioInput, CheckInPayload
+from kinetic.models.outputs import BioStatus, SystemHealthPayload
 
 client = TestClient(app)
 
@@ -32,15 +33,23 @@ def test_checkin_empty_message_returns_400() -> None:
 async def test_checkin_success_path() -> None:
     """POST /api/checkin wires parser → orchestrator and returns a valid SystemHealthPayload."""
     mock_payload = CheckInPayload(bio=BioInput(sleep_hours=8.0))
+    mock_health = SystemHealthPayload(
+        overall_status="green",
+        bio=BioStatus(status="green", burnout_score=20.0, forecast="Looking good."),
+        triage_items=[],
+        behavioral_profiles=[],
+    )
 
-    with patch(
-        "kinetic.api.routes.parse_checkin", new_callable=AsyncMock, return_value=mock_payload
+    with (
+        patch(
+            "kinetic.api.routes.parse_checkin", new_callable=AsyncMock, return_value=mock_payload
+        ),
+        patch("kinetic.api.routes.orchestrate", new_callable=AsyncMock, return_value=mock_health),
     ):
         response = client.post("/api/checkin", json={"message": "Slept 8 hours."})
 
     assert response.status_code == 200
     data = response.json()
-    # Status depends on historical DB state — verify shape, not a specific value
     assert data["overall_status"] in ("green", "yellow", "red")
     assert "bio" in data
     assert "triage_items" in data
