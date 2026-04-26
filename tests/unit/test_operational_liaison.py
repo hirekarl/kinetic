@@ -349,6 +349,36 @@ async def test_process_empty_contact_pauses_by_default() -> None:
     assert result.contact_pauses == []
 
 
+@pytest.mark.unit
+async def test_process_returns_task_completions() -> None:
+    """Liaison response with task_completions is returned correctly."""
+    response = LiaisonResponse(
+        text="Marked laundry complete.",
+        task_completions=["laundry"],
+    )
+    with _patch_liaison(response):
+        result = await _liaison().process(
+            message="I just finished the laundry.",
+            overall_status="green",
+            triage_items=[],
+        )
+
+    assert result.task_completions == ["laundry"]
+
+
+@pytest.mark.unit
+async def test_process_empty_task_completions_by_default() -> None:
+    """Regular check-in with no task completion mention produces no task_completions."""
+    with _patch_liaison():
+        result = await _liaison().process(
+            message="Feeling tired.",
+            overall_status="yellow",
+            triage_items=[],
+        )
+
+    assert result.task_completions == []
+
+
 # ── Conversation history ──────────────────────────────────────────────────────
 
 

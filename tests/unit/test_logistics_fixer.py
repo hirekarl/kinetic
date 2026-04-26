@@ -114,3 +114,25 @@ async def test_time_to_resolve_non_zero_for_critical_tasks() -> None:
 
     assert result.status is not None
     assert result.status.time_to_resolve_minutes > 0
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_triage_items_carry_source_id_equal_to_task_name() -> None:
+    """All logistics triage items must have source_id set to the originating task name."""
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(name="laundry", days_overdue=3, priority="high"),
+                LogisticsTask(name="groceries", days_overdue=2, priority="medium"),
+            ]
+        )
+    )
+    result = await LogisticsFixer().process(payload)
+
+    assert len(result.triage_items) >= 1
+    for item in result.triage_items:
+        assert item.source_id is not None, (
+            f"source_id must not be None for logistics item {item.description}"
+        )
+        assert item.source_id in {"laundry", "groceries"}

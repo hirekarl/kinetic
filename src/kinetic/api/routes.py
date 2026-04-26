@@ -31,6 +31,21 @@ async def reset_database() -> dict[str, str]:
     return {"status": "success", "message": "Database wiped."}
 
 
+@router.patch("/tasks/{task_name}/complete")
+async def complete_task(task_name: str) -> dict[str, str]:
+    """Mark a task as completed."""
+    db = get_db()
+    try:
+        await db.complete_task(task_name)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=f"Task '{task_name}' not found") from e
+    except ValueError as e:
+        raise HTTPException(
+            status_code=409, detail=f"Task '{task_name}' is already completed"
+        ) from e
+    return {"status": "completed", "task_name": task_name}
+
+
 @router.post("/checkin", response_model=SystemHealthPayload)
 async def checkin(body: CheckInRequest) -> SystemHealthPayload:
     """Accept a natural-language check-in message, parse it, and return system health."""

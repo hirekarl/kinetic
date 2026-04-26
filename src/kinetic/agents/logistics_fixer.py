@@ -117,6 +117,7 @@ class LogisticsFixer:
                         domain="logistics",
                         description=f"{task.name} critically overdue ({task.days_overdue}d, {task.priority} priority).",
                         action=next_step or suggestion or f"Handle {task.name} today.",
+                        source_id=task.name,
                     )
                 )
             elif level == "yellow" and overall != "red":
@@ -128,6 +129,7 @@ class LogisticsFixer:
                         domain="logistics",
                         description=f"{task.name} overdue ({task.days_overdue}d, {task.priority} priority).",
                         action=next_step or suggestion or f"Schedule {task.name} within 24h.",
+                        source_id=task.name,
                     )
                 )
 

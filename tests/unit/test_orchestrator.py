@@ -40,6 +40,7 @@ def mock_db() -> MagicMock:
         client.get_behavioral_profiles = AsyncMock(return_value=[])
         client.upsert_contact_pause = AsyncMock(return_value=None)
         client.get_active_pauses = AsyncMock(return_value=[])
+        client.complete_task = AsyncMock(return_value=None)
         mock.return_value = client
         yield client
 
@@ -404,3 +405,65 @@ async def test_no_directives_skips_upsert(mock_db: MagicMock, mock_liaison: Magi
     await orchestrate(CheckInPayload(), message="Slept 7 hours.")
 
     mock_db.upsert_contact_pause.assert_not_called()
+
+
+# ── Task completion directive ─────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_task_completion_directive_is_persisted(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """When liaison returns task_completions, complete_task is called for each name."""
+    mock_liaison.process.return_value = LiaisonResponse(
+        text="Marked laundry complete.",
+        task_completions=["laundry"],
+    )
+    await orchestrate(CheckInPayload(), message="I finished the laundry.")
+
+    mock_db.complete_task.assert_called_once_with("laundry")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_multiple_task_completions_each_persisted(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """All task names in task_completions result in a complete_task call each."""
+    mock_liaison.process.return_value = LiaisonResponse(
+        text="Both done.",
+        task_completions=["laundry", "groceries"],
+    )
+    await orchestrate(CheckInPayload(), message="Done with laundry and groceries.")
+
+    assert mock_db.complete_task.call_count == 2
+    calls = {c.args[0] for c in mock_db.complete_task.call_args_list}
+    assert calls == {"laundry", "groceries"}
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_task_completion_keyerror_does_not_raise(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """If complete_task raises KeyError (unknown task), orchestrate still returns normally."""
+    mock_db.complete_task.side_effect = KeyError("unknown_task")
+    mock_liaison.process.return_value = LiaisonResponse(
+        text="Done.",
+        task_completions=["unknown_task"],
+    )
+    result = await orchestrate(CheckInPayload(), message="Done with unknown task.")
+
+    assert result.overall_status in ("green", "yellow", "red")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_no_task_completions_skips_complete_task(
+    mock_db: MagicMock, mock_liaison: MagicMock
+) -> None:
+    """When liaison returns no task_completions, complete_task is never called."""
+    await orchestrate(CheckInPayload(), message="Just a status check.")
+
+    mock_db.complete_task.assert_not_called()

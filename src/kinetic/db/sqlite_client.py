@@ -449,6 +449,17 @@ class SqliteClient:
             )
             await db.commit()
 
+    async def complete_task(self, task_name: str) -> None:
+        """Mark a task as completed. Raises KeyError if the task does not exist."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            async with db.execute("SELECT name FROM tasks WHERE name = ?", (task_name,)) as cur:
+                row = await cur.fetchone()
+            if row is None:
+                raise KeyError(task_name)
+            await db.execute("UPDATE tasks SET status = 'completed' WHERE name = ?", (task_name,))
+            await db.commit()
+
     async def clear_database(self) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("DELETE FROM checkin_tasks")

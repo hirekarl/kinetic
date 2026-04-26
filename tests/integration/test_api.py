@@ -1,6 +1,6 @@
 """Integration tests for the FastAPI routes."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -69,3 +69,47 @@ async def test_checkin_parser_failure_returns_503() -> None:
 
     assert response.status_code == 503
     assert "GEMINI_API_KEY is not set" in response.json()["detail"]
+
+
+# ── Task completion endpoint ──────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_complete_task_returns_200_for_known_task() -> None:
+    """PATCH /api/tasks/{task_name}/complete returns 200 when task exists."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_task = AsyncMock(return_value=None)
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/laundry/complete")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "completed"
+    assert response.json()["task_name"] == "laundry"
+
+
+@pytest.mark.unit
+def test_complete_task_returns_404_for_unknown_task() -> None:
+    """PATCH /api/tasks/{task_name}/complete returns 404 when task is not found."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_task = AsyncMock(side_effect=KeyError("nonexistent"))
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/nonexistent/complete")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.unit
+def test_complete_task_returns_409_for_already_completed() -> None:
+    """PATCH /api/tasks/{task_name}/complete returns 409 when already completed."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_task = AsyncMock(side_effect=ValueError("already completed"))
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/laundry/complete")
+
+    assert response.status_code == 409

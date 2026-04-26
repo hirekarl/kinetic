@@ -288,3 +288,65 @@ async def test_upsert_behavioral_profile_increments_count(
     assert "4 nights" in p.insight  # updated insight
     assert p.first_observed.replace(microsecond=0) == first_time  # must NOT change
     assert p.last_updated.replace(microsecond=0) == second_time  # must update
+
+
+# ── Task completion ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_task_marks_existing_task_completed(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_task() sets status='completed' for an existing task row."""
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[LogisticsTask(name="laundry", days_overdue=2, priority="high")]
+        )
+    )
+    await _seed_checkin(client, payload, datetime.now())
+
+    await client.complete_task("laundry")
+
+    tasks = await client.get_all_tasks()
+    laundry = next((t for t in tasks if t["name"] == "laundry"), None)
+    assert laundry is not None
+    assert laundry["status"] == "completed"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_task_raises_key_error_for_unknown_task(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_task() raises KeyError when the task name is not in the DB."""
+    client = _make_client(tmp_path)
+    async with aiosqlite.connect(client.db_path) as db:
+        await client._init_db(db)
+
+    with pytest.raises(KeyError, match="nonexistent_task"):
+        await client.complete_task("nonexistent_task")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_task_idempotent_for_already_completed(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_task() on an already-completed task does not raise and status stays completed."""
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[LogisticsTask(name="laundry", days_overdue=2, priority="high")]
+        )
+    )
+    await _seed_checkin(client, payload, datetime.now())
+
+    await client.complete_task("laundry")
+    await client.complete_task("laundry")  # second call must not raise
+
+    tasks = await client.get_all_tasks()
+    laundry = next((t for t in tasks if t["name"] == "laundry"), None)
+    assert laundry is not None
+    assert laundry["status"] == "completed"

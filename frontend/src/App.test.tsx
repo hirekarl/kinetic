@@ -35,6 +35,7 @@ const mockHealth: SystemHealthPayload = {
       action: 'Hard stop at 11pm',
       snooze_until: null,
       completed: false,
+      source_id: null,
     },
   ],
   roi_summary: {

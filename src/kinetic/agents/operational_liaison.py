@@ -46,6 +46,14 @@ class LiaisonResponse(BaseModel):
             "break, or contact pause for a specific person. Leave empty for everything else."
         ),
     )
+    task_completions: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Populate with task names ONLY when the user explicitly states they completed or "
+            "finished a specific task. Each entry must match an exact task name from the triage "
+            "list. Leave empty for all other messages."
+        ),
+    )
 
 
 class OperationalLiaison:

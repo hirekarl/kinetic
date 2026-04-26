@@ -12,6 +12,7 @@ const mockItems: TriageItem[] = [
     action: 'Hard stop at 10pm',
     snooze_until: null,
     completed: false,
+    source_id: null,
   },
   {
     id: 'logistics-001',
@@ -21,6 +22,7 @@ const mockItems: TriageItem[] = [
     action: 'Run a load tonight',
     snooze_until: null,
     completed: false,
+    source_id: 'laundry',
   },
   {
     id: 'relational-001',
@@ -30,6 +32,7 @@ const mockItems: TriageItem[] = [
     action: 'Send a message',
     snooze_until: null,
     completed: false,
+    source_id: null,
   },
 ];
 

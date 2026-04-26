@@ -310,6 +310,13 @@ async def orchestrate(
     except Exception:
         logger.exception("Failed to load active contact pauses — proceeding without filtering")
 
+    # 6b. Process any task completion directives from the liaison
+    for task_name in liaison_response.task_completions:
+        try:
+            await db.complete_task(task_name)
+        except KeyError:
+            logger.warning(f"complete_task: task not found in DB: {task_name!r}")
+
     # 7. Apply contact-pause filtering to triage items and relational status
     triage_items = _filter_paused_contacts(triage_items, active_pauses)
     relational_status = _filter_paused_relational_status(relational_status, active_pauses)

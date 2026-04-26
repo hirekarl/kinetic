@@ -12,6 +12,7 @@ export interface TriageItem {
   action: string;
   snooze_until: string | null; // ISO 8601 datetime
   completed: boolean;
+  source_id: string | null; // originating task name for logistics items
 }
 
 export interface ROISummary {

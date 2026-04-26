@@ -19,6 +19,10 @@ class TriageItem(BaseModel):
     action: str
     snooze_until: datetime | None = None
     completed: bool = False
+    source_id: str | None = Field(
+        default=None,
+        description="Originating task name for logistics items; used for server-side completion",
+    )
 
 
 class ROISummary(BaseModel):
