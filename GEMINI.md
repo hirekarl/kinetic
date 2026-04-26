@@ -223,22 +223,19 @@ The app reads this via `python-dotenv`. The `.gitignore` already excludes `.env`
 
 ---
 
-## Deployment (Render Blueprint)
+## Running Locally (MVP Target)
 
-The project ships a `render.yaml` at the root. On Render:
+The MVP demos locally. Two terminals:
 
-1. Connect the GitHub repo in the Render dashboard
-2. Render detects `render.yaml` and creates two services automatically:
-   - **kinetic-api** — Python web service (FastAPI + uvicorn)
-   - **kinetic-frontend** — Static site (Vite build output)
-3. In the Render dashboard, set these environment variables manually:
-   - On **kinetic-api**: `GEMINI_API_KEY=<your key>`
-   - On **kinetic-frontend**: `VITE_API_BASE_URL=https://kinetic-api.onrender.com`
-4. Trigger a deploy — both services build from the same repo
+```bash
+# Terminal 1 — backend
+uv run uvicorn kinetic.main:app --reload --port 8000
 
-**Local vs. production API routing:**
-- Dev: Vite proxies `/api/*` to `http://localhost:8000`
-- Production: frontend makes requests to `VITE_API_BASE_URL` directly
+# Terminal 2 — frontend
+cd frontend && npm run dev
+```
+
+Open `http://localhost:5173`. The Vite dev server proxies `/api/*` to `:8000` automatically.
 
 ---
 

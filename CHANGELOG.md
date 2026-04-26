@@ -26,6 +26,9 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Refactored LLM Parser to use the modern `google-genai` SDK (v1.0), removing the deprecated `google-generativeai` package.
 - Updated `App.tsx` and `App.test.tsx` to support the new semantic structure and ROI integration.
 
+### Removed
+- `render.yaml` — Render deployment config removed; MVP targets local demo only.
+
 ### Fixed
 - `clear_database()` now deletes from `behavioral_profiles` — previously left stale profiles after `/api/debug/reset`.
 - `_parse_patterns()` uses bracket-depth matching instead of a greedy regex, correctly handling nested arrays in `evidence` payloads and prose commentary containing brackets before the JSON array.

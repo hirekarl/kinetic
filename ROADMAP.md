@@ -29,7 +29,7 @@ Foundation: professional tooling, typed skeletons, AI agent team, deployment con
 - [x] `.pre-commit-config.yaml` — ruff, mypy, prettier, conventional-pre-commit
 - [x] `CLAUDE.md` + `GEMINI.md` — full project docs + OS auto-detect startup ritual
 - [x] `.claude/settings.json` — pre-approved commands
-- [x] `render.yaml` — Render Blueprint (Python API + React static site)
+- ~~`render.yaml` — Render Blueprint~~ (removed; MVP demos locally)
 - [x] `scripts/release.sh` — SemVer release ceremony
 - [x] `.env.example` — environment variable template
 - [x] `CHANGELOG.md` — Keep-a-Changelog initialized
@@ -288,7 +288,7 @@ Error handling, empty states, accessibility, demo script.
 ### Demo Preparation
 - [ ] Demo script written (step-by-step walkthrough of PRD narrative)
 - [ ] Seeded demo state available (pre-populated check-in data for live demo)
-- [ ] Render deploy verified: both services healthy, API responding, frontend loading
+- [ ] Local demo run verified end-to-end: backend on :8000, frontend on :5173, full check-in flow
 
 ### Stretch Goals 🔷
 - [ ] Persistent historical state (file-based storage, SQLite, or localStorage)
@@ -301,8 +301,7 @@ Error handling, empty states, accessibility, demo script.
 ### Quality Gates
 - [ ] All prior sprint gates still passing
 - [ ] `v1.0.0` release ceremony complete (`./scripts/release.sh`)
-- [ ] Render deploy healthy (both services green)
-- [ ] Demo run rehearsed end-to-end
+- [ ] Local demo run rehearsed end-to-end
 
 > **Critical milestone: fully functional MVP by 2026-05-05 (Day 10)**
 
