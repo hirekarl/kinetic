@@ -52,14 +52,14 @@ async def test_high_stress_yields_red() -> None:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_no_bio_input_returns_failure() -> None:
-    """Payload with bio=None → success=False, no status."""
+async def test_no_bio_input_returns_nominal_status() -> None:
+    """Payload with bio=None → success=True, nominal status."""
     payload = CheckInPayload()
     result = await BioArchivist().process(payload)
 
-    assert result.success is False
-    assert result.status is None
-    assert result.error_message is not None
+    assert result.success is True
+    assert result.status is not None
+    assert result.status.status == "green"
 
 
 @pytest.mark.unit

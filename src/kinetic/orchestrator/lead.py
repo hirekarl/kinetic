@@ -9,7 +9,7 @@ from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
 from kinetic.agents.operational_liaison import OperationalLiaison
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
-from kinetic.db.ladybug_client import LadybugClient
+from kinetic.db.sqlite_client import SqliteClient
 from kinetic.models.inputs import (
     BioInput,
     CheckInPayload,
@@ -31,14 +31,14 @@ from kinetic.models.outputs import (
 logger = logging.getLogger(__name__)
 
 # Global DB Client
-_db_client: LadybugClient | None = None
+_db_client: SqliteClient | None = None
 
 
-def get_db() -> LadybugClient:
+def get_db() -> SqliteClient:
     global _db_client
     if _db_client is None:
-        path = os.environ.get("LADYBUG_DB_PATH", "./.kinetic_db")
-        _db_client = LadybugClient(path)
+        path = os.environ.get("SQLITE_DB_PATH", "./kinetic.db")
+        _db_client = SqliteClient(path)
     return _db_client
 
 
@@ -100,7 +100,7 @@ def _assign_stable_ids(items: list[TriageItem]) -> list[TriageItem]:
     return result
 
 
-async def _merge_history(payload: CheckInPayload, db: LadybugClient) -> CheckInPayload:
+async def _merge_history(payload: CheckInPayload, db: SqliteClient) -> CheckInPayload:
     """Populate missing fields in payload with the latest known data from DB."""
     # 1. Bio
     latest_bio = await db.get_latest_bio()

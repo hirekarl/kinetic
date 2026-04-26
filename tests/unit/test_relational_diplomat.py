@@ -76,14 +76,14 @@ async def test_empty_vibe_checks_yields_green() -> None:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_no_relational_input_returns_failure() -> None:
-    """Payload with relational=None → success=False."""
+async def test_no_relational_input_returns_nominal_status() -> None:
+    """Payload with relational=None → success=True, nominal status."""
     payload = CheckInPayload()
     result = await RelationalDiplomat().process(payload)
 
-    assert result.success is False
-    assert result.status is None
-    assert result.error_message is not None
+    assert result.success is True
+    assert result.status is not None
+    assert result.status.status == "green"
 
 
 @pytest.mark.unit
