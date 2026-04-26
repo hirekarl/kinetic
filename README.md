@@ -7,7 +7,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Sprint](https://img.shields.io/badge/sprint-1%20of%205-orange)](ROADMAP.md)
+[![Version](https://img.shields.io/badge/version-v1.1.0-blue)](CHANGELOG.md)
 
 ---
 
@@ -15,7 +15,7 @@
 
 High-performing engineers routinely fall into the **High-Performance Trap**: relentless output accumulates hidden personal debt — sleep, logistics, relationships — until a crash forces a reset.
 
-Kinetic is a mission-control dashboard that surfaces that debt before it compounds. You brief it in natural language once a day. It routes your input through three specialist agents and hands back a prioritized, data-driven triage list so you can clear high-leverage actions in minutes and return to flow.
+Kinetic is a mission-control dashboard that surfaces that debt before it compounds. You brief it in natural language once a day. It routes your input through three domain agents and an operational liaison, then hands back a prioritized, data-driven triage list so you can clear high-leverage actions in minutes and return to flow.
 
 ```
 "Slept 5 hours, ate okay, feeling disconnected from Marcus."
@@ -49,6 +49,7 @@ A single natural-language check-in message is parsed by **Gemini 2.5 Flash + Ins
 | **Bio-Metric Archivist** | Sleep · Nutrition · Energy | Burnout score + forecast |
 | **Logistics Fixer** | Domestic tasks + outsourcing ROI | Criticality flags + vendor suggestions |
 | **Relational Diplomat** | Connection margin + vibe checks | Interaction sprint recommendations |
+| **Operational Liaison** | Tactical orchestration + executive function | Sequenced action scripts, contact pauses |
 
 The orchestrator aggregates agent outputs into a single `SystemHealthPayload` — one consistent shape the React frontend consumes, regardless of which agents fired.
 
@@ -69,7 +70,6 @@ The orchestrator aggregates agent outputs into a single `SystemHealthPayload` �
 **Tooling**
 - [Commitizen](https://commitizen-tools.github.io/commitizen/) SemVer (Conventional Commits)
 - pre-commit hooks: ruff, mypy, prettier, conventional-pre-commit
-- [Render Blueprint](https://render.com/docs/blueprint-spec) deployment (`render.yaml`)
 
 ---
 
@@ -124,10 +124,12 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 |--------|-------|---------|--------|
 | Sprint 0 | Bootstrap — tooling, typed skeletons, agent team | `v0.1.0` | ✅ Released |
 | Sprint 1 | Agent logic — all three agents + orchestrator | `v0.2.0` | ✅ Released |
-| Sprint 2 | LLM parsing layer — Gemini + Instructor end-to-end | `v0.3.0` | ✅ |
-| Sprint 3 | Frontend core — ChatPanel + Dashboard components | `v0.4.0` | ✅ |
-| Sprint 4 | Integration + ROI + Persistence + Liaison | `v0.5.0` | ✅ |
-| Sprint 5 | Polish, accessibility audit, demo prep | `v1.0.0` | 🔄 In progress |
+| Sprint 2 | LLM parsing layer — Gemini + Instructor end-to-end | `v0.3.0` | ✅ Released |
+| Sprint 3 | Frontend core — ChatPanel + Dashboard components | `v0.4.0` | ✅ Released |
+| Sprint 4 | Integration + ROI + Persistence + Liaison | `v0.5.0` | ✅ Released |
+| Sprint 5 | Behavioral memory — SQLite patterns + profile panel | `v0.6.0` | ✅ Released |
+| Sprint 6 | Polish + demo prep — onboarding, a11y, empty states | `v1.0.0` | ✅ Released |
+| Sprint 6b | Dashboard interactivity + liaison hardening | `v1.1.0` | ✅ Released |
 
 **Demo deadline:** 2026-05-03 · **MVP deadline:** 2026-05-05
 
@@ -156,12 +158,7 @@ Every commit follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ## Deployment
 
-The project ships a `render.yaml` [Blueprint](https://render.com/docs/blueprint-spec). Connect the repo in the Render dashboard and two services are provisioned automatically:
-
-- **kinetic-api** — Python/FastAPI web service
-- **kinetic-frontend** — React/Vite static site
-
-Set `GEMINI_API_KEY` on the API service and `VITE_API_BASE_URL=https://kinetic-api.onrender.com` on the frontend service, then deploy.
+Kinetic runs locally. Backend on `:8000`, frontend on `:5173` (Vite proxies `/api` → `:8000`). See [Getting Started](#getting-started) above.
 
 ---
 

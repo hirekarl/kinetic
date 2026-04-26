@@ -149,7 +149,7 @@ frontend/src/
 | Sprint 4 | `v0.5.0` | Integration + ROI | ✅ |
 | Sprint 5 | `v0.6.0` | Behavioral Memory | ✅ |
 | Sprint 6 | `v1.0.0` | Polish + Demo | ✅ |
-| Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | 🔄 |
+| Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | ✅ |
 
 ---
 
