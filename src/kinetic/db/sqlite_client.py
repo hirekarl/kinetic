@@ -32,7 +32,8 @@ class SqliteClient:
                 id TEXT PRIMARY KEY,
                 timestamp DATETIME,
                 message TEXT,
-                embedding TEXT
+                embedding TEXT,
+                liaison_feedback TEXT
             )
             """
         )
@@ -97,7 +98,9 @@ class SqliteClient:
             logger.error(f"Embedding failed: {e}")
             return [0.0] * 768
 
-    async def insert_checkin(self, payload: CheckInPayload, message: str) -> str:
+    async def insert_checkin(
+        self, payload: CheckInPayload, message: str, liaison_feedback: str | None = None
+    ) -> str:
         """Insert a parsed check-in into SQLite."""
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
@@ -106,8 +109,8 @@ class SqliteClient:
             emb = self.get_embedding(message)
 
             await db.execute(
-                "INSERT INTO checkins (id, timestamp, message, embedding) VALUES (?, ?, ?, ?)",
-                (checkin_id, ts, message, json.dumps(emb)),
+                "INSERT INTO checkins (id, timestamp, message, embedding, liaison_feedback) VALUES (?, ?, ?, ?, ?)",
+                (checkin_id, ts, message, json.dumps(emb), liaison_feedback),
             )
 
             if payload.bio:
@@ -213,6 +216,23 @@ class SqliteClient:
             ) as cursor:
                 rows = await cursor.fetchall()
                 return [dict(r) for r in rows]
+
+    async def get_history(self, limit: int = 20) -> list[dict[str, str]]:
+        """Fetch check-in and liaison history for dialogue hydration."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT message, liaison_feedback, timestamp FROM checkins ORDER BY timestamp ASC LIMIT ?",
+                (limit,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+                messages = []
+                for r in rows:
+                    messages.append({"role": "user", "content": r["message"]})
+                    if r["liaison_feedback"]:
+                        messages.append({"role": "system", "content": r["liaison_feedback"]})
+                return messages
 
     async def clear_database(self) -> None:
         async with aiosqlite.connect(self.db_path) as db:

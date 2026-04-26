@@ -31,3 +31,22 @@ export async function fetchCheckin(
 
   return response.json() as Promise<SystemHealthPayload>;
 }
+
+/**
+ * Fetches the current system health and message history.
+ */
+export async function fetchHistory(): Promise<{
+  health: SystemHealthPayload;
+  messages: { role: 'user' | 'system'; content: string }[];
+}> {
+  const response = await fetch(`${API_BASE_URL}/api/history`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch system history.');
+  }
+
+  return response.json() as Promise<{
+    health: SystemHealthPayload;
+    messages: { role: 'user' | 'system'; content: string }[];
+  }>;
+}

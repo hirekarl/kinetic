@@ -144,19 +144,15 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
     """Route parsed check-in payload to relevant agents and aggregate results."""
     db = get_db()
 
-    # 1. Persist the current check-in (and get embedding)
-    if message:
-        await db.insert_checkin(payload, message)
-
-    # 2. Merge history into payload to maintain system context
+    # 1. Merge history into payload to maintain system context
     payload = await _merge_history(payload, db)
 
-    # 3. Fetch history for context (rolling metrics)
+    # 2. Fetch history for context (rolling metrics)
     history: dict[str, Any] = {
         "bio": await db.get_recent_bio(limit=7),
     }
 
-    # 4. Fire agents in parallel
+    # 3. Fire agents in parallel
     bio_task = asyncio.create_task(BioArchivist().process(payload, history))
     logistics_task = asyncio.create_task(LogisticsFixer().process(payload, history))
     relational_task = asyncio.create_task(RelationalDiplomat().process(payload, history))
@@ -230,12 +226,16 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
 
     roi = _calculate_roi(bio_status, logistics_status, relational_status)
 
-    # 3. Formulate tactical liaison feedback
+    # 4. Formulate tactical liaison feedback
     liaison_feedback = await OperationalLiaison().process(
         message=message,
         overall_status=overall,
         triage_items=triage_items,
     )
+
+    # 5. Persist the current check-in (including feedback)
+    if message:
+        await db.insert_checkin(payload, message, liaison_feedback)
 
     return SystemHealthPayload(
         overall_status=overall,
@@ -246,3 +246,16 @@ async def orchestrate(payload: CheckInPayload, message: str = "") -> SystemHealt
         roi_summary=roi,
         liaison_feedback=liaison_feedback,
     )
+
+
+async def get_current_state() -> dict[str, Any]:
+    """Retrieve the current health dashboard and full conversation history."""
+    db = get_db()
+
+    # 1. Run orchestration on empty payload to get current health from DB
+    health = await orchestrate(CheckInPayload(), message="")
+
+    # 2. Get dialogue history
+    messages = await db.get_history(limit=50)
+
+    return {"health": health, "messages": messages}

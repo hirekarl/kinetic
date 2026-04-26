@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChatPanel, Message } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
@@ -6,7 +6,7 @@ import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCar
 import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
-import { fetchCheckin } from './api/client';
+import { fetchCheckin, fetchHistory } from './api/client';
 import { SystemHealthPayload } from './types';
 
 function App() {
@@ -14,6 +14,22 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Hydrate state from backend on mount
+  useEffect(() => {
+    setIsLoading(true);
+    void fetchHistory()
+      .then((data) => {
+        setHealth(data.health);
+        setMessages(data.messages);
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to hydrate state', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const handleSendMessage = (content: string) => {
     // 1. Add user message to feed immediately

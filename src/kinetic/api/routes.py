@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from kinetic.models.outputs import SystemHealthPayload
-from kinetic.orchestrator.lead import get_db, orchestrate
+from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate
 from kinetic.parsing.llm_parser import parse_checkin
 
 router = APIRouter(prefix="/api")
@@ -15,11 +17,17 @@ class CheckInRequest(BaseModel):
     history: list[dict[str, str]] = Field(default_factory=list)
 
 
+@router.get("/history")
+async def fetch_history() -> dict[str, Any]:
+    """Return the current system health and dialogue history."""
+    return await get_current_state()
+
+
 @router.post("/debug/reset")
 async def reset_database() -> dict[str, str]:
     """Wipe all data from the graph database (Debug only)."""
     db = get_db()
-    db.clear_database()
+    await db.clear_database()
     return {"status": "success", "message": "Database wiped."}
 
 
