@@ -7,6 +7,7 @@ import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfilePanel';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
+import { OnboardingModal } from './components/OnboardingModal';
 import { fetchCheckin, fetchHistory } from './api/client';
 import { SystemHealthPayload } from './types';
 
@@ -16,6 +17,14 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('kinetic_onboarded')
+  );
+
+  const handleDismissOnboarding = () => {
+    localStorage.setItem('kinetic_onboarded', 'true');
+    setShowOnboarding(false);
+  };
 
   // Hydrate state from backend on mount
   useEffect(() => {
@@ -96,6 +105,7 @@ function App() {
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
       {/* Left Panel: Operational Liaison Feed */}
       <div className="w-[420px] shrink-0">
         <ChatPanel onSendMessage={handleSendMessage} isLoading={isLoading} messages={messages} />

@@ -75,6 +75,14 @@ const FULL_HEALTH_RESPONSE = {
 };
 
 test.describe('Kinetic — Mission Control', () => {
+  // Skip onboarding for all Mission Control tests — it runs on every page.goto()
+  // so the modal never blocks interaction with the dashboard under test.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('kinetic_onboarded', 'true');
+    });
+  });
+
   test('landing page passes axe accessibility audit', async ({ page }) => {
     await page.goto('/');
     const results = await new AxeBuilder({ page })

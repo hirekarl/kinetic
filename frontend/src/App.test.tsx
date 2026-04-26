@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from './App';
 import { SystemHealthPayload } from './types';
 
@@ -61,6 +61,16 @@ describe('App — split-panel shell', () => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    // Suppress onboarding so these tests stay focused on the dashboard shell
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue('true'),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('renders the chat panel heading', async () => {
@@ -218,5 +228,68 @@ describe('App — split-panel shell', () => {
     await waitFor(() => {
       expect(screen.queryByText(/critical error/i)).not.toBeInTheDocument();
     });
+  });
+});
+
+// ── Onboarding ────────────────────────────────────────────────────────────────
+
+describe('App — Onboarding', () => {
+  // Use a real in-memory store so we can test that setItem is called and
+  // that subsequent getItem calls reflect the stored value.
+  let store: Map<string, string>;
+  let mockLocalStorage: {
+    getItem: ReturnType<typeof vi.fn>;
+    setItem: ReturnType<typeof vi.fn>;
+    removeItem: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    mockFetchHistory.mockReset();
+    mockFetchCheckin.mockReset();
+    mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    store = new Map();
+    mockLocalStorage = {
+      getItem: vi.fn((key: string) => store.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store.set(key, value);
+      }),
+      removeItem: vi.fn((key: string) => {
+        store.delete(key);
+      }),
+    };
+    vi.stubGlobal('localStorage', mockLocalStorage);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('shows onboarding modal on first visit (no localStorage flag)', async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /personal infrastructure/i })).toBeInTheDocument();
+    });
+  });
+
+  it('does not show onboarding when kinetic_onboarded is already set', async () => {
+    store.set('kinetic_onboarded', 'true');
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('sets kinetic_onboarded in localStorage when onboarding is dismissed via Skip', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(screen.getByRole('button', { name: /skip/i }));
+    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('kinetic_onboarded', 'true');
+  });
+
+  it('modal disappears after Skip', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('dialog'));
+    fireEvent.click(screen.getByRole('button', { name: /skip/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
