@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -125,11 +124,24 @@ def _build_prompt(
 
 
 def _parse_patterns(text: str) -> list[dict[str, Any]]:
-    """Extract a JSON array from Gemini response text."""
-    match = re.search(r"\[.*\]", text, re.DOTALL)
-    if not match:
+    """Extract a JSON array from Gemini response text.
+
+    Uses bracket-depth matching from the last ']' backwards to find the
+    outermost array. Handles nested arrays and prose with brackets before
+    the JSON payload (e.g. "Here [per request]. Data: [...]").
+    """
+    end = text.rfind("]")
+    if end == -1:
         raise ValueError(f"No JSON array found in response: {text[:200]}")
-    return json.loads(match.group())  # type: ignore[no-any-return]
+    depth = 0
+    for i in range(end, -1, -1):
+        if text[i] == "]":
+            depth += 1
+        elif text[i] == "[":
+            depth -= 1
+            if depth == 0:
+                return json.loads(text[i : end + 1])  # type: ignore[no-any-return]
+    raise ValueError(f"Unmatched brackets in response: {text[:200]}")
 
 
 def _is_valid_entry(entry: object) -> bool:

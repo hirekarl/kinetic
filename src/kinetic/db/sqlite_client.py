@@ -437,4 +437,5 @@ class SqliteClient:
             await db.execute("DELETE FROM vibe_checks")
             await db.execute("DELETE FROM tasks")
             await db.execute("DELETE FROM checkins")
+            await db.execute("DELETE FROM behavioral_profiles")
             await db.commit()
