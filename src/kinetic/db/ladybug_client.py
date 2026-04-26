@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import uuid
@@ -47,7 +48,7 @@ class LadybugClient:
             "CREATE NODE TABLE BioMetric(id UUID, sleep_hours DOUBLE, nutrition_quality INT64, energy_level INT64, PRIMARY KEY (id))"
         )
         self._safe_execute(
-            "CREATE NODE TABLE LogisticsTask(name STRING, priority STRING, PRIMARY KEY (name))"
+            "CREATE NODE TABLE LogisticsTask(name STRING, priority STRING, subtasks STRING, completed_subtasks STRING, status STRING, PRIMARY KEY (name))"
         )
         self._safe_execute("CREATE NODE TABLE Person(name STRING, PRIMARY KEY (name))")
 
@@ -115,9 +116,21 @@ class LadybugClient:
         # 3. Handle Logistics
         if payload.logistics:
             for task in payload.logistics.tasks:
+                subtasks_json = json.dumps(task.subtasks)
+                completed_json = json.dumps(task.completed_subtasks)
+
+                # MERGE the task node (keeping properties updated)
                 self.conn.execute(
-                    "MERGE (t:LogisticsTask {name: $name}) ON CREATE SET t.priority = $pri",
-                    {"name": task.name, "pri": task.priority},
+                    "MERGE (t:LogisticsTask {name: $name}) "
+                    "ON CREATE SET t.priority = $pri, t.subtasks = $sub, t.completed_subtasks = $comp, t.status = $stat "
+                    "ON MATCH SET t.priority = $pri, t.subtasks = $sub, t.completed_subtasks = $comp, t.status = $stat",
+                    {
+                        "name": task.name,
+                        "pri": task.priority,
+                        "sub": subtasks_json,
+                        "comp": completed_json,
+                        "stat": task.status,
+                    },
                 )
                 self.conn.execute(
                     "MATCH (c:CheckIn), (t:LogisticsTask) WHERE c.id = $cid AND t.name = $tname "
@@ -164,7 +177,7 @@ class LadybugClient:
         # For now, we return the latest priority/state for every known task.
         result = self.conn.execute(
             "MATCH (c:CheckIn)-[r:MENTIONED_TASK]->(t:LogisticsTask) "
-            "RETURN t.name, t.priority, r.days_overdue, c.timestamp "
+            "RETURN t.name, t.priority, r.days_overdue, t.subtasks, t.completed_subtasks, t.status, c.timestamp "
             "ORDER BY c.timestamp DESC"
         )
         tasks = {}
@@ -176,6 +189,9 @@ class LadybugClient:
                     "name": name,
                     "priority": row[1],
                     "days_overdue": row[2],
+                    "subtasks": json.loads(row[3] or "[]"),
+                    "completed_subtasks": json.loads(row[4] or "[]"),
+                    "status": row[5] or "pending",
                 }
         return list(tasks.values())
 

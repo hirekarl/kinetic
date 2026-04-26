@@ -5,13 +5,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 /**
  * Fetches system health based on a natural-language check-in message.
  */
-export async function fetchCheckin(message: string): Promise<SystemHealthPayload> {
+export async function fetchCheckin(
+  message: string,
+  history: { role: string; content: string }[] = []
+): Promise<SystemHealthPayload> {
   const response = await fetch(`${API_BASE_URL}/api/checkin`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, history }),
   });
 
   if (!response.ok) {

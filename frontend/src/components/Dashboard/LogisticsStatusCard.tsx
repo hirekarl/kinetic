@@ -51,6 +51,35 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
         </div>
       </div>
 
+      {data.tasks_with_steps.length > 0 && (
+        <div className="mb-6 space-y-4">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">
+            Task Progress
+          </div>
+          {data.tasks_with_steps.map((task) => (
+            <div key={task.name} className="space-y-1">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-zinc-200">{task.name}</span>
+                <span className="text-zinc-500">
+                  {task.completed_subtasks.length.toString()}/{task.subtasks.length.toString()}{' '}
+                  steps
+                </span>
+              </div>
+              <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    task.status === 'completed' ? 'bg-status-green' : 'bg-status-yellow'
+                  }`}
+                  style={{
+                    width: `${(task.subtasks.length > 0 ? (task.completed_subtasks.length / task.subtasks.length) * 100 : 0).toString()}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {data.critical_tasks.length > 0 && (
         <div className="mb-6">
           <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2 text-status-red">

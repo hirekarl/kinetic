@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from kinetic.models.inputs import LogisticsTask
+
 StatusLevel = Literal["green", "yellow", "red"]
 AgentDomain = Literal["bio", "logistics", "relational", "system"]
 
@@ -37,6 +39,7 @@ class BioStatus(BaseModel):
 class LogisticsStatus(BaseModel):
     status: StatusLevel
     critical_tasks: list[str] = Field(default_factory=list)
+    tasks_with_steps: list[LogisticsTask] = Field(default_factory=list)
     outsourcing_suggestions: list[str] = Field(default_factory=list)
     time_to_resolve_minutes: int = 0
     error_message: str | None = None

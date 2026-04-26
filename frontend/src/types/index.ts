@@ -29,9 +29,20 @@ export interface BioStatus {
   error_message?: string;
 }
 
+export interface LogisticsTask {
+  name: string;
+  status: 'pending' | 'completed';
+  days_overdue: number;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  subtasks: string[];
+  completed_subtasks: string[];
+  notes: string | null;
+}
+
 export interface LogisticsStatus {
   status: StatusLevel;
   critical_tasks: string[];
+  tasks_with_steps: LogisticsTask[];
   outsourcing_suggestions: string[];
   time_to_resolve_minutes: number;
   error_message?: string;

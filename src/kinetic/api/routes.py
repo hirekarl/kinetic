@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from kinetic.models.outputs import SystemHealthPayload
 from kinetic.orchestrator.lead import get_db, orchestrate
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api")
 
 class CheckInRequest(BaseModel):
     message: str
+    history: list[dict[str, str]] = Field(default_factory=list)
 
 
 @router.post("/debug/reset")
@@ -29,7 +30,7 @@ async def checkin(body: CheckInRequest) -> SystemHealthPayload:
         raise HTTPException(status_code=400, detail="message must not be empty")
 
     try:
-        payload = await parse_checkin(body.message)
+        payload = await parse_checkin(body.message, body.history)
     except OSError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except Exception as e:

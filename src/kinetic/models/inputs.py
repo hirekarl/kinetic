@@ -7,8 +7,11 @@ from pydantic import BaseModel, Field
 
 class LogisticsTask(BaseModel):
     name: str
+    status: Literal["pending", "completed"] = "pending"
     days_overdue: int = 0
     priority: Literal["low", "medium", "high", "critical"] = "medium"
+    subtasks: list[str] = Field(default_factory=list)
+    completed_subtasks: list[str] = Field(default_factory=list)
     notes: str | None = None
 
 

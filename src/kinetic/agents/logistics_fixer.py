@@ -78,6 +78,9 @@ class LogisticsFixer:
         triage: list[TriageItem] = []
 
         for task in tasks:
+            if task.status == "completed":
+                continue
+
             score = _criticality(task)
             level = _task_level(score)
 
@@ -92,6 +95,13 @@ class LogisticsFixer:
             if suggestion:
                 outsourcing_suggestions.append(suggestion)
 
+            # Determine specific action: show the next incomplete subtask if available
+            next_step = None
+            if task.subtasks:
+                incomplete = [s for s in task.subtasks if s not in task.completed_subtasks]
+                if incomplete:
+                    next_step = f"NEXT STEP: {incomplete[0]}"
+
             if level == "red":
                 overall = "red"
                 triage.append(
@@ -100,7 +110,7 @@ class LogisticsFixer:
                         priority=8,
                         domain="logistics",
                         description=f"{task.name} critically overdue ({task.days_overdue}d, {task.priority} priority).",
-                        action=suggestion or f"Handle {task.name} today — blocking other recovery.",
+                        action=next_step or suggestion or f"Handle {task.name} today.",
                     )
                 )
             elif level == "yellow" and overall != "red":
@@ -111,7 +121,7 @@ class LogisticsFixer:
                         priority=5,
                         domain="logistics",
                         description=f"{task.name} overdue ({task.days_overdue}d, {task.priority} priority).",
-                        action=suggestion or f"Schedule {task.name} within 24h.",
+                        action=next_step or suggestion or f"Schedule {task.name} within 24h.",
                     )
                 )
 
@@ -119,6 +129,7 @@ class LogisticsFixer:
             status=LogisticsStatus(
                 status=overall,
                 critical_tasks=critical_tasks,
+                tasks_with_steps=tasks,
                 outsourcing_suggestions=outsourcing_suggestions,
                 time_to_resolve_minutes=time_minutes,
             ),

@@ -23,7 +23,7 @@ function App() {
     setIsLoading(true);
     setError(null);
 
-    void fetchCheckin(content)
+    void fetchCheckin(content, messages)
       .then((result) => {
         setHealth(result);
         // 2. Add liaison feedback to feed
