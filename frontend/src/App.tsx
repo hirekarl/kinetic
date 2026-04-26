@@ -15,6 +15,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
 
   // Hydrate state from backend on mount
   useEffect(() => {
@@ -33,6 +34,8 @@ function App() {
   }, []);
 
   const handleSendMessage = (content: string) => {
+    setLastMessage(content);
+
     // 1. Add user message to feed immediately
     const userMsg: Message = { role: 'user', content };
     setMessages((prev) => [...prev, userMsg]);
@@ -43,6 +46,7 @@ function App() {
     void fetchCheckin(content, messages)
       .then((result) => {
         setHealth(result);
+        setLastMessage(null);
         // 2. Add liaison feedback to feed
         if (result.liaison_feedback) {
           const systemMsg: Message = { role: 'system', content: result.liaison_feedback };
@@ -52,11 +56,21 @@ function App() {
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : 'Failed to update system health.';
         setError(msg);
-        setMessages((prev) => [...prev, { role: 'system', content: `[CRITICAL ERROR] ${msg}` }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'system', content: `Check-in could not be processed. ${msg}` },
+        ]);
       })
       .finally(() => {
         setIsLoading(false);
       });
+  };
+
+  const handleRetry = () => {
+    if (lastMessage) {
+      setError(null);
+      handleSendMessage(lastMessage);
+    }
   };
 
   const handleReset = async () => {
@@ -73,6 +87,7 @@ function App() {
         setHealth(null);
         setMessages([]);
         setError(null);
+        setLastMessage(null);
       }
     } catch (err) {
       console.error('Reset failed', err);
@@ -115,8 +130,24 @@ function App() {
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="flex-1 overflow-y-auto p-8" tabIndex={0}>
           {error && (
-            <div className="mb-8 rounded-lg border border-status-red/20 bg-status-red/5 p-4 text-sm text-status-red">
-              <span className="font-bold">SYSTEM ERROR:</span> {error}
+            <div
+              role="alert"
+              className="mb-8 rounded-lg border border-status-red/20 bg-status-red/5 p-4"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-status-red">Analysis unavailable</p>
+                  <p className="mt-1 text-sm text-zinc-400 truncate">{error}</p>
+                </div>
+                {lastMessage && (
+                  <button
+                    onClick={handleRetry}
+                    className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition-colors hover:border-zinc-600 hover:text-white"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

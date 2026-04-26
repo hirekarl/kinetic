@@ -212,6 +212,34 @@ test.describe('Kinetic — Mission Control', () => {
     await expect(page.getByText('5 observations')).toBeVisible();
   });
 
+  test('error banner shows "Analysis unavailable" with Retry button on 503', async ({ page }) => {
+    let callCount = 0;
+    await page.route('**/api/checkin', async (route) => {
+      callCount++;
+      if (callCount === 1) {
+        await route.fulfill({ status: 503, json: { detail: 'GEMINI_API_KEY is not set' } });
+      } else {
+        await route.fulfill({ json: FULL_HEALTH_RESPONSE });
+      }
+    });
+
+    await page.goto('/');
+    const input = page.getByPlaceholder(/what's your status/i);
+    await input.fill('Slept 5 hours.');
+    await page.getByRole('button', { name: /send/i }).click();
+
+    // Error banner appears with softened copy and Retry button
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByText(/analysis unavailable/i)).toBeVisible();
+    const retryBtn = page.getByRole('button', { name: /retry/i });
+    await expect(retryBtn).toBeVisible();
+
+    // Clicking Retry re-submits and banner clears on success
+    await retryBtn.click();
+    await expect(page.getByText(/sector status/i)).toBeVisible();
+    await expect(page.getByRole('alert')).not.toBeVisible();
+  });
+
   test('populated dashboard state passes axe accessibility audit', async ({ page }) => {
     // Pre-populate via the history endpoint so we can audit without interaction
     await page.route('**/api/history', async (route) => {

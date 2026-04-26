@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 import { SystemHealthPayload } from './types';
@@ -117,17 +118,105 @@ describe('App — split-panel shell', () => {
     expect(window.confirm).toHaveBeenCalled();
   });
 
-  it('shows error message when check-in fails', async () => {
+  // ── Error state — softened copy ────────────────────────────────────────────
+
+  it('shows softened "Analysis unavailable" heading when check-in fails', async () => {
     mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
-    fireEvent.change(textarea, { target: { value: 'Test.' } });
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
     fireEvent.submit(textarea.closest('form')!);
 
     await waitFor(() => {
-      expect(screen.getByText(/system error/i)).toBeInTheDocument();
+      expect(screen.getByText(/analysis unavailable/i)).toBeInTheDocument();
+    });
+  });
+
+  it('does not use alarming "SYSTEM ERROR" copy in the error banner', async () => {
+    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+
+    const textarea = screen.getByPlaceholderText(/what's your status/i);
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
+    fireEvent.submit(textarea.closest('form')!);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/system error/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows a Retry button in the error banner after a failed check-in', async () => {
+    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+
+    const textarea = screen.getByPlaceholderText(/what's your status/i);
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
+    fireEvent.submit(textarea.closest('form')!);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    });
+  });
+
+  it('Retry button re-submits the last message and clears the banner on success', async () => {
+    const user = userEvent.setup();
+    mockFetchCheckin
+      .mockRejectedValueOnce(new Error('Service unavailable'))
+      .mockResolvedValueOnce({ ...mockHealth, liaison_feedback: 'All systems restored.' });
+
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+
+    const textarea = screen.getByPlaceholderText(/what's your status/i);
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
+    fireEvent.submit(textarea.closest('form')!);
+
+    await waitFor(() => screen.getByRole('button', { name: /retry/i }));
+
+    await user.click(screen.getByRole('button', { name: /retry/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/analysis unavailable/i)).not.toBeInTheDocument();
+      expect(mockFetchCheckin).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('error banner is absent when no error has occurred', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+    expect(screen.queryByText(/analysis unavailable/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /retry/i })).not.toBeInTheDocument();
+  });
+
+  it('chat feed shows softened error copy when check-in fails', async () => {
+    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+
+    const textarea = screen.getByPlaceholderText(/what's your status/i);
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
+    fireEvent.submit(textarea.closest('form')!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/check-in could not be processed/i)).toBeInTheDocument();
+    });
+  });
+
+  it('chat feed does not use alarming "[CRITICAL ERROR]" prefix', async () => {
+    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
+
+    const textarea = screen.getByPlaceholderText(/what's your status/i);
+    fireEvent.change(textarea, { target: { value: 'Slept 5 hours.' } });
+    fireEvent.submit(textarea.closest('form')!);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/critical error/i)).not.toBeInTheDocument();
     });
   });
 });
