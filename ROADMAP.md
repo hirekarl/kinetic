@@ -319,36 +319,36 @@ Conversational depth, specialist agent routing, contact pause lifecycle, task co
 - [x] Contact pause lifecycle: `ContactPauseDirective` extracted by liaison → persisted to `contact_pauses` SQLite table → active pauses filter triage items + relational status + interaction sprints
 - [x] `ContactPause` model added to `SystemHealthPayload.active_pauses`; Relational Diplomat card shows "On Break" section
 
-### Task A1 — Server-Persisted Task Completion (backend)
-- [ ] `source_id: str | None = None` on `TriageItem`
-- [ ] `LogisticsFixer` sets `source_id=task.name` on generated triage items
-- [ ] `SqliteClient.complete_task(task_name: str) -> None`
-- [ ] `LiaisonResponse.task_completions: list[str]` field
-- [ ] Orchestrator iterates `task_completions`, calls `db.complete_task()` for each
-- [ ] `PATCH /api/tasks/{task_name}/complete` endpoint (200 | 404 | 409)
-- [ ] TS type: `TriageItem.source_id: string | null`
+### Task A1 — Server-Persisted Task Completion (backend) ✅
+- [x] `source_id: str | None = None` on `TriageItem`
+- [x] `LogisticsFixer` sets `source_id=task.name` on generated triage items
+- [x] `SqliteClient.complete_task(task_name: str) -> None`
+- [x] `LiaisonResponse.task_completions: list[str]` field
+- [x] Orchestrator iterates `task_completions`, calls `db.complete_task()` for each
+- [x] `PATCH /api/tasks/{task_name}/complete` endpoint (200 | 404 | 409)
+- [x] TS type: `TriageItem.source_id: string | null`
 
-### Task A2 — Triage Completion UI (frontend)
-- [ ] Checkmark button on logistics triage items with non-null `source_id`
-- [ ] Optimistic removal on click; restore on API error
-- [ ] `TriageList` accepts `onCompleteTask?: (taskName: string) => Promise<void>`
-- [ ] `App.tsx` `handleCompleteTask` wired up
-- [ ] WCAG 2.1 AA compliance on new interactive elements
+### Task A2 — Triage Completion UI (frontend) ✅
+- [x] Checkmark button on logistics triage items with non-null `source_id`
+- [x] Optimistic removal on click; restore on API error
+- [x] `TriageList` accepts `onCompleteTask?: (taskName: string) => Promise<void>`
+- [x] `App.tsx` `handleCompleteTask` wired up
+- [x] WCAG 2.1 AA compliance on new interactive elements
 
-### Task B1 — Liaison Prompt Hardening (backend)
-- [ ] SYNTHESIS rule: competing multi-domain crisis → unified sequenced protocol
-- [ ] IMPROVEMENT ACK rule: partial recovery → acknowledge delta, update forecast
-- [ ] EVENT ROUTING rule: upcoming deadline → one action per specialist domain
-- [ ] HISTORY RESOLUTION rule: pronoun references → resolve from last 3 turns
-- [ ] AGENCY rule: user overrides recommendation → pivot to risk mitigation only
-- [ ] Orchestrator processes `task_completions` directive (same pattern as contact pauses)
+### Task B1 — Liaison Prompt Hardening (backend) ✅
+- [x] SYNTHESIS rule: competing multi-domain crisis → unified sequenced protocol
+- [x] IMPROVEMENT ACK rule: partial recovery → acknowledge delta, update forecast
+- [x] EVENT ROUTING rule: upcoming deadline → one action per specialist domain
+- [x] HISTORY RESOLUTION rule: pronoun references → resolve from last 3 turns
+- [x] AGENCY rule: user overrides recommendation → pivot to risk mitigation only
+- [x] Orchestrator processes `task_completions` directive (same pattern as contact pauses)
 
-### Task B2 — Scenario Test Suite + Live Runner (both)
-- [ ] `tests/scenarios/test_scenarios.py` — 5 deterministic mocked scenario fixtures
-- [ ] `scripts/run_scenarios.py` — live runner against `:8000`
+### Task B2 — Scenario Test Suite + Live Runner (both) ✅
+- [x] `tests/scenarios/test_scenarios.py` — 5 deterministic mocked scenario fixtures
+- [x] `scripts/run_scenarios.py` — live runner against `:8000`
 
 ### Quality Gates
-- [ ] All prior sprint gates still passing
+- [x] All prior sprint gates still passing (86% backend coverage, 124 frontend tests)
 - [ ] `v1.1.0` release ceremony complete
 
 ---
