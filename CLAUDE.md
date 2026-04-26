@@ -76,7 +76,8 @@ tests/
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models
-  App.tsx                  split-panel root component
+  App.tsx                  split-panel root component; first-visit onboarding gate via localStorage
+  components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display
   components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel
   hooks/                   useCheckin, useSystemHealth, etc.

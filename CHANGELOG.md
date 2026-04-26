@@ -7,6 +7,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- **Onboarding flow:** 3-screen modal tutorial shown on first visit (Personal Infrastructure → Chat-First → Your Agent Team). Skippable at any step; dismissed permanently via a `kinetic_onboarded` localStorage flag. Includes focus trap, Escape-key dismiss, `role="dialog"` + `aria-modal`, `role="group"` step indicator for screen readers, and a mouse-only backdrop button. Zero WCAG 2.1 AA violations (axe).
 - **Startup warning:** FastAPI `lifespan` handler emits a `WARNING`-level log at startup when `GEMINI_API_KEY` is absent, making missing credentials immediately visible in server logs rather than silently failing on first request.
 - **Retry CTA in error banner:** After a failed check-in the error banner now shows a "Retry" button that re-submits the last message without requiring the user to re-type it. The button is hidden once the retry succeeds and the banner clears.
 

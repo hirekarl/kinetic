@@ -275,12 +275,12 @@ Error handling, empty states, accessibility, demo script.
 - [x] All empty states reviewed for non-alarming, non-judgmental copy
 
 ### Onboarding Flow
-- [ ] 3-screen micro-tutorial (skippable): "Personal infrastructure", "Chat-first", "Agent roles"
-- [ ] First-time detection: `localStorage` flag, shown once
-- [ ] Vitest + Playwright: tutorial renders, skip works, doesn't re-appear on reload
+- [x] 3-screen micro-tutorial (skippable): "Personal infrastructure", "Chat-first", "Agent roles"
+- [x] First-time detection: `localStorage` flag, shown once
+- [x] Vitest + Playwright: tutorial renders, skip works, doesn't re-appear on reload
 
 ### Accessibility Final Audit
-- [ ] Full axe WCAG 2.1 AA audit on: empty state, loaded state, error state, onboarding
+- [x] Full axe WCAG 2.1 AA audit on: empty state, loaded state, error state, onboarding
 - [ ] Keyboard navigation: all interactive elements reachable and operable without mouse
 - [ ] Color contrast: all status colors meet 4.5:1 ratio (green/yellow/red on dark bg)
 - [ ] Screen reader smoke test: status cards announce meaningful content
