@@ -365,7 +365,7 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 
 ---
 
-## Sprint 7 — Agent Dispatch Log 🔄
+## Sprint 7 — Agent Dispatch Log ✅
 **Dates:** 2026-04-26 → TBD · **Target version:** `v1.2.0`
 
 Make the multi-agent routing visible during a live demo via a collapsible Agent Dispatch Log panel in the Mission Control dashboard. Pure frontend feature — no backend or model changes.
@@ -384,7 +384,7 @@ Make the multi-agent routing visible during a live demo via a collapsible Agent 
 - [x] `npm run typecheck` → 0 errors
 - [x] `npm run lint` → 0 errors (including jsx-a11y)
 - [x] Frontend coverage ≥ 80% on new files (`AgentDispatchLog.tsx` 100%, `agentLog.ts` 100%)
-- [ ] `v1.2.0` release ceremony complete
+- [x] `v1.2.0` release ceremony complete
 
 ---
 
@@ -400,4 +400,4 @@ Make the multi-agent routing visible during a live demo via a collapsible Agent 
 | `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
-| `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | 🔄 |
+| `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
