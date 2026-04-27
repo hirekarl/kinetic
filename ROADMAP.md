@@ -365,6 +365,29 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 
 ---
 
+## Sprint 7 — Agent Dispatch Log 🔄
+**Dates:** 2026-04-26 → TBD · **Target version:** `v1.2.0`
+
+Make the multi-agent routing visible during a live demo via a collapsible Agent Dispatch Log panel in the Mission Control dashboard. Pure frontend feature — no backend or model changes.
+
+### Tasks
+- [x] `AgentFired` + `AgentLogEntry` types added to `frontend/src/types/index.ts`
+- [x] `buildAgentLogEntry` utility at `frontend/src/utils/agentLog.ts`
+- [x] `AgentDispatchLog` component at `frontend/src/components/Dashboard/AgentDispatchLog.tsx`
+      — collapsible, newest-first, per-entry expandable agent summaries + responding_agent badge
+- [x] `App.tsx` accumulates `agentLog: AgentLogEntry[]` state; passes to `AgentDispatchLog`
+- [x] Vitest: empty state, full entry, partial entry, expand/collapse, `buildAgentLogEntry` util (21 new tests; 145 total passing)
+- [x] Playwright e2e + axe: 51/51 across Chromium, Firefox, mobile Safari — zero WCAG 2.1 AA violations
+
+### Quality Gates
+- [x] All prior sprint gates still passing (145 tests, 95.4% coverage)
+- [x] `npm run typecheck` → 0 errors
+- [x] `npm run lint` → 0 errors (including jsx-a11y)
+- [x] Frontend coverage ≥ 80% on new files (`AgentDispatchLog.tsx` 100%, `agentLog.ts` 100%)
+- [ ] `v1.2.0` release ceremony complete
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -377,3 +400,4 @@ The data is time-series shaped, not graph-shaped. SQLite handles all required qu
 | `v0.6.0` | Sprint 5 — Behavioral Memory | Phase 3+ | ✅ |
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
+| `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | 🔄 |

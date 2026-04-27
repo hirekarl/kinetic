@@ -80,8 +80,11 @@ frontend/src/
   App.tsx                  split-panel root component; first-visit onboarding gate via localStorage
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display
-  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, agent dispatch log
     SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
+    AgentDispatchLog.tsx   collapsible agent routing history; per-entry expandable agent summaries + responding_agent badge
+  utils/
+    agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
   hooks/                   useCheckin, useSystemHealth, etc.
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core accessibility specs
@@ -102,7 +105,8 @@ frontend/src/
 | Sprint 4 | `v0.5.0` | Integration + ROI | ✅ |
 | Sprint 5 | `v0.6.0` | Behavioral Memory | ✅ |
 | Sprint 6 | `v1.0.0` | Polish + Demo | ✅ |
-| Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | 🔄 |
+| Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | ✅ |
+| Sprint 7 | `v1.2.0` | Agent Dispatch Log | 🔄 |
 
 ---
 

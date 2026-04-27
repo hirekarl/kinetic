@@ -4,6 +4,11 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+- Agent Dispatch Log panel: collapsible sidebar in Mission Control showing per-check-in agent routing history — which specialist agents fired, their status levels, per-agent summary lines, and the liaison's responding_agent routing decision
+
 ## v1.1.0 (2026-04-26)
 
 ### Feat
