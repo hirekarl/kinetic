@@ -117,7 +117,7 @@ frontend/src/
 | Sprint 6 | `v1.0.0` | Polish + Demo | ✅ |
 | Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | ✅ |
 | Sprint 7 | `v1.2.0` | Agent Dispatch Log | ✅ |
-| Sprint 8 | `v1.3.0` | Multi-Tenant Auth | 🔄 |
+| Sprint 8 | `v1.3.0` | Multi-Tenant Auth | ✅ |
 
 ---
 

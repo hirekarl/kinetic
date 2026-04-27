@@ -388,7 +388,7 @@ Make the multi-agent routing visible during a live demo via a collapsible Agent 
 
 ---
 
-## Sprint 8 — Multi-Tenant Authentication 🔄
+## Sprint 8 — Multi-Tenant Authentication ✅
 **Dates:** 2026-04-26 → TBD · **Target version:** `v1.3.0`
 
 Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two tenants: `demo` and `personal`.
@@ -415,7 +415,7 @@ Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two 
 
 ### Quality Gates
 - [x] All prior sprint gates still passing
-- [ ] `v1.3.0` release ceremony complete
+- [x] `v1.3.0` release ceremony complete
 
 ---
 
@@ -432,4 +432,4 @@ Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two 
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
 | `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
-| `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | 🔄 In progress |
+| `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | ✅ Released |
