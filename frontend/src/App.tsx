@@ -6,14 +6,17 @@ import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCar
 import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfilePanel';
+import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
 import { fetchCheckin, fetchHistory, completeTask } from './api/client';
-import { SystemHealthPayload } from './types';
+import { AgentLogEntry, SystemHealthPayload } from './types';
+import { buildAgentLogEntry } from './utils/agentLog';
 
 function App() {
   const [health, setHealth] = useState<SystemHealthPayload | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [agentLog, setAgentLog] = useState<AgentLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
@@ -52,10 +55,13 @@ function App() {
     setIsLoading(true);
     setError(null);
 
+    const timestamp = new Date().toISOString();
+
     void fetchCheckin(content, messages)
       .then((result) => {
         setHealth(result);
         setLastMessage(null);
+        setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
         // 2. Add liaison feedback to feed
         if (result.liaison_feedback) {
           const systemMsg: Message = {
@@ -225,6 +231,11 @@ function App() {
                   profiles={health.behavioral_profiles}
                   isLoading={isLoading}
                 />
+              </section>
+
+              {/* Agent Dispatch Log */}
+              <section>
+                <AgentDispatchLog entries={agentLog} isLoading={isLoading} />
               </section>
             </div>
           )}

@@ -121,3 +121,18 @@ export interface SystemHealthPayload {
 export interface CheckInRequest {
   message: string;
 }
+
+export interface AgentFired {
+  domain: 'bio' | 'logistics' | 'relational';
+  status: StatusLevel;
+  summary: string;
+}
+
+export interface AgentLogEntry {
+  id: string;
+  timestamp: string; // ISO 8601
+  user_message: string;
+  agents_fired: AgentFired[];
+  responding_agent: string | null;
+  overall_status: StatusLevel;
+}
