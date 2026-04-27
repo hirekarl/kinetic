@@ -23,11 +23,21 @@ fail()    { echo -e "${RED}✗${RESET} $*"; exit 1; }
 # ── Parse args ─────────────────────────────────────────────────────────────
 
 INCREMENT_FLAG=""
+YES=0
+AUTO_PUSH=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --increment)
       INCREMENT_FLAG="--increment $2"
       shift 2
+      ;;
+    --yes|-y)
+      YES=1
+      shift
+      ;;
+    --push)
+      AUTO_PUSH=1
+      shift
       ;;
     *) fail "Unknown argument: $1" ;;
   esac
@@ -70,8 +80,12 @@ uv run cz changelog --dry-run
 # ── Confirm ────────────────────────────────────────────────────────────────
 
 echo ""
-read -r -p "$(echo -e "${BOLD}Proceed with release?${RESET} [y/N] ")" confirm
-[[ "$confirm" =~ ^[Yy]$ ]] || { warn "Release aborted."; exit 0; }
+if [[ $YES -eq 1 ]]; then
+  info "Auto-confirming release (--yes)"
+else
+  read -r -p "$(echo -e "${BOLD}Proceed with release?${RESET} [y/N] ")" confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || { warn "Release aborted."; exit 0; }
+fi
 
 # ── Bump + tag ─────────────────────────────────────────────────────────────
 
@@ -86,10 +100,18 @@ info "Ready to push:"
 git log --oneline -3
 
 echo ""
-read -r -p "$(echo -e "${BOLD}Push commit and tag to origin?${RESET} [y/N] ")" push_confirm
-if [[ "$push_confirm" =~ ^[Yy]$ ]]; then
+if [[ $AUTO_PUSH -eq 1 ]]; then
+  info "Auto-pushing (--push)"
   git push && git push --tags
   success "Release pushed. 🚀"
-else
+elif [[ $YES -eq 1 ]]; then
   warn "Push skipped. Run 'git push && git push --tags' when ready."
+else
+  read -r -p "$(echo -e "${BOLD}Push commit and tag to origin?${RESET} [y/N] ")" push_confirm
+  if [[ "$push_confirm" =~ ^[Yy]$ ]]; then
+    git push && git push --tags
+    success "Release pushed. 🚀"
+  else
+    warn "Push skipped. Run 'git push && git push --tags' when ready."
+  fi
 fi
