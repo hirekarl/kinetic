@@ -45,7 +45,8 @@ React Dashboard (frontend/src/)
 ```
 src/kinetic/
   __init__.py              package version (__version__)
-  main.py                  FastAPI app, CORS config, router mount; lifespan startup warning when GEMINI_API_KEY absent
+  main.py                  FastAPI app, CORS config, router mounts (api + auth); lifespan warnings for GEMINI_API_KEY and SECRET_KEY
+  auth.py                  TenantConfig + CurrentUser models; load_credentials(), verify_password(), create_access_token(), decode_access_token(); get_current_user() + get_current_tenant() FastAPI dependencies
   models/
     inputs.py              CheckInPayload + sub-models (canonical input contracts)
     outputs.py             SystemHealthPayload + sub-models (canonical output contracts)
@@ -56,11 +57,13 @@ src/kinetic/
     relational_diplomat.py connection margin + interaction sprints
     operational_liaison.py Instructor-based structured router; accepts behavioral context + live agent status; returns LiaisonResponse (text, responding_agent, contact_pauses)
   orchestrator/
-    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering
+    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; get_db(tenant) per-tenant SQLite client cache
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
-    routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history, POST /api/debug/reset)
+    __init__.py            package init
+    auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
+    routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant
   db/
     sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses()
   services/
@@ -71,13 +74,17 @@ tests/
   conftest.py              shared fixtures (sample payloads, health objects)
   unit/test_models.py      model validation tests
   unit/test_main.py        startup warning / lifespan tests
+  unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
+  unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
+  integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
   integration/             end-to-end API tests (Phase 3+)
   scenarios/               deterministic scenario fixtures for adversarial/multi-turn coverage (Sprint 6b)
 
 frontend/src/
-  types/index.ts           TypeScript interfaces mirroring Python output models
-  App.tsx                  split-panel root component; first-visit onboarding gate via localStorage
+  types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser (username, tenant, display_name)
+  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header
+  components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display
   components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, agent dispatch log
@@ -85,9 +92,12 @@ frontend/src/
     AgentDispatchLog.tsx   collapsible agent routing history; per-entry expandable agent summaries + responding_agent badge
   utils/
     agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
-  hooks/                   useCheckin, useSystemHealth, etc.
+  hooks/
+    useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
+  api/
+    client.ts              fetchCheckin, fetchHistory, completeTask (all accept optional token); login, fetchMe, logout; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
-  e2e/                     Playwright + axe-core accessibility specs
+  e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
 ```
 
 ---
@@ -106,7 +116,8 @@ frontend/src/
 | Sprint 5 | `v0.6.0` | Behavioral Memory | ✅ |
 | Sprint 6 | `v1.0.0` | Polish + Demo | ✅ |
 | Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | ✅ |
-| Sprint 7 | `v1.2.0` | Agent Dispatch Log | 🔄 |
+| Sprint 7 | `v1.2.0` | Agent Dispatch Log | ✅ |
+| Sprint 8 | `v1.3.0` | Multi-Tenant Auth | 🔄 |
 
 ---
 
@@ -160,9 +171,11 @@ Create `.env` at the project root (never commit it):
 
 ```
 GEMINI_API_KEY=your_key_here
+SECRET_KEY=your-32-byte-hex-string-here  # generate: python -c "import secrets; print(secrets.token_hex(32))"
+CREDENTIALS_PATH=./credentials.toml      # optional; defaults to ./credentials.toml
 ```
 
-The app reads this via `python-dotenv`. The `.gitignore` already excludes `.env`.
+The app reads this via `python-dotenv`. The `.gitignore` already excludes `.env`. Copy `credentials.toml.example` to `credentials.toml` and fill in real bcrypt hashes (never commit it).
 
 ---
 

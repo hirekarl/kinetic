@@ -136,3 +136,9 @@ export interface AgentLogEntry {
   responding_agent: string | null;
   overall_status: StatusLevel;
 }
+
+export interface AuthUser {
+  username: string;
+  tenant: string;
+  display_name: string;
+}

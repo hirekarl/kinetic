@@ -9,11 +9,16 @@ import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfile
 import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
+import { LoginScreen } from './components/LoginScreen';
 import { fetchCheckin, fetchHistory, completeTask } from './api/client';
+import { useAuth } from './hooks/useAuth';
 import { AgentLogEntry, SystemHealthPayload } from './types';
 import { buildAgentLogEntry } from './utils/agentLog';
 
 function App() {
+  const { user, token, isLoading: authLoading, login: authLogin, logout: authLogout } = useAuth();
+  const [loginError, setLoginError] = useState<string | null>(null);
+
   const [health, setHealth] = useState<SystemHealthPayload | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [agentLog, setAgentLog] = useState<AgentLogEntry[]>([]);
@@ -24,15 +29,34 @@ function App() {
     () => !localStorage.getItem('kinetic_onboarded')
   );
 
+  const handleLogin = async (username: string, password: string) => {
+    setLoginError(null);
+    try {
+      await authLogin(username, password);
+    } catch {
+      setLoginError('Invalid credentials. Please try again.');
+    }
+  };
+
+  const handleLogout = async () => {
+    await authLogout();
+    setHealth(null);
+    setMessages([]);
+    setAgentLog([]);
+    setError(null);
+    setLastMessage(null);
+  };
+
   const handleDismissOnboarding = () => {
     localStorage.setItem('kinetic_onboarded', 'true');
     setShowOnboarding(false);
   };
 
-  // Hydrate state from backend on mount
+  // Hydrate state from backend when authenticated
   useEffect(() => {
+    if (!token) return;
     setIsLoading(true);
-    void fetchHistory()
+    void fetchHistory(token)
       .then((data) => {
         setHealth(data.health);
         setMessages(data.messages);
@@ -43,12 +67,11 @@ function App() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [token]);
 
   const handleSendMessage = (content: string) => {
     setLastMessage(content);
 
-    // 1. Add user message to feed immediately
     const userMsg: Message = { role: 'user', content };
     setMessages((prev) => [...prev, userMsg]);
 
@@ -57,12 +80,11 @@ function App() {
 
     const timestamp = new Date().toISOString();
 
-    void fetchCheckin(content, messages)
+    void fetchCheckin(content, messages, token ?? undefined)
       .then((result) => {
         setHealth(result);
         setLastMessage(null);
         setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
-        // 2. Add liaison feedback to feed
         if (result.liaison_feedback) {
           const systemMsg: Message = {
             role: 'system',
@@ -93,7 +115,7 @@ function App() {
   };
 
   const handleCompleteTask = async (taskName: string) => {
-    await completeTask(taskName);
+    await completeTask(taskName, token ?? undefined);
   };
 
   const handleReset = async () => {
@@ -104,6 +126,7 @@ function App() {
         `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/debug/reset`,
         {
           method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
       if (response.ok) {
@@ -116,6 +139,20 @@ function App() {
       console.error('Reset failed', err);
     }
   };
+
+  // Auth loading — validating stored session
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950">
+        <div className="h-3 w-3 rounded-full bg-zinc-700 animate-pulse" />
+      </div>
+    );
+  }
+
+  // Not authenticated — show login screen
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} error={loginError} isLoading={false} />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
@@ -135,6 +172,19 @@ function App() {
           </div>
 
           <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase">
+                {user.display_name}
+              </span>
+              <button
+                onClick={() => {
+                  void handleLogout();
+                }}
+                className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-200 transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
             <button
               onClick={() => {
                 void handleReset();

@@ -76,19 +76,21 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('kinetic_onboarded', 'true');
+      localStorage.setItem('kinetic_token', 'e2e-test-token');
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: { username: 'demo', tenant: 'demo', display_name: 'Demo' },
+      });
+    });
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: null, messages: [] } });
     });
   });
 
   test('keyboard navigation: all interactive elements reachable without mouse', async ({
     page,
   }) => {
-    // Return null health so the idle state renders with suggested prompts visible.
-    // The history fetch failure path is caught silently, so mocking a clean
-    // empty response is more predictable.
-    await page.route('**/api/history', async (route) => {
-      await route.fulfill({ json: { health: null, messages: [] } });
-    });
-
     await page.goto('/');
     // Wait for the idle state to confirm history fetch settled
     await expect(page.getByText(/system idle/i)).toBeVisible();
@@ -98,8 +100,9 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
     //   2. Suggested prompt 2
     //   3. Suggested prompt 3
     //   4. textarea            (ChatPanel input area)
-    //   5. Reset System button (right-panel header)
-    //   6. Scrollable content  (main > div[tabIndex=0])
+    //   5. Sign out button     (right-panel header)
+    //   6. Reset System button (right-panel header)
+    //   7. Scrollable content  (main > div[tabIndex=0])
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /slept 5 hours/i })).toBeFocused();
@@ -117,6 +120,9 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
 
     // Send is disabled when textarea is empty — browser skips disabled buttons.
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: /sign out/i })).toBeFocused();
+
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /reset system/i })).toBeFocused();
 
     await page.keyboard.press('Tab');
@@ -133,8 +139,7 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
     await page.goto('/');
     await expect(page.getByText(/sector status/i)).toBeVisible();
 
-    // Expand the behavioral profile panel — this reveals the "Last updated" text
-    // whose contrast was previously failing (text-zinc-500 = 4.12:1 < 4.5:1).
+    // Expand the behavioral profile panel
     const trigger = page.getByRole('button', { name: /behavioral profile/i });
     await trigger.click();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');

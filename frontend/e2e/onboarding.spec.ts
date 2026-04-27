@@ -3,8 +3,24 @@ import AxeBuilder from '@axe-core/playwright';
 
 // Each test gets a fresh browser context (Playwright default), so localStorage
 // starts empty — the onboarding modal shows on first visit without any setup.
+// Auth is bypassed via a stored token + mocked /api/auth/me.
 
 test.describe('Kinetic — Onboarding', () => {
+  test.beforeEach(async ({ page }) => {
+    // Authenticate (token only — do NOT set kinetic_onboarded)
+    await page.addInitScript(() => {
+      localStorage.setItem('kinetic_token', 'e2e-test-token');
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: { username: 'demo', tenant: 'demo', display_name: 'Demo' },
+      });
+    });
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: null, messages: [] } });
+    });
+  });
+
   test('shows modal on first visit with "Personal Infrastructure" as step 0', async ({ page }) => {
     await page.goto('/');
     const dialog = page.getByRole('dialog');
@@ -51,7 +67,7 @@ test.describe('Kinetic — Onboarding', () => {
     const flag = await page.evaluate(() => localStorage.getItem('kinetic_onboarded'));
     expect(flag).toBe('true');
 
-    // Reload — modal must NOT reappear
+    // Reload — modal must NOT reappear (kinetic_onboarded persists; addInitScript re-sets token)
     await page.reload();
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });

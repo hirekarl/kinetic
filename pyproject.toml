@@ -14,6 +14,8 @@ dependencies = [
     "google-genai>=1.73.1",
     "jsonref>=1.1.0",
     "aiosqlite>=0.22.1",
+    "pyjwt>=2.8",
+    "bcrypt>=4.0",
 ]
 
 [dependency-groups]
@@ -68,6 +70,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "ANN", "S105", "S106"]
 "src/kinetic/main.py" = ["ANN"]
+# FastAPI dependency injection pattern: Depends(...) in default args is intentional
+"src/kinetic/auth.py" = ["B008"]
+"src/kinetic/api/*.py" = ["B008", "S105"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["kinetic"]

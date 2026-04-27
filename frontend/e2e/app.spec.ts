@@ -90,16 +90,27 @@ const FULL_HEALTH_RESPONSE = {
 };
 
 test.describe('Kinetic — Mission Control', () => {
-  // Skip onboarding for all Mission Control tests — it runs on every page.goto()
-  // so the modal never blocks interaction with the dashboard under test.
   test.beforeEach(async ({ page }) => {
+    // Skip onboarding and bypass auth for all Mission Control tests
     await page.addInitScript(() => {
       localStorage.setItem('kinetic_onboarded', 'true');
+      localStorage.setItem('kinetic_token', 'e2e-test-token');
+    });
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        json: { username: 'demo', tenant: 'demo', display_name: 'Demo' },
+      });
+    });
+    // Default history — individual tests override with their own route if needed
+    await page.route('**/api/history', async (route) => {
+      await route.fulfill({ json: { health: null, messages: [] } });
     });
   });
 
   test('landing page passes axe accessibility audit', async ({ page }) => {
     await page.goto('/');
+    // Wait for auth to resolve and idle state to render
+    await expect(page.getByRole('heading', { name: /mission control/i })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze();
@@ -113,9 +124,6 @@ test.describe('Kinetic — Mission Control', () => {
   });
 
   test('can perform a check-in and see dashboard updates', async ({ page }) => {
-    await page.route('**/api/history', async (route) => {
-      await route.fulfill({ json: { health: null, messages: [] } });
-    });
     await page.route('**/api/checkin', async (route) => {
       // Small delay so the "Analyzing..." loading state is visible before mock resolves
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -177,9 +185,6 @@ test.describe('Kinetic — Mission Control', () => {
   });
 
   test('full check-in populates all three sector cards and triage list', async ({ page }) => {
-    await page.route('**/api/history', async (route) => {
-      await route.fulfill({ json: { health: null, messages: [] } });
-    });
     await page.route('**/api/checkin', async (route) => {
       await route.fulfill({ json: FULL_HEALTH_RESPONSE });
     });
@@ -240,9 +245,6 @@ test.describe('Kinetic — Mission Control', () => {
   });
 
   test('error banner shows "Analysis unavailable" with Retry button on 503', async ({ page }) => {
-    await page.route('**/api/history', async (route) => {
-      await route.fulfill({ json: { health: null, messages: [] } });
-    });
     let callCount = 0;
     await page.route('**/api/checkin', async (route) => {
       callCount++;

@@ -38,16 +38,18 @@ logger = logging.getLogger(__name__)
 # Holds references to fire-and-forget background tasks to prevent GC before completion
 _background_tasks: set[asyncio.Task[None]] = set()
 
-# Global DB Client
-_db_client: SqliteClient | None = None
+# Per-tenant DB client cache keyed by tenant id
+_db_clients: dict[str, SqliteClient] = {}
 
 
-def get_db() -> SqliteClient:
-    global _db_client
-    if _db_client is None:
-        path = os.environ.get("SQLITE_DB_PATH", "./kinetic.db")
-        _db_client = SqliteClient(path)
-    return _db_client
+def get_db(tenant: str = "default") -> SqliteClient:
+    if tenant not in _db_clients:
+        if tenant == "default":
+            path = os.environ.get("SQLITE_DB_PATH", "./kinetic.db")
+        else:
+            path = f"./kinetic_{tenant}.db"
+        _db_clients[tenant] = SqliteClient(path)
+    return _db_clients[tenant]
 
 
 def _calculate_roi(
@@ -190,9 +192,11 @@ async def orchestrate(
     payload: CheckInPayload,
     message: str = "",
     history: list[dict[str, str]] | None = None,
+    db: SqliteClient | None = None,
 ) -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
-    db = get_db()
+    if db is None:
+        db = get_db()
 
     # 1. Merge history into payload to maintain system context
     payload = await _merge_history(payload, db)
@@ -349,12 +353,13 @@ async def orchestrate(
     )
 
 
-async def get_current_state() -> dict[str, Any]:
+async def get_current_state(db: SqliteClient | None = None) -> dict[str, Any]:
     """Retrieve the current health dashboard and full conversation history."""
-    db = get_db()
+    if db is None:
+        db = get_db()
 
     # 1. Run orchestration on empty payload to get current health from DB
-    health = await orchestrate(CheckInPayload(), message="")
+    health = await orchestrate(CheckInPayload(), message="", db=db)
 
     # 2. Get dialogue history
     messages = await db.get_history(limit=50)

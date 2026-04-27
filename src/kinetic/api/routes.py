@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from kinetic.auth import get_current_tenant
 from kinetic.models.outputs import SystemHealthPayload
 from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate
 from kinetic.parsing.llm_parser import parse_checkin
@@ -18,23 +19,27 @@ class CheckInRequest(BaseModel):
 
 
 @router.get("/history")
-async def fetch_history() -> dict[str, Any]:
-    """Return the current system health and dialogue history."""
-    return await get_current_state()
+async def fetch_history(tenant: str = Depends(get_current_tenant)) -> dict[str, Any]:
+    """Return the current system health and dialogue history for the authenticated tenant."""
+    db = get_db(tenant)
+    return await get_current_state(db=db)
 
 
 @router.post("/debug/reset")
-async def reset_database() -> dict[str, str]:
-    """Wipe all data from the graph database (Debug only)."""
-    db = get_db()
+async def reset_database(tenant: str = Depends(get_current_tenant)) -> dict[str, str]:
+    """Wipe all data for the authenticated tenant (Debug only)."""
+    db = get_db(tenant)
     await db.clear_database()
     return {"status": "success", "message": "Database wiped."}
 
 
 @router.patch("/tasks/{task_name}/complete")
-async def complete_task(task_name: str) -> dict[str, str]:
-    """Mark a task as completed."""
-    db = get_db()
+async def complete_task(
+    task_name: str,
+    tenant: str = Depends(get_current_tenant),
+) -> dict[str, str]:
+    """Mark a task as completed for the authenticated tenant."""
+    db = get_db(tenant)
     try:
         await db.complete_task(task_name)
     except KeyError as e:
@@ -47,7 +52,10 @@ async def complete_task(task_name: str) -> dict[str, str]:
 
 
 @router.post("/checkin", response_model=SystemHealthPayload)
-async def checkin(body: CheckInRequest) -> SystemHealthPayload:
+async def checkin(
+    body: CheckInRequest,
+    tenant: str = Depends(get_current_tenant),
+) -> SystemHealthPayload:
     """Accept a natural-language check-in message, parse it, and return system health."""
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
@@ -59,4 +67,5 @@ async def checkin(body: CheckInRequest) -> SystemHealthPayload:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
 
-    return await orchestrate(payload, body.message, body.history)
+    db = get_db(tenant)
+    return await orchestrate(payload, body.message, body.history, db=db)

@@ -4,6 +4,12 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+- Multi-tenant auth backend: `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`; all API routes now require a valid JWT bearer token; per-tenant SQLite DB isolation (`kinetic_{tenant}.db`)
+- Auth frontend: login screen gates the entire app; `useAuth` hook manages JWT session via localStorage; all API calls include `Authorization: Bearer` header; Sign Out button and display name in header; session persists across page refreshes
+
 ## v1.2.0 (2026-04-26)
 
 ### Feat

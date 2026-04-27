@@ -1,15 +1,25 @@
 """Integration tests for the FastAPI routes."""
 
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from kinetic.auth import get_current_tenant
 from kinetic.main import app
 from kinetic.models.inputs import BioInput, CheckInPayload
 from kinetic.models.outputs import BioStatus, SystemHealthPayload
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def bypass_auth() -> Generator[None, None, None]:
+    """Override get_current_tenant for all tests in this module — auth is tested separately."""
+    app.dependency_overrides[get_current_tenant] = lambda: "test"
+    yield
+    app.dependency_overrides.pop(get_current_tenant, None)
 
 
 @pytest.mark.unit

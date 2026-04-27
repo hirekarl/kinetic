@@ -50,24 +50,45 @@ const mockHealth: SystemHealthPayload = {
   active_pauses: [],
 };
 
+const MOCK_USER = { username: 'demo', tenant: 'demo', display_name: 'Demo' };
+
 const mockFetchHistory = vi.fn();
 const mockFetchCheckin = vi.fn();
 const mockCompleteTask = vi.fn();
 
 vi.mock('./api/client', () => ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  fetchHistory: () => mockFetchHistory(),
+  fetchHistory: (...args: unknown[]) => mockFetchHistory(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchCheckin: (...args: unknown[]) => mockFetchCheckin(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   completeTask: (...args: unknown[]) => mockCompleteTask(...args),
+  login: vi.fn(),
+  fetchMe: vi.fn(),
+  logout: vi.fn(),
 }));
+
+// Mock useAuth so these tests focus on dashboard behaviour, not auth flow
+const mockUseAuth = vi.fn();
+vi.mock('./hooks/useAuth', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  useAuth: () => mockUseAuth(),
+}));
+
+const defaultAuthState = {
+  user: MOCK_USER,
+  token: 'test-token',
+  isLoading: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+};
 
 describe('App — split-panel shell', () => {
   beforeEach(() => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
     mockCompleteTask.mockReset();
+    mockUseAuth.mockReturnValue(defaultAuthState);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     // Suppress onboarding so these tests stay focused on the dashboard shell
     vi.stubGlobal('localStorage', {
@@ -263,16 +284,25 @@ describe('App — split-panel shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /mark laundry complete/i }));
 
     await waitFor(() => {
-      expect(mockCompleteTask).toHaveBeenCalledWith('laundry');
+      expect(mockCompleteTask).toHaveBeenCalledWith('laundry', expect.anything());
     });
+  });
+
+  it('displays the authenticated user display name in the header', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /mission control/i }));
+    expect(screen.getByText('Demo')).toBeInTheDocument();
+  });
+
+  it('renders a Sign out button in the header', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('button', { name: /sign out/i }));
   });
 });
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
 
 describe('App — Onboarding', () => {
-  // Use a real in-memory store so we can test that setItem is called and
-  // that subsequent getItem calls reflect the stored value.
   let store: Map<string, string>;
   let mockLocalStorage: {
     getItem: ReturnType<typeof vi.fn>;
@@ -284,6 +314,7 @@ describe('App — Onboarding', () => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockUseAuth.mockReturnValue(defaultAuthState);
     store = new Map();
     mockLocalStorage = {
       getItem: vi.fn((key: string) => store.get(key) ?? null),
@@ -328,5 +359,83 @@ describe('App — Onboarding', () => {
     await waitFor(() => screen.getByRole('dialog'));
     fireEvent.click(screen.getByRole('button', { name: /skip/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+// ── Auth gating ───────────────────────────────────────────────────────────────
+
+describe('App — Auth gating', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders the LoginScreen when user is null', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: /^kinetic$/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+  });
+
+  it('renders a loading spinner while authLoading is true', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: true,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    render(<App />);
+    // Neither the login screen heading nor the main app heading should be present
+    expect(screen.queryByRole('heading', { name: /^kinetic$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /mission control/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the dashboard (not LoginScreen) when user is authenticated', async () => {
+    mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockUseAuth.mockReturnValue(defaultAuthState);
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue('true'),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText(/username/i)).not.toBeInTheDocument();
+  });
+
+  it('login failure sets error message shown on LoginScreen', async () => {
+    const mockLogin = vi.fn().mockRejectedValue(new Error('bad creds'));
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: false,
+      login: mockLogin,
+      logout: vi.fn(),
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText(/username/i), 'demo');
+    await user.type(screen.getByLabelText(/password/i), 'wrong');
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(/invalid credentials/i);
+    });
   });
 });

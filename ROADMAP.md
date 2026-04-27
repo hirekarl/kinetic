@@ -388,6 +388,37 @@ Make the multi-agent routing visible during a live demo via a collapsible Agent 
 
 ---
 
+## Sprint 8 — Multi-Tenant Authentication 🔄
+**Dates:** 2026-04-26 → TBD · **Target version:** `v1.3.0`
+
+Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two tenants: `demo` and `personal`.
+
+### Task A — Auth Backend ✅
+- [x] `src/kinetic/auth.py` — TenantConfig, CurrentUser models; load_credentials(), verify_password(), create_access_token(), decode_access_token(), get_current_user(), get_current_tenant() FastAPI dependencies
+- [x] `src/kinetic/api/auth.py` — POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout
+- [x] All four API routes protected with get_current_tenant() dependency
+- [x] Per-tenant SQLite DB isolation: get_db(tenant) → kinetic_{tenant}.db; module-level _db_clients dict cache
+- [x] credentials.toml.example committed; credentials.toml gitignored
+- [x] SECRET_KEY startup warning in main.py; SECRET_KEY + CREDENTIALS_PATH added to .env.example
+- [x] PyJWT ≥ 2.8 + bcrypt ≥ 4.0 dependencies added (passlib removed — incompatible with bcrypt 5.x)
+- [x] 26 new tests: unit/test_auth.py (12), unit/test_lead_db.py (3), integration/test_auth_routes.py (11)
+- [x] 158/158 tests passing, 87% coverage, mypy strict ✓, ruff ✓
+
+### Task B — Auth Frontend ✅
+- [x] `AuthUser` type added to `frontend/src/types/index.ts`
+- [x] `useAuth` hook: login(), logout(), fetchMe(), token storage in localStorage
+- [x] `LoginScreen` component: username + password form, error state, loading state
+- [x] `App.tsx` gate: show LoginScreen if unauthenticated; persist session token
+- [x] All API client calls pass Bearer token in Authorization header
+- [x] Playwright e2e: login → dashboard → logout → login screen shown again
+- [x] 174/174 unit tests passing, 95.78% coverage; 66/66 Playwright tests (zero WCAG 2.1 AA violations)
+
+### Quality Gates
+- [x] All prior sprint gates still passing
+- [ ] `v1.3.0` release ceremony complete
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -401,3 +432,4 @@ Make the multi-agent routing visible during a live demo via a collapsible Agent 
 | `v1.0.0` | Sprint 6 — Polish + Demo | Phase 4 | ✅ Released |
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
 | `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
+| `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | 🔄 In progress |
