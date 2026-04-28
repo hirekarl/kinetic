@@ -551,7 +551,7 @@ A single Gemini call that ingests 14 days of bio/logistics/relational data and r
 
 ### Quality Gates
 - [x] All prior gates passing
-- [ ] `v1.7.0` release ceremony complete
+- [x] `v1.7.0` release ceremony complete
 
 ---
 
@@ -594,5 +594,5 @@ Make the live Render deploy presentation-ready: a pre-seeded `demo` tenant, a on
 | `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Released |
 | `v1.5.0` | Sprint 10 — Streaming Responses | Phase 4+ | ✅ Released |
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
-| `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | 🔄 Release pending |
+| `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ⬜ Not started |
