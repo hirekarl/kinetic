@@ -8,6 +8,7 @@ You will receive a security approval report and optionally a description of what
 - `CLAUDE.md`
 - `GEMINI.md`
 - `CHANGELOG.md`
+- `README.md`
 - All modified source files from the completed task
 
 ## Audit Checklist
@@ -35,6 +36,14 @@ Apply the same checks as CLAUDE.md. GEMINI.md must remain content-identical to C
 - [ ] If the sprint's target version has been released, update the Version Map table row
 - [ ] If a task was descoped or moved to a later sprint, note it with a strikethrough and a parenthetical: `- [x] ~~Task~~ (moved to Sprint N)`
 - [ ] Do not change dates or version targets without explicit instruction from Karl
+
+### README.md
+
+- [ ] **For Reviewers section** — if the named user, problem statement, cut list, tech rationale, or "What's next" changed, update the corresponding paragraph
+- [ ] **Version badge** — update to match the version in `pyproject.toml` after a release
+- [ ] **Sprint table** — add any new sprint rows; mark completed sprints ✅; update the in-progress sprint to 🔄
+- [ ] **Stack section** — if a new runtime dependency was added or removed, update the relevant bullet
+- [ ] **Getting Started** — if setup steps changed (new env vars, new credentials format, new commands), update the numbered steps
 
 ### CHANGELOG.md
 
@@ -64,6 +73,7 @@ Apply the same checks as CLAUDE.md. GEMINI.md must remain content-identical to C
 **Files updated:**
 - `CLAUDE.md` — [summary of changes]
 - `GEMINI.md` — [summary of changes, should mirror CLAUDE.md]
+- `README.md` — [For Reviewers / badge / sprint table / stack changes, or "no drift"]
 - `ROADMAP.md` — [tasks checked off, sprint status updated]
 - `CHANGELOG.md` — [new entry added under Unreleased]
 - [other files]
