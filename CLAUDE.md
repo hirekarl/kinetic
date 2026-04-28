@@ -45,7 +45,7 @@ React Dashboard (frontend/src/)
 ```
 src/kinetic/
   __init__.py              package version (__version__)
-  main.py                  FastAPI app, CORS config, router mounts (api + auth); lifespan warnings for GEMINI_API_KEY and SECRET_KEY
+  main.py                  FastAPI app, CORS config, router mounts (api + auth); lifespan: warnings for GEMINI_API_KEY + SECRET_KEY, asyncpg pool create/close when DATABASE_URL set
   auth.py                  TenantConfig + CurrentUser models; load_credentials(), verify_password(), create_access_token(), decode_access_token(); get_current_user() + get_current_tenant() FastAPI dependencies
   models/
     inputs.py              CheckInPayload + sub-models (canonical input contracts)
@@ -57,7 +57,7 @@ src/kinetic/
     relational_diplomat.py connection margin + interaction sprints
     operational_liaison.py Instructor-based structured router; accepts behavioral context + live agent status; returns LiaisonResponse (text, responding_agent, contact_pauses)
   orchestrator/
-    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; get_db(tenant) per-tenant SQLite client cache
+    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; dual-mode get_db(tenant): PostgresClient when _pg_pool set, SqliteClient otherwise
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
@@ -65,7 +65,9 @@ src/kinetic/
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
     routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant
   db/
+    base.py                DatabaseClient Protocol — shared interface satisfied by both SqliteClient and PostgresClient (Sprint 9)
     sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses()
+    postgres_client.py     asyncpg PostgreSQL client: same interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL (Sprint 9)
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
@@ -73,11 +75,13 @@ src/kinetic/
 tests/
   conftest.py              shared fixtures (sample payloads, health objects)
   unit/test_models.py      model validation tests
-  unit/test_main.py        startup warning / lifespan tests
+  unit/test_main.py        startup warning / lifespan tests; pool create + close lifecycle (AsyncMock)
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
-  unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching
+  unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
+  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 13 method names, isinstance check against SqliteClient
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
+  integration/test_postgres_client.py  29 PostgresClient integration tests; all methods + tenant isolation; skipped without DATABASE_URL
   integration/             end-to-end API tests (Phase 3+)
   scenarios/               deterministic scenario fixtures for adversarial/multi-turn coverage (Sprint 6b)
 
@@ -118,6 +122,7 @@ frontend/src/
 | Sprint 6b | `v1.1.0` | Dashboard Interactivity + Liaison Hardening | ✅ |
 | Sprint 7 | `v1.2.0` | Agent Dispatch Log | ✅ |
 | Sprint 8 | `v1.3.0` | Multi-Tenant Auth | ✅ |
+| Sprint 9 | `v1.4.0` | PostgreSQL Migration | ✅ |
 
 ---
 
@@ -173,6 +178,8 @@ Create `.env` at the project root (never commit it):
 GEMINI_API_KEY=your_key_here
 SECRET_KEY=your-32-byte-hex-string-here  # generate: python -c "import secrets; print(secrets.token_hex(32))"
 CREDENTIALS_PATH=./credentials.toml      # optional; defaults to ./credentials.toml
+DATABASE_URL=postgresql://user:pass@host/db  # optional; if set, app uses PostgreSQL (Render injects this automatically); omit for SQLite local dev
+FRONTEND_URL=https://your-frontend.onrender.com  # optional; added to CORS allow_origins at startup (Render production only)
 ```
 
 The app reads this via `python-dotenv`. The `.gitignore` already excludes `.env`. Copy `credentials.toml.example` to `credentials.toml` and fill in real bcrypt hashes (never commit it).

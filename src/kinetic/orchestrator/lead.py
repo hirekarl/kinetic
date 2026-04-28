@@ -6,10 +6,14 @@ import os
 from datetime import date, timedelta
 from typing import Any
 
+import asyncpg
+
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
 from kinetic.agents.operational_liaison import OperationalLiaison
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
+from kinetic.db.base import DatabaseClient
+from kinetic.db.postgres_client import PostgresClient
 from kinetic.db.sqlite_client import SqliteClient
 from kinetic.models.inputs import (
     BioInput,
@@ -38,11 +42,16 @@ logger = logging.getLogger(__name__)
 # Holds references to fire-and-forget background tasks to prevent GC before completion
 _background_tasks: set[asyncio.Task[None]] = set()
 
-# Per-tenant DB client cache keyed by tenant id
-_db_clients: dict[str, SqliteClient] = {}
+# Per-tenant DB client cache keyed by tenant id (SQLite path)
+_db_clients: dict[str, DatabaseClient] = {}
+
+# Set by main.py lifespan when DATABASE_URL is present; None means SQLite fallback
+_pg_pool: asyncpg.Pool | None = None
 
 
-def get_db(tenant: str = "default") -> SqliteClient:
+def get_db(tenant: str = "default") -> DatabaseClient:
+    if _pg_pool is not None:
+        return PostgresClient(_pg_pool, tenant)
     if tenant not in _db_clients:
         if tenant == "default":
             path = os.environ.get("SQLITE_DB_PATH", "./kinetic.db")
@@ -148,7 +157,7 @@ def _filter_paused_relational_status(
     )
 
 
-async def _merge_history(payload: CheckInPayload, db: SqliteClient) -> CheckInPayload:
+async def _merge_history(payload: CheckInPayload, db: DatabaseClient) -> CheckInPayload:
     """Populate missing fields in payload with the latest known data from DB."""
     # 1. Bio
     latest_bio = await db.get_latest_bio()
@@ -192,7 +201,7 @@ async def orchestrate(
     payload: CheckInPayload,
     message: str = "",
     history: list[dict[str, str]] | None = None,
-    db: SqliteClient | None = None,
+    db: DatabaseClient | None = None,
 ) -> SystemHealthPayload:
     """Route parsed check-in payload to relevant agents and aggregate results."""
     if db is None:
@@ -353,7 +362,7 @@ async def orchestrate(
     )
 
 
-async def get_current_state(db: SqliteClient | None = None) -> dict[str, Any]:
+async def get_current_state(db: DatabaseClient | None = None) -> dict[str, Any]:
     """Retrieve the current health dashboard and full conversation history."""
     if db is None:
         db = get_db()

@@ -29,7 +29,7 @@ Foundation: professional tooling, typed skeletons, AI agent team, deployment con
 - [x] `.pre-commit-config.yaml` — ruff, mypy, prettier, conventional-pre-commit
 - [x] `CLAUDE.md` + `GEMINI.md` — full project docs + OS auto-detect startup ritual
 - [x] `.claude/settings.json` — pre-approved commands
-- ~~`render.yaml` — Render Blueprint~~ (removed; MVP demos locally)
+- ~~`render.yaml` — Render Blueprint~~ (removed; MVP demos locally; restored Sprint 9)
 - [x] `scripts/release.sh` — SemVer release ceremony
 - [x] `.env.example` — environment variable template
 - [x] `CHANGELOG.md` — Keep-a-Changelog initialized
@@ -419,6 +419,45 @@ Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two 
 
 ---
 
+## Sprint 9 — PostgreSQL Migration ✅
+**Dates:** 2026-04-27 · **Target version:** `v1.4.0`
+
+Migrate the database layer from per-tenant SQLite files to Render's managed PostgreSQL (basic-256mb). Introduces a `DatabaseClient` Protocol so both backends satisfy the same interface; local dev continues to use SQLite with zero change. Multi-tenancy moves from separate DB files to a `tenant` column on every table.
+
+### Infrastructure (completed)
+- [x] `render.yaml` — Render Blueprint: Python API service + static frontend + PostgreSQL database (basic-256mb); `SECRET_KEY` auto-generated; `GEMINI_API_KEY` + `FRONTEND_URL` + `VITE_API_BASE_URL` marked `sync: false`
+- [x] `.python-version` — pins Python 3.12 for uv and Render
+- [x] `src/kinetic/main.py` — CORS `allow_origins` now reads `FRONTEND_URL` env var at startup (production Render URL)
+
+### Task 1 — DatabaseClient Protocol ✅
+- [x] `src/kinetic/db/base.py` — `DatabaseClient` Protocol with all 13 method signatures
+- [x] `orchestrator/lead.py` — `get_db()` return type + `_db_clients` dict typed as `DatabaseClient`; `orchestrate()` `db` param typed as `DatabaseClient | None`
+- [x] `services/pattern_detector.py` — `db` param type updated from `SqliteClient` to `DatabaseClient`
+- [x] `mypy --strict` passes; no behavior change
+
+### Task 2 — PostgresClient implementation ✅
+- [x] `src/kinetic/db/postgres_client.py` — asyncpg-backed `PostgresClient` satisfying `DatabaseClient` Protocol
+- [x] `_migrate()` — idempotent DDL: all 7 tables with `tenant TEXT NOT NULL`; `inserted_at TIMESTAMPTZ DEFAULT NOW()` on `bio_metrics`, `vibe_checks`, `checkin_tasks`; composite unique constraints for tenant-scoped natural keys
+- [x] All 13 public methods ported: `?` → `$N` params, SQLite date arithmetic → Python-computed cutoffs, `rowid` ordering → `inserted_at DESC`, `clear_database()` deletes only `WHERE tenant = $1`
+- [x] `uv add asyncpg>=0.31.0` (runtime dep added to `pyproject.toml`)
+- [x] `tests/integration/test_postgres_client.py` — 29 tests covering all 13 methods + tenant isolation; guarded by `@pytest.mark.skipif(not DATABASE_URL)`
+
+### Task 3 — Pool lifecycle + dual-mode `get_db()` ✅
+- [x] `main.py` lifespan — creates `asyncpg.Pool` (min=2, max=10) when `DATABASE_URL` set; calls `_migrate()` once; closes pool on shutdown; logs info when absent (SQLite fallback)
+- [x] `orchestrator/lead.py` — `_pg_pool: asyncpg.Pool | None = None` module-level var; `get_db()` returns `PostgresClient(pool, tenant)` when pool live; `SqliteClient` otherwise
+- [x] Unit tests: 3 pool-branch tests in `test_lead_db.py`; 2 lifespan pool tests in `test_main.py` (AsyncMock, no real DB required)
+
+### Quality Gates
+- [x] All prior sprint gates still passing (180 passed, 29 skipped — PostgreSQL integration tests without DATABASE_URL)
+- [x] `uv run pytest --cov-fail-under=80` passes — 81% aggregate coverage
+- [x] `uv run mypy src/kinetic --strict` → 0 errors
+- [x] `/qa-reviewer` approval — APPROVED
+- [x] `/security-reviewer` approval — APPROVED (bandit 0 issues; pip-audit 1 informational; npm audit 6 moderate dev-only)
+- [x] `/docs-keeper` updates complete
+- [ ] `v1.4.0` release ceremony complete
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -433,3 +472,4 @@ Per-tenant data isolation, JWT-based sessions, and a frontend login screen. Two 
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
 | `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
 | `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | ✅ Released |
+| `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Pending release |

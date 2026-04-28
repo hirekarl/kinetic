@@ -8,7 +8,7 @@ from typing import Any
 
 from google import genai
 
-from kinetic.db.sqlite_client import SqliteClient
+from kinetic.db.base import DatabaseClient
 from kinetic.models.outputs import BehavioralProfile, BehavioralSummary
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ _MAX_PATTERNS = 5
 
 
 async def detect_and_update_patterns(
-    db: SqliteClient,
+    db: DatabaseClient,
     behavioral_summary: BehavioralSummary,
     current_profiles: list[BehavioralProfile],
     api_key: str | None = None,
