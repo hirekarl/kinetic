@@ -520,7 +520,7 @@ Surface the 14-day burnout score history as a line chart in the Bio card. The da
 
 ### Quality Gates
 - [x] All prior gates passing
-- [ ] `v1.6.0` release ceremony complete
+- [x] `v1.6.0` release ceremony complete
 
 ---
 
