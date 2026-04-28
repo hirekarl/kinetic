@@ -524,22 +524,26 @@ Surface the 14-day burnout score history as a line chart in the Bio card. The da
 
 ---
 
-## Sprint 12 — Weekly Digest ⬜
+## Sprint 12 — Weekly Digest 🔄
 **Target version:** `v1.7.0`
 
 A single Gemini call that ingests 14 days of bio/logistics/relational data and returns a prose "state of the system" paragraph. Shown as a collapsible "Weekly Review" card in the dashboard.
 
-### Backend
-- [ ] New endpoint `GET /api/digest` — requires `get_current_tenant`; fetches `get_behavioral_summary(days=14)` + `get_behavioral_profiles()` + last 14 `get_checkin_history()` entries; passes to Gemini with a structured prompt; returns `DigestResponse(summary: str, generated_at: datetime)`
-- [ ] `DigestResponse` Pydantic model in `models/outputs.py`; mirrored in `frontend/src/types/index.ts`
-- [ ] Rate-limit guard: cache digest for 6 hours per tenant (store in a `digest_cache` table or in-memory dict); return cached version if fresh
-- [ ] Unit tests: digest generation (mocked Gemini), cache hit/miss, empty-history fallback
-- [ ] Integration tests: full endpoint round-trip
+### Backend ✅
+- [x] `DigestResponse(summary: str, generated_at: datetime)` added to `src/kinetic/models/outputs.py`
+- [x] `src/kinetic/services/digest_generator.py` — `generate_digest()` with 6h in-memory cache per tenant; empty-history guard; Gemini raw `generate_content` call; exception-safe
+- [x] `GET /api/digest?force=false` added to `routes.py`; 503 if GEMINI_API_KEY absent; requires `get_current_tenant`
+- [x] Unit tests: happy path, cache hit/miss/TTL, `force=True` bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery (10 tests)
+- [x] Route tests: 200 shape, `force` forwarding, 401, 503 (5 tests)
+- [x] CI hotfix: `get_burnout_series(days <= 0)` early return guards against SQLite datetime precision race on UTC CI runners
+- [x] `/qa-reviewer` APPROVED (247 passed, 83% coverage, mypy ✓, ruff ✓)
+- [x] `/security-reviewer` APPROVED (no new vulnerabilities; in-memory cache keyed by tenant string)
 
 ### Frontend
+- [ ] `DigestResponse` TS interface added to `frontend/src/types/index.ts`
+- [ ] `fetchDigest(token?, force?)` added to `frontend/src/api/client.ts`
 - [ ] `WeeklyDigestCard` component — collapsible disclosure; "Weekly Review" heading; prose paragraph; "Generated X minutes ago" timestamp; "Refresh" button (re-fetches, shows spinner)
 - [ ] `App.tsx`: fetch digest on mount (after auth); refresh on explicit user action only
-- [ ] `client.ts`: `fetchDigest(token)` API call
 - [ ] Vitest: loading state, populated state, error state, refresh action
 - [ ] Playwright + axe: zero violations
 

@@ -63,7 +63,7 @@ src/kinetic/
   api/
     __init__.py            package init
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
-    routes.py              FastAPI APIRouter (POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette
+    routes.py              FastAPI APIRouter (GET /api/digest, POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette; /digest returns DigestResponse (cached 6h, force=bool param)
   db/
     base.py                DatabaseClient Protocol — 14-method shared interface satisfied by both SqliteClient and PostgresClient
     sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series()
@@ -71,6 +71,7 @@ src/kinetic/
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
+    digest_generator.py    generate_digest(): 6h in-memory cache per tenant; empty-history guard; Gemini prose summary; exception-safe (returns [DIGEST ERROR] string on failure)
 
 tests/
   conftest.py              shared fixtures (sample payloads, health objects)
@@ -80,6 +81,8 @@ tests/
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
   unit/test_db_protocol.py DatabaseClient Protocol completeness: all 14 method names, isinstance check against SqliteClient
   unit/test_burnout_series.py 14 tests for get_burnout_series(): empty/single/formula/ordering/days-filter/partial/all-None/perfect-health; Postgres mock; get_behavioral_summary() wiring
+  unit/test_digest_generator.py 10 tests for generate_digest(): happy path, cache hit/miss/TTL, force=True bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery
+  unit/test_digest_route.py 5 tests for GET /api/digest: 200 shape, force=False default, force=True forwarded, 401 without JWT, 503 without API key
   unit/test_streaming.py   17 tests for LiaisonMetadata defaults, stream_text() chunking, extract_metadata() keyword guard + Instructor path + failure fallback, orchestrate_stream() event order + persistence + agent failure recovery + side effects
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
@@ -302,6 +305,7 @@ The Python models in `src/kinetic/models/` are the single source of truth for da
 **Output contract:**
 - `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None`, `responding_agent: str | None`, `active_pauses: list[ContactPause]`
 - Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest; `burnout_series: list[float]` — per-entry burnout 0-100 oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`, `ContactPause`
+- Standalone digest model: `DigestResponse` (in `models/outputs.py`) — `summary: str`, `generated_at: datetime`; returned by `GET /api/digest`; TS mirror: `DigestResponse { summary: string; generated_at: string }`
 - Internal agent model: `LiaisonResponse` (in `agents/operational_liaison.py`) — `text: str`, `responding_agent: RespondingAgent`, `contact_pauses: list[ContactPauseDirective]`
 - Internal streaming metadata: `LiaisonMetadata` (in `agents/operational_liaison.py`) — lightweight post-stream extraction: `responding_agent`, `contact_pauses`, `task_completions`
 - Frontend streaming contract: `StreamDonePayload` (in `frontend/src/types/index.ts`) — `responding_agent`, `contact_pauses: ContactPauseDirective[]`, `task_completions`, `active_pauses`, `behavioral_profiles`, `behavioral_summary`; `ContactPauseDirective` mirrors Python model
