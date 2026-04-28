@@ -9,6 +9,8 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ### Added
 - `DigestResponse(summary, generated_at)` Pydantic model and `GET /api/digest?force=false` endpoint — returns a Gemini-generated 14-day prose summary cached for 6 hours per tenant; `force=true` regenerates immediately
 - `src/kinetic/services/digest_generator.py` — `generate_digest()` service with in-memory TTL cache, empty-history guard, and exception-safe Gemini call
+- `WeeklyDigestCard` component — collapsible "Weekly Review" panel in the Mission Control dashboard; shows 14-day prose digest, relative "Generated X minutes ago" timestamp, and a Refresh button with loading spinner; handles loading, no-data, and error (`[DIGEST ERROR]`) states
+- `fetchDigest(token?, force?)` API client function; `DigestResponse` TypeScript interface mirroring the Python model
 
 ### Fixed
 - `get_burnout_series(days=0)` now returns `[]` immediately instead of producing a datetime precision race against SQLite's `datetime('now')` on UTC CI runners

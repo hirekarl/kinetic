@@ -524,7 +524,7 @@ Surface the 14-day burnout score history as a line chart in the Bio card. The da
 
 ---
 
-## Sprint 12 — Weekly Digest 🔄
+## Sprint 12 — Weekly Digest ✅
 **Target version:** `v1.7.0`
 
 A single Gemini call that ingests 14 days of bio/logistics/relational data and returns a prose "state of the system" paragraph. Shown as a collapsible "Weekly Review" card in the dashboard.
@@ -539,16 +539,18 @@ A single Gemini call that ingests 14 days of bio/logistics/relational data and r
 - [x] `/qa-reviewer` APPROVED (247 passed, 83% coverage, mypy ✓, ruff ✓)
 - [x] `/security-reviewer` APPROVED (no new vulnerabilities; in-memory cache keyed by tenant string)
 
-### Frontend
-- [ ] `DigestResponse` TS interface added to `frontend/src/types/index.ts`
-- [ ] `fetchDigest(token?, force?)` added to `frontend/src/api/client.ts`
-- [ ] `WeeklyDigestCard` component — collapsible disclosure; "Weekly Review" heading; prose paragraph; "Generated X minutes ago" timestamp; "Refresh" button (re-fetches, shows spinner)
-- [ ] `App.tsx`: fetch digest on mount (after auth); refresh on explicit user action only
-- [ ] Vitest: loading state, populated state, error state, refresh action
-- [ ] Playwright + axe: zero violations
+### Frontend ✅
+- [x] `DigestResponse` TS interface added to `frontend/src/types/index.ts`
+- [x] `fetchDigest(token?, force?)` added to `frontend/src/api/client.ts`; `force=true` appends `?force=true`
+- [x] `WeeklyDigestCard` component — collapsible disclosure ("Weekly Review"); prose paragraph; "Generated X minutes ago" relative timestamp; Refresh button with spinner; loading skeleton; [DIGEST ERROR] error block; no-data empty state
+- [x] `App.tsx`: `digestData`/`digestLoading`/`digestRefreshing` state; digest fetch alongside history in post-auth `useEffect`; `handleRefreshDigest` callback
+- [x] Vitest: 14 tests — loading, populated (open/closed), no-data, error, refresh trigger, relative timestamp (220 total passing, 95% coverage)
+- [x] Playwright + axe: 66/66 passing, zero WCAG 2.1 AA violations
+- [x] `/qa-reviewer` APPROVED (220 tests, 95% coverage, ESLint ✓, TypeScript ✓, axe ✓)
+- [x] `/security-reviewer` APPROVED (no new attack surfaces; digest text rendered as React text node)
 
 ### Quality Gates
-- [ ] All prior gates passing
+- [x] All prior gates passing
 - [ ] `v1.7.0` release ceremony complete
 
 ---
@@ -592,5 +594,5 @@ Make the live Render deploy presentation-ready: a pre-seeded `demo` tenant, a on
 | `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Released |
 | `v1.5.0` | Sprint 10 — Streaming Responses | Phase 4+ | ✅ Released |
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
-| `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ⬜ Not started |
+| `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | 🔄 Release pending |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ⬜ Not started |

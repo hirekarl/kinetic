@@ -92,21 +92,22 @@ tests/
   scenarios/               deterministic scenario fixtures for adversarial/multi-turn coverage (Sprint 6b)
 
 frontend/src/
-  types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload
-  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state
+  types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload, DigestResponse
+  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback
   components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
-  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, agent dispatch log
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, weekly digest card, agent dispatch log
     SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
     BurnoutTrendChart.tsx  SVG polyline chart for 14-day burnout series; red/amber/emerald stroke from linear regression slope; aria-hidden + sr-only label; null for < 2 points
+    WeeklyDigestCard.tsx   collapsible "Weekly Review" disclosure; prose summary paragraph; "Generated X minutes ago" relative timestamp; Refresh button with spinner; loading skeleton (role="status"); [DIGEST ERROR] error block; no-data empty state
     AgentDispatchLog.tsx   collapsible agent routing history; per-entry expandable agent summaries + responding_agent badge
   utils/
     agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
   hooks/
     useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
   api/
-    client.ts              fetchCheckin, fetchHistory, completeTask (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
+    client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
 ```
@@ -132,7 +133,7 @@ frontend/src/
 | Sprint 9 | `v1.4.0` | PostgreSQL Migration | ✅ |
 | Sprint 10 | `v1.5.0` | Streaming Responses | ✅ |
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
-| Sprint 12 | `v1.7.0` | Weekly Digest | ⬜ |
+| Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ⬜ |
 
 ---
