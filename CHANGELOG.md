@@ -4,19 +4,11 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.4.0 (2026-04-27)
 
-### Added
-- `render.yaml` — Render Blueprint for one-command deployment (FastAPI API service + React static site + PostgreSQL basic-256mb database)
-- `.python-version` — pins Python 3.12 for uv and Render build environment
-- `DatabaseClient` Protocol (`src/kinetic/db/base.py`) — shared `@runtime_checkable` interface satisfied by both SQLite and PostgreSQL backends
-- `PostgresClient` (`src/kinetic/db/postgres_client.py`) — asyncpg-backed implementation with per-tenant row isolation (`tenant TEXT NOT NULL` column on all 7 tables) and idempotent `_migrate()` DDL
-- Dual-mode `get_db()` in `orchestrator/lead.py` — returns `PostgresClient` when `DATABASE_URL` is set (Render production), `SqliteClient` otherwise (local dev unchanged)
-- `asyncpg>=0.31.0` runtime dependency
+### Feat
 
-### Changed
-- `src/kinetic/main.py` lifespan now creates and closes an asyncpg connection pool when `DATABASE_URL` is set; logs info when falling back to SQLite
-- `src/kinetic/main.py` CORS origins now include `FRONTEND_URL` env var at startup (required for Render production deployment)
+- **db**: PostgreSQL migration — dual-mode DatabaseClient with asyncpg (Sprint 9)
 
 ## v1.3.0 (2026-04-26)
 
