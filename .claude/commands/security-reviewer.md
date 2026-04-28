@@ -35,7 +35,7 @@ cd frontend && npm audit --audit-level=moderate
 ### Python-specific
 
 - [ ] No `eval()`, `exec()`, or `subprocess` calls with unsanitized user input
-- [ ] No SQL string interpolation (not applicable for demo, but flag if SQLite is added)
+- [ ] No SQL string interpolation — SQLite uses aiosqlite parameterized queries (`?`); PostgreSQL uses asyncpg positional params (`$N`). Flag any direct string interpolation in either backend.
 - [ ] Exception handlers do not leak stack traces to the API response body
 - [ ] CORS `allow_origins` in `main.py` is not `["*"]` in a production-targeted config
 
