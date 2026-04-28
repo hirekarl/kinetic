@@ -7,7 +7,25 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/version-v1.7.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.8.0-blue)](CHANGELOG.md)
+
+---
+
+## For Reviewers
+
+**Problem:** High-performing engineers instrument everything at work — CI pipelines, on-call runbooks, dashboards — but run their personal systems completely blind. Sleep, domestic logistics, and close relationships accumulate hidden debt with no alerting and no triage list. The only feedback loop is burnout, which fires weeks after the damage is done.
+
+**User:** Jordan is a senior software engineer at a growth-stage startup. He ships 50+ hours a week, has the discipline to build reliable production systems, but has never applied that same observability to himself. By the time he notices something is wrong — sleep tanked, laundry three weeks overdue, a close friend he hasn't spoken to in two weeks — he's already deep in a compounding debt spiral that costs 4–8 hours of recovery flow time to unwind.
+
+**What Kinetic does:** One natural-language check-in per day routes through three specialist AI agents (bio, logistics, relational) and an operational liaison. It returns a prioritized triage list of two or three high-leverage actions — the ones that arrest the most compounding debt — so Jordan can clear them in five minutes and return to flow.
+
+**What it does not do:** Kinetic does not provide calendar integration, push notifications, wearable device sync, social features, payment processing, or native mobile apps. It has no automatic data collection — every data point comes from a user check-in message.
+
+**Technology rationale:** Gemini 2.5 Flash + Instructor enforces typed Pydantic output from the LLM, eliminating JSON parsing fragility. FastAPI + asyncpg targets sub-100ms response on structured data queries. The `DatabaseClient` Protocol abstracts SQLite (local dev, zero config) and PostgreSQL (Render production) behind the same 15-method interface — zero application code changes at deploy time. SSE streaming delivers the Operational Liaison's response token-by-token without WebSocket overhead; `fetch` + `ReadableStream` is used instead of `EventSource` because `EventSource` does not support POST bodies.
+
+**What's next:** The highest-value next feature is passive data ingestion — pulling sleep data from a wearable API (Oura, Whoop) so the system updates without a manual check-in. This tests the core assumption that observability, not discipline, is what's missing. After that: a mobile-native interface so the check-in friction drops from 30 seconds to 10.
+
+**Demo script and presentation reference:** [`docs/DEMO.md`](docs/DEMO.md) · [`docs/PRESENTATION.md`](docs/PRESENTATION.md)
 
 ---
 
