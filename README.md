@@ -7,7 +7,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/version-v1.4.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.7.0-blue)](CHANGELOG.md)
 
 ---
 
@@ -87,24 +87,41 @@ The orchestrator aggregates agent outputs into a single `SystemHealthPayload` �
 ### Local dev
 
 ```bash
-# Clone and set up
+# 1. Clone
 git clone https://github.com/hirekarl/kinetic.git
 cd kinetic
 
-# Backend
-cp .env.example .env          # add GEMINI_API_KEY (DATABASE_URL optional — omit to use SQLite)
-cp credentials.toml.example credentials.toml  # fill in bcrypt hashes for your tenants
-uv sync                       # installs Python deps + creates .venv
-pre-commit install            # wire up commit hooks (run once)
+# 2. Python environment
+uv sync                       # installs all deps + creates .venv
+
+# 3. Environment variables
+cp .env.example .env
+# Open .env and set GEMINI_API_KEY=<your key from https://aistudio.google.com/app/apikey>
+# Leave DATABASE_URL unset — app uses SQLite for local dev
+
+# 4. Tenant credentials
+cp credentials.toml.example credentials.toml
+# Generate a bcrypt hash for each tenant password:
+uv run python -c "import bcrypt; print(bcrypt.hashpw(b'your_password', bcrypt.gensalt()).decode())"
+# Paste the hash into credentials.toml under the relevant [tenants.*] block
+
+# 5. Commit hooks (run once)
+pre-commit install
+
+# 6. Start the backend
 uv run uvicorn kinetic.main:app --reload --port 8000
 
-# Frontend (separate terminal)
+# 7. Start the frontend (separate terminal)
 cd frontend
 npm install
 npm run dev                   # Vite dev server on :5173, proxies /api → :8000
 ```
 
 Open `http://localhost:5173` and log in with a tenant defined in `credentials.toml`.
+
+### Running the demo
+
+Log in as the `demo` tenant. If the dashboard is empty, click **Simulate Week** in the top-right header — this inserts five pre-scripted check-ins spanning the past seven days and immediately refreshes the burnout trend chart and weekly digest, giving you a fully-populated dashboard without any manual check-ins.
 
 ### Running tests
 
@@ -140,8 +157,12 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 7 | Agent dispatch log — collapsible multi-agent routing panel | `v1.2.0` | ✅ Released |
 | Sprint 8 | Multi-tenant auth — JWT sessions, bcrypt credentials, per-tenant DB isolation | `v1.3.0` | ✅ Released |
 | Sprint 9 | PostgreSQL migration — asyncpg dual-mode DB layer + Render Blueprint | `v1.4.0` | ✅ Released |
+| Sprint 10 | Streaming responses — SSE token streaming, in-progress chat bubble | `v1.5.0` | ✅ Released |
+| Sprint 11 | Burnout trend chart — 14-day SVG polyline in Bio card | `v1.6.0` | ✅ Released |
+| Sprint 12 | Weekly digest — Gemini prose summary card with 6h cache + refresh | `v1.7.0` | ✅ Released |
+| Sprint 13 | Demo polish — mobile layout, Simulate Week, README, live deploy | `v1.8.0` | 🔄 In progress |
 
-**Demo deadline:** 2026-05-03 · **MVP deadline:** 2026-05-05
+**Demo deadline:** 2026-05-06 · **MVP deadline:** 2026-05-06
 
 ---
 

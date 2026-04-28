@@ -8,31 +8,78 @@
 
 ## Pre-Demo Checklist
 
-Run these before presenting. Takes about 90 seconds.
+Run these before presenting. Takes about 2 minutes.
 
 ```bash
-# Terminal 1 — seed demo history, then start backend
+# Terminal 1 — start backend
 cd /path/to/kinetic
-uv run python scripts/seed_demo.py
 uv run uvicorn kinetic.main:app --reload --port 8000
 
 # Terminal 2 — start frontend
 cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173` in a browser. Confirm:
-- [ ] The onboarding modal appears (means localStorage is fresh — good)
-- [ ] Backend terminal shows no errors
+**If running on the live Render deploy instead:**
+> Open `https://kinetic-frontend.onrender.com` — no local terminals needed. <!-- update URL once deploy is verified -->
 
-If the onboarding modal does NOT appear (already dismissed), open DevTools → Application → Local Storage → delete `kinetic_onboarded`, then reload.
+Open `http://localhost:5173` (or the Render URL) in a browser. Then:
+
+1. Log in as the `demo` tenant
+2. If the dashboard shows **System Idle**, click **Simulate Week** (top-right header) — this inserts five pre-scripted check-ins spanning the past seven days and auto-refreshes the burnout chart and weekly digest. Takes ~3 seconds.
+3. Log out, clear `kinetic_onboarded` from Local Storage, reload — so the onboarding modal appears on Step 1.
+
+Confirm:
+- [ ] The onboarding modal appears after reload
+- [ ] Backend terminal shows no errors
+- [ ] (After Simulate Week) Burnout trend chart is visible in the Bio card
+
+**Fallback if Simulate Week fails:** `uv run python scripts/seed_demo.py` writes demo history directly to the SQLite database.
 
 ---
 
 ## The Narrative
 
-> *It's 9pm on a Wednesday. Karl is deep in a late-night build sprint — code is flowing, productivity at its peak. Running quietly alongside his IDE, Kinetic's dashboard is about to surface a yellow warning. Sleep debt is quietly accumulating. Laundry crossed its critical threshold six days ago. And his connection margin with Marcus has been in the red for over a week.*
+> *It's 9pm on a Wednesday. Jordan is deep in a late-night build sprint — code is flowing, productivity at its peak. Running quietly alongside his IDE, Kinetic's dashboard is about to surface a yellow warning. Sleep debt is quietly accumulating. Laundry crossed its critical threshold six days ago. And his connection margin with Marcus has been in the red for over a week.*
 >
-> *Prior to Kinetic, Karl's only feedback loop was burnout. Now, instead of becoming a crisis, he gets a prioritized triage list: clear three high-leverage actions in under five minutes, then return to flow.*
+> *Prior to Kinetic, Jordan's only feedback loop was burnout. Now, instead of becoming a crisis, he gets a prioritized triage list: clear three high-leverage actions in under five minutes, then return to flow.*
+
+---
+
+## Opening (≈2 min, before touching the keyboard)
+
+### 1 — The Problem
+
+**Say:** "High-performing engineers are optimized for output — but that optimization has a hidden cost. Sleep slips first, then logistics pile up, then relationships quietly drift. You don't feel it until the crash."
+
+"The feedback loop today is burnout. By the time the system tells you something is wrong, the debt is already compounded."
+
+---
+
+### 2 — The Root Cause
+
+**Say:** "The problem isn't discipline. It's visibility. Engineers instrument everything at work — dashboards, alerts, runbooks — but they run their personal systems completely blind."
+
+"There's no SLO for sleep. No alerting on relational drift. No triage list for domestic logistics. You're operating critical infrastructure without observability."
+
+---
+
+### 3 — The Solution
+
+**Say:** "Kinetic is a personal infrastructure management system. One check-in message per day — natural language, 30 seconds — routes through three specialist AI agents. It surfaces a prioritized, data-driven triage list: the two or three actions that will arrest the most compounding debt, so you can clear them in five minutes and return to flow."
+
+---
+
+### 4 — The Architecture (30 seconds)
+
+**Say:** "The stack is: Gemini 2.5 Flash + Instructor for structured LLM parsing, FastAPI + Pydantic v2 on the backend, React + TypeScript on the frontend. Responses stream token-by-token over Server-Sent Events — you'll see that live. All data persists to PostgreSQL on Render in production, SQLite locally."
+
+---
+
+### 5 — What You're About to See
+
+**Say:** "I'll walk you through the onboarding, show you seven days of behavioral history the system has already learned, then do a live check-in using the PRD's example message. You'll see three agents fire, a triage list assemble in real time, and an ROI summary quantify the cost of inaction."
+
+"Let's start."
 
 ---
 
@@ -134,8 +181,18 @@ Common reviewer questions and talking points:
 **"Where is the data stored?"**
 > SQLite locally at `./kinetic.db`. All single-user, fully private. The behavioral profile table accumulates Gemini-derived pattern insights across sessions — that's what the Behavioral Profile panel shows.
 
-**"Why not stream the response?"**
-> Deliberate scope decision for the MVP. The loading indicator and immediate card update on resolution gives the same perceived experience without streaming complexity.
+**"How does the streaming work?"**
+> The backend emits three SSE event types over a single HTTP connection: `agents` (the full `SystemHealthPayload` — dashboard cards render immediately), then `token` events for each text chunk as the Operational Liaison writes its response, then `done` with metadata (responding agent, any contact pauses or task completions). The frontend uses `fetch` + `ReadableStream` with manual SSE line parsing — no EventSource, because EventSource doesn't support POST bodies. If the stream endpoint is unavailable, the client falls back to the non-streaming `/api/checkin` route automatically.
+
+---
+
+## What's Next
+
+**Say:** "Two things on the immediate roadmap."
+
+"First — the live Render deploy. The app is already configured for Render's managed PostgreSQL. Once the deploy is verified, you'll be able to run this demo from a URL instead of two local terminals."
+
+"Second — you've been using the Simulate Week feature without knowing it. That button in the top-right doesn't just populate a database — it replays a scripted week of decline and recovery: baseline health, mild sleep drop, peak stress, beginning recovery. It demonstrates the behavioral trend analysis in under five seconds, without requiring seven real days of check-ins. That's the pitch: observability for your personal infrastructure, with a demo experience that matches the production value."
 
 ---
 
@@ -146,7 +203,8 @@ Common reviewer questions and talking points:
 | "Analysis unavailable" error banner | GEMINI_API_KEY not set — check `.env` and restart backend |
 | Onboarding modal doesn't appear | DevTools → Local Storage → delete `kinetic_onboarded` → reload |
 | Dashboard shows blank cards after check-in | Backend not running on :8000 — restart Terminal 1 |
-| Behavioral Profile panel shows empty state | Re-run `uv run python scripts/seed_demo.py` and reload |
+| Behavioral Profile panel shows empty state | Click **Simulate Week** or re-run `uv run python scripts/seed_demo.py` |
+| Simulate Week button not visible | You're logged in as a non-demo tenant — log out and log in as `demo` |
 
 ---
 

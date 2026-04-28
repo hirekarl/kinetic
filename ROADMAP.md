@@ -555,24 +555,48 @@ A single Gemini call that ingests 14 days of bio/logistics/relational data and r
 
 ---
 
-## Sprint 13 — Demo Polish + Shareable Deploy ⬜
+## Sprint 13 — Demo Polish + Shareable Deploy 🔄
 **Target version:** `v1.8.0`
 
-Make the live Render deploy presentation-ready: a pre-seeded `demo` tenant, a one-command seed script, and a "Simulate Week" feature that fast-replays a compelling scripted check-in sequence to show data accumulation to judges.
+Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulate Week feature, README, demo script structure, live Render deploy, and presentation documentation to close all rubric gaps.
 
-### Demo Tenant Seeding
-- [ ] Extend `scripts/seed_demo.py` to target the PostgreSQL backend via `DATABASE_URL` (currently SQLite-only)
-- [ ] Seed script populates 14 days of bio metrics, tasks, vibe checks, and behavioral profiles for the `demo` tenant
-- [ ] `credentials.toml.example` documents the `demo` tenant; Render Secret File instructions updated in `render.yaml` header comments
+### A — Mobile Responsive Layout
+- [x] `App.tsx`: outer container `flex-col lg:flex-row`; chat panel `w-full lg:w-[420px] h-[45vh] lg:h-auto lg:shrink-0`; header `flex-wrap`; content padding `p-4 md:p-8`
+- [x] `ChatPanel/index.tsx`: `border-r` → `border-b lg:border-b-0 lg:border-r`
+- [x] Playwright smoke test at 375px viewport — zero layout overflow
 
-### Simulate Week Feature
-- [ ] New endpoint `POST /api/demo/simulate` (guarded by `demo` tenant only — reject for any other tenant) — replays 5 pre-scripted check-in messages with timestamps spread across 7 days, populating bio/logistics/relational history
-- [ ] Frontend: "Simulate Week" button visible only when `user.tenant === "demo"`; triggers simulate then auto-refreshes digest + trend chart
-- [ ] Unit tests: tenant guard (non-demo tenant → 403), simulation inserts correct row count
+### B — Simulate Week Feature
+- [x] Backend: `POST /api/demo/simulate` — 403 guard for non-demo tenants; replays 5 pre-scripted check-ins with timestamps spread across 7 days, inserting bio metrics + tasks + vibe checks
+- [x] Frontend: "Simulate Week" button visible only when `user.tenant === "demo"`; triggers endpoint then auto-refreshes digest + burnout trend chart
+- [x] Unit tests: tenant guard (non-demo → 403), simulation inserts correct row count
+
+### C — README.md
+- [x] Stranger-runnable setup: env vars, `uv sync`, `npm install`, dev server commands, credentials setup
+- [x] One-paragraph architecture summary
+- [x] Local demo run instructions
+
+### D — Demo Script Update (`docs/DEMO.md`)
+- [x] Add 5-section opening: Problem → Root Cause → Solution (before current Step 1)
+- [x] Add "What's Next" close (Simulate Week / Render deploy as the pitch)
+- [x] Fix stale "why no streaming" Q&A answer (streaming shipped in Sprint 10)
+- [x] Slot for live Render URL once deploy is verified
+
+### E — Render Deploy
+- [ ] Configure Render dashboard: `GEMINI_API_KEY`, `FRONTEND_URL`, `VITE_API_BASE_URL`, `credentials.toml` Secret File
+- [ ] Extend `scripts/seed_demo.py` to target PostgreSQL backend via `DATABASE_URL` (currently SQLite-only)
+- [ ] Seed `demo` tenant on live PostgreSQL
+- [ ] Verify end-to-end on live Render URL
+- [ ] Update demo script with live URL
+
+### F — Presentation Documentation
+- [x] Sharpen named user one-liner (from "high-performance engineers" to a specific named persona with situation + frustration)
+- [x] Write measurable success metric sentence
+- [x] Technology choices + rationale paragraph (Gemini + Instructor, SQLite → PostgreSQL, SSE streaming)
 
 ### Quality Gates
+- [ ] Mobile layout verified at 375px viewport (no overflow, all interactions reachable)
+- [ ] All prior gates passing (247 backend tests, 220 frontend tests)
 - [ ] Render deploy verified end-to-end with seeded demo tenant
-- [ ] All prior gates passing
 - [ ] `v1.8.0` release ceremony complete
 
 ---
@@ -595,4 +619,4 @@ Make the live Render deploy presentation-ready: a pre-seeded `demo` tenant, a on
 | `v1.5.0` | Sprint 10 — Streaming Responses | Phase 4+ | ✅ Released |
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
-| `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ⬜ Not started |
+| `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | 🔄 In progress |

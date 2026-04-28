@@ -63,15 +63,16 @@ src/kinetic/
   api/
     __init__.py            package init
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
-    routes.py              FastAPI APIRouter (GET /api/digest, POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette; /digest returns DigestResponse (cached 6h, force=bool param)
+    routes.py              FastAPI APIRouter (GET /api/digest, POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset, POST /api/demo/simulate); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette; /digest returns DigestResponse (cached 6h, force=bool param); /demo/simulate is 403-gated to demo tenant only
   db/
-    base.py                DatabaseClient Protocol — 14-method shared interface satisfied by both SqliteClient and PostgresClient
-    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series()
-    postgres_client.py     asyncpg PostgreSQL client: same 14-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series()
+    base.py                DatabaseClient Protocol — 15-method shared interface satisfied by both SqliteClient and PostgresClient
+    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series(), insert_checkin_at()
+    postgres_client.py     asyncpg PostgreSQL client: same 15-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series(), insert_checkin_at()
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
     digest_generator.py    generate_digest(): 6h in-memory cache per tenant; empty-history guard; Gemini prose summary; exception-safe (returns [DIGEST ERROR] string on failure)
+    simulate.py            simulate_week(): inserts 5 pre-scripted check-in snapshots with timestamps spread across 7 historical days for demo population
 
 tests/
   conftest.py              shared fixtures (sample payloads, health objects)
@@ -79,7 +80,8 @@ tests/
   unit/test_main.py        startup warning / lifespan tests; pool create + close lifecycle (AsyncMock)
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
-  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 14 method names, isinstance check against SqliteClient
+  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 15 method names, isinstance check against SqliteClient
+  unit/test_simulate_route.py 7 tests for POST /api/demo/simulate: 401 no auth, 403 non-demo tenant, 200 shape, service called, 5 rows inserted, timestamps historical, CheckInPayload type verified
   unit/test_burnout_series.py 14 tests for get_burnout_series(): empty/single/formula/ordering/days-filter/partial/all-None/perfect-health; Postgres mock; get_behavioral_summary() wiring
   unit/test_digest_generator.py 10 tests for generate_digest(): happy path, cache hit/miss/TTL, force=True bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery
   unit/test_digest_route.py 5 tests for GET /api/digest: 200 shape, force=False default, force=True forwarded, 401 without JWT, 503 without API key
@@ -93,7 +95,7 @@ tests/
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload, DigestResponse
-  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback
+  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback; isSimulating state + handleSimulateWeek; "Simulate Week" button (demo tenant only, aria-label toggles during loading); mobile-responsive layout (flex-col lg:flex-row, h-[45vh] lg:h-auto, p-4 md:p-8)
   components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
@@ -107,7 +109,7 @@ frontend/src/
   hooks/
     useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
   api/
-    client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
+    client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
 ```
@@ -134,7 +136,7 @@ frontend/src/
 | Sprint 10 | `v1.5.0` | Streaming Responses | ✅ |
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
-| Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ⬜ |
+| Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | 🔄 |
 
 ---
 
