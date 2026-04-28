@@ -6,13 +6,14 @@ import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCar
 import { TriageList } from './components/Dashboard/TriageList';
 import { ROISummaryCard } from './components/Dashboard/ROISummaryCard';
 import { BehavioralProfilePanel } from './components/Dashboard/BehavioralProfilePanel';
+import { WeeklyDigestCard } from './components/Dashboard/WeeklyDigestCard';
 import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
 import { LoginScreen } from './components/LoginScreen';
-import { streamCheckin, fetchHistory, completeTask } from './api/client';
+import { streamCheckin, fetchHistory, completeTask, fetchDigest } from './api/client';
 import { useAuth } from './hooks/useAuth';
-import { AgentLogEntry, StreamDonePayload, SystemHealthPayload } from './types';
+import { AgentLogEntry, DigestResponse, StreamDonePayload, SystemHealthPayload } from './types';
 import { buildAgentLogEntry } from './utils/agentLog';
 
 function App() {
@@ -30,6 +31,9 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('kinetic_onboarded')
   );
+  const [digestData, setDigestData] = useState<DigestResponse | null>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestRefreshing, setDigestRefreshing] = useState(false);
 
   const handleLogin = async (username: string, password: string) => {
     setLoginError(null);
@@ -47,6 +51,20 @@ function App() {
     setAgentLog([]);
     setError(null);
     setLastMessage(null);
+    setDigestData(null);
+  };
+
+  const handleRefreshDigest = async () => {
+    if (!token) return;
+    setDigestRefreshing(true);
+    try {
+      const data = await fetchDigest(token, true);
+      setDigestData(data);
+    } catch (err) {
+      console.error('Failed to refresh digest', err);
+    } finally {
+      setDigestRefreshing(false);
+    }
   };
 
   const handleDismissOnboarding = () => {
@@ -58,6 +76,7 @@ function App() {
   useEffect(() => {
     if (!token) return;
     setIsLoading(true);
+    setDigestLoading(true);
     void fetchHistory(token)
       .then((data) => {
         setHealth(data.health);
@@ -68,6 +87,16 @@ function App() {
       })
       .finally(() => {
         setIsLoading(false);
+      });
+    void fetchDigest(token)
+      .then((data) => {
+        setDigestData(data);
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to fetch digest', err);
+      })
+      .finally(() => {
+        setDigestLoading(false);
       });
   }, [token]);
 
@@ -298,6 +327,16 @@ function App() {
                 <BehavioralProfilePanel
                   profiles={health.behavioral_profiles}
                   isLoading={isLoading}
+                />
+              </section>
+
+              {/* Weekly Digest Section */}
+              <section>
+                <WeeklyDigestCard
+                  digest={digestData}
+                  isLoading={digestLoading}
+                  onRefresh={() => void handleRefreshDigest()}
+                  isRefreshing={digestRefreshing}
                 />
               </section>
 

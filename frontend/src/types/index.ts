@@ -150,6 +150,11 @@ export interface ContactPauseDirective {
   reason: string | null;
 }
 
+export interface DigestResponse {
+  summary: string;
+  generated_at: string; // ISO 8601 datetime
+}
+
 export interface StreamDonePayload {
   responding_agent: string;
   contact_pauses: ContactPauseDirective[];

@@ -56,6 +56,7 @@ const mockFetchHistory = vi.fn();
 const mockFetchCheckin = vi.fn();
 const mockStreamCheckin = vi.fn();
 const mockCompleteTask = vi.fn();
+const mockFetchDigest = vi.fn();
 
 vi.mock('./api/client', () => ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -66,6 +67,8 @@ vi.mock('./api/client', () => ({
   streamCheckin: (...args: unknown[]) => mockStreamCheckin(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   completeTask: (...args: unknown[]) => mockCompleteTask(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  fetchDigest: (...args: unknown[]) => mockFetchDigest(...args),
   login: vi.fn(),
   fetchMe: vi.fn(),
   logout: vi.fn(),
@@ -92,9 +95,14 @@ describe('App — split-panel shell', () => {
     mockFetchCheckin.mockReset();
     mockStreamCheckin.mockReset();
     mockCompleteTask.mockReset();
+    mockFetchDigest.mockReset();
     mockUseAuth.mockReturnValue(defaultAuthState);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     mockStreamCheckin.mockResolvedValue(undefined);
+    mockFetchDigest.mockResolvedValue({
+      summary: 'Mock digest summary.',
+      generated_at: new Date().toISOString(),
+    });
     // Suppress onboarding so these tests stay focused on the dashboard shell
     vi.stubGlobal('localStorage', {
       getItem: vi.fn().mockReturnValue('true'),
@@ -431,8 +439,13 @@ describe('App — Onboarding', () => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
     mockStreamCheckin.mockReset();
+    mockFetchDigest.mockReset();
     mockStreamCheckin.mockResolvedValue(undefined);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockFetchDigest.mockResolvedValue({
+      summary: 'Mock digest summary.',
+      generated_at: new Date().toISOString(),
+    });
     mockUseAuth.mockReturnValue(defaultAuthState);
     store = new Map();
     mockLocalStorage = {

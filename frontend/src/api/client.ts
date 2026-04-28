@@ -1,4 +1,4 @@
-import { AuthUser, StreamDonePayload, SystemHealthPayload } from '../types';
+import { AuthUser, DigestResponse, StreamDonePayload, SystemHealthPayload } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -32,6 +32,17 @@ export async function fetchCheckin(
   }
 
   return response.json() as Promise<SystemHealthPayload>;
+}
+
+export async function fetchDigest(token?: string, force?: boolean): Promise<DigestResponse> {
+  const url = `${API_BASE_URL}/api/digest${force ? '?force=true' : ''}`;
+  const response = await fetch(url, {
+    headers: authHeaders(token),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch digest.');
+  }
+  return response.json() as Promise<DigestResponse>;
 }
 
 export async function completeTask(taskName: string, token?: string): Promise<void> {
