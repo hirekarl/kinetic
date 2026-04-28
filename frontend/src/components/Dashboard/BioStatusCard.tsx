@@ -2,6 +2,7 @@ import React from 'react';
 import { BehavioralSummary, BioStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
+import { BurnoutTrendChart } from './BurnoutTrendChart';
 import { SleepSparkline } from './SleepSparkline';
 
 interface BioStatusCardProps {
@@ -64,6 +65,20 @@ export const BioStatusCard: React.FC<BioStatusCardProps> = ({
             <SleepSparkline
               series={behavioralSummary.bio_trend.sleep_series}
               declining={behavioralSummary.bio_trend.sleep_slope < 0}
+              width={160}
+              height={32}
+            />
+          </div>
+        )}
+
+      {behavioralSummary?.bio_trend?.burnout_series &&
+        behavioralSummary.bio_trend.burnout_series.length >= 2 && (
+          <div className="mb-6">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+              14-Day Burnout Trend
+            </div>
+            <BurnoutTrendChart
+              series={behavioralSummary.bio_trend.burnout_series}
               width={160}
               height={32}
             />

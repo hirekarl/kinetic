@@ -65,6 +65,7 @@ export interface BioTrend {
   worst_sleep_day: string | null; // ISO date "YYYY-MM-DD"
   days_analyzed: number;
   sleep_series: number[]; // per-day hours oldest→newest
+  burnout_series: number[]; // per-entry burnout 0-100, oldest→newest
 }
 
 export interface RecurringTask {

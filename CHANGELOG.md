@@ -4,6 +4,14 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+- `BioTrend.burnout_series: list[float]` — per-entry burnout scores (0–100, oldest→newest) computed from stored bio metrics and surfaced via `get_behavioral_summary()`
+- `DatabaseClient.get_burnout_series(days=14)` — new Protocol method (14th); implemented in both `SqliteClient` and `PostgresClient` using the same weighted formula as `BioArchivist`
+- `BurnoutTrendChart` component — SVG polyline in Bio card showing 14-day burnout score history; red stroke for worsening trend (slope > 1.0), emerald for improving (slope < -1.0), amber for flat; `aria-hidden` SVG with adjacent `sr-only` screen-reader label
+- `BioStatusCard` now renders `BurnoutTrendChart` below the burnout score stat, guarded by `burnout_series.length >= 2`; hidden when insufficient data
+
 ## v1.5.0 (2026-04-28)
 
 ### Feat

@@ -21,6 +21,36 @@ from kinetic.models.outputs import (
 
 logger = logging.getLogger(__name__)
 
+_SLEEP_WEIGHT = 0.4
+_NUTRITION_WEIGHT = 0.3
+_ENERGY_WEIGHT = 0.3
+_BASELINE_SLEEP = 8.0
+_SLEEP_PENALTY = 25.0
+
+
+def _compute_burnout_scalar(
+    sleep_hours: float | None,
+    nutrition_quality: float | None,
+    energy_level: float | None,
+) -> float:
+    """Replicate BioArchivist per-entry burnout formula (no historical debt adjustment)."""
+    weighted_sum = 0.0
+    total_weight = 0.0
+    if sleep_hours is not None:
+        deficit = max(0.0, _BASELINE_SLEEP - sleep_hours)
+        weighted_sum += _SLEEP_WEIGHT * min(100.0, deficit * _SLEEP_PENALTY)
+        total_weight += _SLEEP_WEIGHT
+    if nutrition_quality is not None:
+        weighted_sum += _NUTRITION_WEIGHT * (10.0 - nutrition_quality) / 9.0 * 100.0
+        total_weight += _NUTRITION_WEIGHT
+    if energy_level is not None:
+        weighted_sum += _ENERGY_WEIGHT * (10.0 - energy_level) / 9.0 * 100.0
+        total_weight += _ENERGY_WEIGHT
+    if total_weight == 0.0:
+        return 0.0
+    return round(weighted_sum / total_weight, 2)
+
+
 _DDL = """
 CREATE TABLE IF NOT EXISTS checkins (
     id TEXT PRIMARY KEY,
@@ -307,6 +337,16 @@ class PostgresClient:
                 n = len(sleep_vals)
                 slope = statistics.linear_regression(range(n), sleep_vals).slope if n >= 2 else 0.0
                 worst_day = dates[sleep_vals.index(min(sleep_vals))] if sleep_vals else None
+                burnout_vals = [
+                    _compute_burnout_scalar(
+                        float(r["sleep_hours"]) if r["sleep_hours"] is not None else None,
+                        float(r["nutrition_quality"])
+                        if r["nutrition_quality"] is not None
+                        else None,
+                        float(r["energy_level"]) if r["energy_level"] is not None else None,
+                    )
+                    for r in bio_rows
+                ]
                 bio_trend = BioTrend(
                     avg_sleep_hours=round(statistics.mean(sleep_vals), 2) if sleep_vals else 0.0,
                     sleep_slope=round(slope, 4),
@@ -317,6 +357,7 @@ class PostgresClient:
                     worst_sleep_day=worst_day,
                     days_analyzed=len(set(dates)),
                     sleep_series=sleep_vals,
+                    burnout_series=burnout_vals,
                 )
 
             task_rows = await conn.fetch(
@@ -377,6 +418,28 @@ class PostgresClient:
                 days_analyzed=days_analyzed,
                 generated_at=datetime.now(),
             )
+
+    async def get_burnout_series(self, days: int = 14) -> list[float]:
+        """Return per-entry burnout scores for the last `days` days, oldest→newest."""
+        cutoff = datetime.now() - timedelta(days=days)
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT bm.sleep_hours, bm.nutrition_quality, bm.energy_level"
+                " FROM bio_metrics bm"
+                " JOIN checkins c ON bm.checkin_id = c.id"
+                " WHERE c.tenant = $1 AND bm.tenant = $1 AND c.timestamp >= $2"
+                " ORDER BY c.timestamp ASC",
+                self.tenant,
+                cutoff,
+            )
+        return [
+            _compute_burnout_scalar(
+                float(r["sleep_hours"]) if r["sleep_hours"] is not None else None,
+                float(r["nutrition_quality"]) if r["nutrition_quality"] is not None else None,
+                float(r["energy_level"]) if r["energy_level"] is not None else None,
+            )
+            for r in rows
+        ]
 
     async def get_behavioral_profiles(self) -> list[BehavioralProfile]:
         async with self.pool.acquire() as conn:

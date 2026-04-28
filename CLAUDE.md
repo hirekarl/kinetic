@@ -65,9 +65,9 @@ src/kinetic/
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
     routes.py              FastAPI APIRouter (POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette
   db/
-    base.py                DatabaseClient Protocol — shared interface satisfied by both SqliteClient and PostgresClient (Sprint 9)
-    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses()
-    postgres_client.py     asyncpg PostgreSQL client: same interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL (Sprint 9)
+    base.py                DatabaseClient Protocol — 14-method shared interface satisfied by both SqliteClient and PostgresClient
+    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series()
+    postgres_client.py     asyncpg PostgreSQL client: same 14-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series()
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
@@ -78,7 +78,8 @@ tests/
   unit/test_main.py        startup warning / lifespan tests; pool create + close lifecycle (AsyncMock)
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
-  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 13 method names, isinstance check against SqliteClient
+  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 14 method names, isinstance check against SqliteClient
+  unit/test_burnout_series.py 14 tests for get_burnout_series(): empty/single/formula/ordering/days-filter/partial/all-None/perfect-health; Postgres mock; get_behavioral_summary() wiring
   unit/test_streaming.py   17 tests for LiaisonMetadata defaults, stream_text() chunking, extract_metadata() keyword guard + Instructor path + failure fallback, orchestrate_stream() event order + persistence + agent failure recovery + side effects
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
@@ -93,8 +94,9 @@ frontend/src/
   components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
-  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, agent dispatch log
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, agent dispatch log
     SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
+    BurnoutTrendChart.tsx  SVG polyline chart for 14-day burnout series; red/amber/emerald stroke from linear regression slope; aria-hidden + sr-only label; null for < 2 points
     AgentDispatchLog.tsx   collapsible agent routing history; per-entry expandable agent summaries + responding_agent badge
   utils/
     agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
@@ -126,7 +128,7 @@ frontend/src/
 | Sprint 8 | `v1.3.0` | Multi-Tenant Auth | ✅ |
 | Sprint 9 | `v1.4.0` | PostgreSQL Migration | ✅ |
 | Sprint 10 | `v1.5.0` | Streaming Responses | ✅ |
-| Sprint 11 | `v1.6.0` | Burnout Trend Chart | ⬜ |
+| Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ⬜ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ⬜ |
 
@@ -299,7 +301,7 @@ The Python models in `src/kinetic/models/` are the single source of truth for da
 
 **Output contract:**
 - `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None`, `responding_agent: str | None`, `active_pauses: list[ContactPause]`
-- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`, `ContactPause`
+- Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest; `burnout_series: list[float]` — per-entry burnout 0-100 oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`, `ContactPause`
 - Internal agent model: `LiaisonResponse` (in `agents/operational_liaison.py`) — `text: str`, `responding_agent: RespondingAgent`, `contact_pauses: list[ContactPauseDirective]`
 - Internal streaming metadata: `LiaisonMetadata` (in `agents/operational_liaison.py`) — lightweight post-stream extraction: `responding_agent`, `contact_pauses`, `task_completions`
 - Frontend streaming contract: `StreamDonePayload` (in `frontend/src/types/index.ts`) — `responding_agent`, `contact_pauses: ContactPauseDirective[]`, `task_completions`, `active_pauses`, `behavioral_profiles`, `behavioral_summary`; `ContactPauseDirective` mirrors Python model

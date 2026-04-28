@@ -12,6 +12,7 @@ const mockBehavioralSummary: BehavioralSummary = {
     worst_sleep_day: null,
     days_analyzed: 3,
     sleep_series: [7.0, 6.5, 6.0],
+    burnout_series: [40, 50, 60],
   },
   recurring_tasks: [],
   relational_drifts: [],
@@ -87,5 +88,48 @@ describe('BioStatusCard', () => {
     };
     render(<BioStatusCard data={mockData} behavioralSummary={thinSummary} />);
     expect(screen.queryByText(/7-day sleep trend/i)).not.toBeInTheDocument();
+  });
+
+  // ── BurnoutTrendChart integration ───────────────────────────────────────────
+
+  it('renders burnout trend label when burnout_series has ≥ 2 entries', () => {
+    render(<BioStatusCard data={mockData} behavioralSummary={mockBehavioralSummary} />);
+    expect(screen.getByText(/14-day burnout trend/i, { selector: 'div' })).toBeInTheDocument();
+  });
+
+  it('does not render burnout trend when behavioralSummary is null', () => {
+    render(<BioStatusCard data={mockData} behavioralSummary={null} />);
+    expect(
+      screen.queryByText(/14-day burnout trend/i, { selector: 'div' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not render burnout trend when behavioralSummary is omitted', () => {
+    render(<BioStatusCard data={mockData} />);
+    expect(
+      screen.queryByText(/14-day burnout trend/i, { selector: 'div' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not render burnout trend when burnout_series has fewer than 2 entries', () => {
+    const thinSummary: BehavioralSummary = {
+      ...mockBehavioralSummary,
+      bio_trend: { ...mockBehavioralSummary.bio_trend!, burnout_series: [50] },
+    };
+    render(<BioStatusCard data={mockData} behavioralSummary={thinSummary} />);
+    expect(
+      screen.queryByText(/14-day burnout trend/i, { selector: 'div' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not render burnout trend when burnout_series is empty', () => {
+    const emptySummary: BehavioralSummary = {
+      ...mockBehavioralSummary,
+      bio_trend: { ...mockBehavioralSummary.bio_trend!, burnout_series: [] },
+    };
+    render(<BioStatusCard data={mockData} behavioralSummary={emptySummary} />);
+    expect(
+      screen.queryByText(/14-day burnout trend/i, { selector: 'div' })
+    ).not.toBeInTheDocument();
   });
 });

@@ -68,6 +68,10 @@ class BioTrend(BaseModel):
         default_factory=list,
         description="Per-day sleep hours, oldest→newest, same window as days_analyzed",
     )
+    burnout_series: list[float] = Field(
+        default_factory=list,
+        description="Per-entry burnout score 0-100, oldest->newest, same window as days_analyzed",
+    )
 
 
 class RecurringTask(BaseModel):

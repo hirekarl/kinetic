@@ -23,6 +23,35 @@ from kinetic.models.outputs import (
 
 logger = logging.getLogger(__name__)
 
+_SLEEP_WEIGHT = 0.4
+_NUTRITION_WEIGHT = 0.3
+_ENERGY_WEIGHT = 0.3
+_BASELINE_SLEEP = 8.0
+_SLEEP_PENALTY = 25.0
+
+
+def _compute_burnout_scalar(
+    sleep_hours: float | None,
+    nutrition_quality: float | None,
+    energy_level: float | None,
+) -> float:
+    """Replicate BioArchivist per-entry burnout formula (no historical debt adjustment)."""
+    weighted_sum = 0.0
+    total_weight = 0.0
+    if sleep_hours is not None:
+        deficit = max(0.0, _BASELINE_SLEEP - sleep_hours)
+        weighted_sum += _SLEEP_WEIGHT * min(100.0, deficit * _SLEEP_PENALTY)
+        total_weight += _SLEEP_WEIGHT
+    if nutrition_quality is not None:
+        weighted_sum += _NUTRITION_WEIGHT * (10.0 - nutrition_quality) / 9.0 * 100.0
+        total_weight += _NUTRITION_WEIGHT
+    if energy_level is not None:
+        weighted_sum += _ENERGY_WEIGHT * (10.0 - energy_level) / 9.0 * 100.0
+        total_weight += _ENERGY_WEIGHT
+    if total_weight == 0.0:
+        return 0.0
+    return round(weighted_sum / total_weight, 2)
+
 
 class SqliteClient:
     """Handles persistence of check-ins into SQLite (Relational)."""
@@ -325,6 +354,14 @@ class SqliteClient:
                 n = len(sleep_vals)
                 slope = statistics.linear_regression(range(n), sleep_vals).slope if n >= 2 else 0.0
                 worst_day = dates[sleep_vals.index(min(sleep_vals))] if sleep_vals else None
+                burnout_vals = [
+                    _compute_burnout_scalar(
+                        float(r[0]) if r[0] is not None else None,
+                        float(r[1]) if r[1] is not None else None,
+                        float(r[2]) if r[2] is not None else None,
+                    )
+                    for r in bio_rows
+                ]
                 bio_trend = BioTrend(
                     avg_sleep_hours=round(statistics.mean(sleep_vals), 2) if sleep_vals else 0.0,
                     sleep_slope=round(slope, 4),
@@ -335,6 +372,7 @@ class SqliteClient:
                     worst_sleep_day=worst_day,
                     days_analyzed=len(set(dates)),
                     sleep_series=sleep_vals,
+                    burnout_series=burnout_vals,
                 )
 
             # Recurring overdue tasks (appeared overdue in ≥2 check-ins)
@@ -402,6 +440,29 @@ class SqliteClient:
                 days_analyzed=days_analyzed,
                 generated_at=datetime.now(),
             )
+
+    async def get_burnout_series(self, days: int = 14) -> list[float]:
+        """Return per-entry burnout scores for the last `days` days, oldest→newest."""
+        offset = f"-{days} days"
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            async with db.execute(
+                "SELECT bm.sleep_hours, bm.nutrition_quality, bm.energy_level"
+                " FROM bio_metrics bm"
+                " JOIN checkins c ON bm.checkin_id = c.id"
+                " WHERE c.timestamp >= datetime('now', ?)"
+                " ORDER BY c.timestamp ASC",
+                (offset,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+        return [
+            _compute_burnout_scalar(
+                float(r[0]) if r[0] is not None else None,
+                float(r[1]) if r[1] is not None else None,
+                float(r[2]) if r[2] is not None else None,
+            )
+            for r in rows
+        ]
 
     async def get_behavioral_profiles(self) -> list[BehavioralProfile]:
         """Return all accumulated behavioral profiles, newest-updated first."""
