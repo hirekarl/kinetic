@@ -39,7 +39,7 @@ _class: lead
 ### Frontend
 - **React 18 / TypeScript**
 - SSE (Server-Sent Events)
-- Vanilla CSS / Sparklines
+- Tailwind CSS / Sparklines
 
 ---
 
