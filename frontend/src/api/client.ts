@@ -34,6 +34,17 @@ export async function fetchCheckin(
   return response.json() as Promise<SystemHealthPayload>;
 }
 
+export async function simulateWeek(token?: string): Promise<{ inserted: number }> {
+  const response = await fetch(`${API_BASE_URL}/api/demo/simulate`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to run simulation.');
+  }
+  return response.json() as Promise<{ inserted: number }>;
+}
+
 export async function fetchDigest(token?: string, force?: boolean): Promise<DigestResponse> {
   const url = `${API_BASE_URL}/api/digest${force ? '?force=true' : ''}`;
   const response = await fetch(url, {

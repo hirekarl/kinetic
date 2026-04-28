@@ -11,7 +11,7 @@ import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
 import { LoginScreen } from './components/LoginScreen';
-import { streamCheckin, fetchHistory, completeTask, fetchDigest } from './api/client';
+import { streamCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek } from './api/client';
 import { useAuth } from './hooks/useAuth';
 import { AgentLogEntry, DigestResponse, StreamDonePayload, SystemHealthPayload } from './types';
 import { buildAgentLogEntry } from './utils/agentLog';
@@ -34,6 +34,7 @@ function App() {
   const [digestData, setDigestData] = useState<DigestResponse | null>(null);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestRefreshing, setDigestRefreshing] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const handleLogin = async (username: string, password: string) => {
     setLoginError(null);
@@ -52,6 +53,22 @@ function App() {
     setError(null);
     setLastMessage(null);
     setDigestData(null);
+  };
+
+  const handleSimulateWeek = async () => {
+    if (!token) return;
+    setIsSimulating(true);
+    try {
+      await simulateWeek(token);
+      await handleRefreshDigest();
+      const data = await fetchHistory(token);
+      setHealth(data.health);
+      setMessages(data.messages);
+    } catch (err) {
+      console.error('Simulation failed', err);
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   const handleRefreshDigest = async () => {
@@ -197,10 +214,10 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
       {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
       {/* Left Panel: Operational Liaison Feed */}
-      <div className="w-[420px] shrink-0">
+      <div className="w-full lg:w-[420px] lg:shrink-0 h-[45vh] lg:h-auto">
         <ChatPanel
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
@@ -212,7 +229,7 @@ function App() {
       {/* Right Panel: Mission Control Dashboard */}
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/30">
         {/* Top Header */}
-        <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-8 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-800 bg-zinc-950 px-4 md:px-8 py-3 md:py-4">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-bold tracking-tight text-white">Mission Control</h2>
             {health && <StatusBadge status={health.overall_status} />}
@@ -232,6 +249,18 @@ function App() {
                 Sign out
               </button>
             </div>
+            {user.tenant === 'demo' && (
+              <button
+                onClick={() => {
+                  void handleSimulateWeek();
+                }}
+                disabled={isSimulating}
+                aria-label={isSimulating ? 'Simulating...' : 'Simulate Week'}
+                className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 hover:text-emerald-300 transition-colors disabled:opacity-50"
+              >
+                {isSimulating ? 'Simulating...' : 'Simulate Week'}
+              </button>
+            )}
             <button
               onClick={() => {
                 void handleReset();
@@ -249,7 +278,7 @@ function App() {
         {/* Scrollable Content */}
         {/* tabIndex={0} is required to satisfy axe scrollable-region-focusable on content-only regions */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-        <div className="flex-1 overflow-y-auto p-8" tabIndex={0}>
+        <div className="flex-1 overflow-y-auto p-4 md:p-8" tabIndex={0}>
           {error && (
             <div
               role="alert"

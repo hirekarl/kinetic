@@ -96,13 +96,14 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
     await expect(page.getByText(/system idle/i)).toBeVisible();
 
     // DOM tab order with empty textarea (Send is disabled → not focusable):
-    //   1. Suggested prompt 1  (ChatPanel scroll region, first in DOM)
+    //   1. Suggested prompt 1   (ChatPanel scroll region, first in DOM)
     //   2. Suggested prompt 2
     //   3. Suggested prompt 3
-    //   4. textarea            (ChatPanel input area)
-    //   5. Sign out button     (right-panel header)
-    //   6. Reset System button (right-panel header)
-    //   7. Scrollable content  (main > div[tabIndex=0])
+    //   4. textarea             (ChatPanel input area)
+    //   5. Sign out button      (right-panel header)
+    //   6. Simulate Week button (demo-tenant only, right-panel header)
+    //   7. Reset System button  (right-panel header)
+    //   8. Scrollable content   (main > div[tabIndex=0])
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /slept 5 hours/i })).toBeFocused();
@@ -121,6 +122,10 @@ test.describe('Kinetic — Accessibility Final Audit', () => {
     // Send is disabled when textarea is empty — browser skips disabled buttons.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /sign out/i })).toBeFocused();
+
+    // Simulate Week button (visible for demo tenant)
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: /simulate week/i })).toBeFocused();
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /reset system/i })).toBeFocused();

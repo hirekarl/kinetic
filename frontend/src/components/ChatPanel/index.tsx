@@ -70,7 +70,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-col border-r border-zinc-800 bg-zinc-950">
+    <div className="flex h-full flex-col border-b lg:border-b-0 lg:border-r border-zinc-800 bg-zinc-950">
       {/* Dialogue Feed */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
         <header className="mb-8">

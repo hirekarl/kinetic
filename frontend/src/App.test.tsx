@@ -57,6 +57,7 @@ const mockFetchCheckin = vi.fn();
 const mockStreamCheckin = vi.fn();
 const mockCompleteTask = vi.fn();
 const mockFetchDigest = vi.fn();
+const mockSimulateWeek = vi.fn();
 
 vi.mock('./api/client', () => ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -69,6 +70,8 @@ vi.mock('./api/client', () => ({
   completeTask: (...args: unknown[]) => mockCompleteTask(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchDigest: (...args: unknown[]) => mockFetchDigest(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  simulateWeek: (...args: unknown[]) => mockSimulateWeek(...args),
   login: vi.fn(),
   fetchMe: vi.fn(),
   logout: vi.fn(),
@@ -96,6 +99,7 @@ describe('App — split-panel shell', () => {
     mockStreamCheckin.mockReset();
     mockCompleteTask.mockReset();
     mockFetchDigest.mockReset();
+    mockSimulateWeek.mockReset();
     mockUseAuth.mockReturnValue(defaultAuthState);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     mockStreamCheckin.mockResolvedValue(undefined);
@@ -103,6 +107,7 @@ describe('App — split-panel shell', () => {
       summary: 'Mock digest summary.',
       generated_at: new Date().toISOString(),
     });
+    mockSimulateWeek.mockResolvedValue({ inserted: 5 });
     // Suppress onboarding so these tests stay focused on the dashboard shell
     vi.stubGlobal('localStorage', {
       getItem: vi.fn().mockReturnValue('true'),
@@ -423,6 +428,58 @@ describe('App — split-panel shell', () => {
     render(<App />);
     await waitFor(() => screen.getByRole('button', { name: /sign out/i }));
   });
+
+  // ── Simulate Week ──────────────────────────────────────────────────────────
+
+  it('Simulate Week button is not rendered for non-demo tenant', async () => {
+    mockUseAuth.mockReturnValue({
+      ...defaultAuthState,
+      user: { username: 'personal', tenant: 'personal', display_name: 'Personal' },
+    });
+    render(<App />);
+    await waitFor(() => screen.getByRole('heading', { name: /mission control/i }));
+    expect(screen.queryByRole('button', { name: /simulate week/i })).not.toBeInTheDocument();
+  });
+
+  it('Simulate Week button is rendered for demo tenant', async () => {
+    render(<App />);
+    await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
+  });
+
+  it('clicking Simulate Week calls simulateWeek then triggers a forced digest refresh', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
+
+    await user.click(screen.getByRole('button', { name: /simulate week/i }));
+
+    await waitFor(() => {
+      expect(mockSimulateWeek).toHaveBeenCalledTimes(1);
+      expect(mockFetchDigest).toHaveBeenCalledWith(expect.anything(), true);
+    });
+  });
+
+  it('Simulate Week button is disabled while simulating', async () => {
+    let resolveSimulate!: (v: { inserted: number }) => void;
+    mockSimulateWeek.mockImplementation(
+      () =>
+        new Promise<{ inserted: number }>((resolve) => {
+          resolveSimulate = resolve;
+        })
+    );
+
+    render(<App />);
+    await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /simulate week/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /simulating/i })).toBeDisabled();
+    });
+
+    // Resolve to allow test cleanup
+    resolveSimulate({ inserted: 5 });
+  });
 });
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
@@ -440,12 +497,14 @@ describe('App — Onboarding', () => {
     mockFetchCheckin.mockReset();
     mockStreamCheckin.mockReset();
     mockFetchDigest.mockReset();
+    mockSimulateWeek.mockReset();
     mockStreamCheckin.mockResolvedValue(undefined);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     mockFetchDigest.mockResolvedValue({
       summary: 'Mock digest summary.',
       generated_at: new Date().toISOString(),
     });
+    mockSimulateWeek.mockResolvedValue({ inserted: 5 });
     mockUseAuth.mockReturnValue(defaultAuthState);
     store = new Map();
     mockLocalStorage = {
