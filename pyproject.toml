@@ -19,6 +19,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "sse-starlette>=1.8",
     "present>=0.6.0",
+    "mistune>=2.0.0,<3.0.0",
 ]
 
 [dependency-groups]
