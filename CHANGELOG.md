@@ -4,16 +4,12 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.8.0 (2026-04-28)
 
-### Added
-- Mobile-responsive layout: app now stacks vertically on small screens (chat panel above dashboard) and expands to side-by-side on large screens
-- "Simulate Week" button (demo tenant only): inserts 5 pre-scripted check-ins spanning 7 historical days, then auto-refreshes digest and burnout chart to show a populated dashboard state
-- `POST /api/demo/simulate` backend route: 403-gated to demo tenant; `simulate_week()` service with configurable scripted trajectories (baseline → decline → peak stress → recovery)
-- `insert_checkin_at()` added to `DatabaseClient` Protocol (both SQLite and PostgreSQL backends) to support historical timestamp injection
-- README.md updated: numbered setup steps, inline bcrypt hash generation command, "Running the demo" section with Simulate Week instructions, sprint table extended through Sprint 13
-- `docs/DEMO.md` updated: 5-section verbal opening (Problem → Root Cause → Solution → Architecture → Preview), Pre-Demo checklist updated to use Simulate Week button, streaming Q&A corrected (streaming ships in Sprint 10 via SSE), "What's Next" close added, Render URL slot added
-- `docs/PRESENTATION.md` added: named persona (Karl, senior SWE at growth-stage startup), measurable success metric, technology choices rationale (Gemini + Instructor, dual-mode DB Protocol, SSE streaming)
+### Feat
+
+- **ui**: Simulate Week button + mobile-responsive layout (Sprint 13 A+B)
+- **demo**: POST /api/demo/simulate — 5 scripted check-ins with historical timestamps
 
 ## v1.7.0 (2026-04-28)
 

@@ -1,6 +1,6 @@
 [project]
 name = "kinetic"
-version = "1.7.0"
+version = "1.8.0"
 description = "Bio-Operational Triage Engine — personal infrastructure management for high-performance engineers"
 authors = [{ name = "Karl Johnson", email = "hirekarl@proton.me" }]
 requires-python = ">=3.12"
@@ -155,7 +155,7 @@ exclude_lines = [
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.7.0"
+version = "1.8.0"
 version_provider = "commitizen"
 version_files = [
     "pyproject.toml:^version",
