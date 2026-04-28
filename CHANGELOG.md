@@ -4,17 +4,11 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.5.0 (2026-04-28)
 
-### Added
-- `POST /api/checkin/stream` SSE endpoint — streams Operational Liaison reply token-by-token via Server-Sent Events; emits `agents` event (agent status cards) immediately, then `token` events per Gemini chunk, then `done` event with metadata
-- `OperationalLiaison.stream_text()` — async generator yielding raw text chunks from google-genai `generate_content_stream`
-- `OperationalLiaison.extract_metadata()` — lightweight post-stream Instructor call extracting `responding_agent`, `contact_pauses`, `task_completions`; skipped by keyword guard for plain check-ins
-- `orchestrate_stream()` in lead orchestrator — full pipeline variant of `orchestrate()` yielding SSE event dicts; same persistence, contact pause, and task completion side effects as the non-streaming path
-- `streamCheckin()` in frontend API client — `fetch` + `ReadableStream` SSE consumer with manual line parsing; automatic fallback to `fetchCheckin` on non-200 or network error
-- `ContactPauseDirective` and `StreamDonePayload` TypeScript interfaces mirroring Python streaming models
-- `ChatPanel` `streamingContent` prop — renders in-progress assistant bubble with blinking `|` cursor during streaming; transitions to finalized message on `done`
-- `App.tsx` streaming integration — `accumulatedRef` + `streamingContent` state wired to all `streamCheckin` callbacks; dashboard updates on first `agents` event, text appends on `token`, message finalizes on `done`
+### Feat
+
+- **streaming**: Sprint 10 — SSE streaming backend + frontend client (v1.5.0)
 
 ## v1.4.0 (2026-04-27)
 
