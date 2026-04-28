@@ -113,6 +113,13 @@ class ContactPause(BaseModel):
     reason: str | None = None
 
 
+class DigestResponse(BaseModel):
+    summary: str = Field(
+        description="Gemini-generated prose paragraph summarising the last 14 days"
+    )
+    generated_at: datetime = Field(description="UTC timestamp when this digest was generated")
+
+
 class SystemHealthPayload(BaseModel):
     """Canonical output from the lead orchestrator, consumed directly by the frontend."""
 

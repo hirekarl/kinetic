@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,9 +8,10 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from kinetic.auth import get_current_tenant
-from kinetic.models.outputs import SystemHealthPayload
+from kinetic.models.outputs import DigestResponse, SystemHealthPayload
 from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate, orchestrate_stream
 from kinetic.parsing.llm_parser import parse_checkin
+from kinetic.services.digest_generator import generate_digest
 
 router = APIRouter(prefix="/api")
 
@@ -17,6 +19,19 @@ router = APIRouter(prefix="/api")
 class CheckInRequest(BaseModel):
     message: str
     history: list[dict[str, str]] = Field(default_factory=list)
+
+
+@router.get("/digest", response_model=DigestResponse)
+async def get_digest(
+    force: bool = False,
+    tenant: str = Depends(get_current_tenant),
+) -> DigestResponse:
+    """Return a 14-day prose digest for the authenticated tenant (cached 6 h)."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured")
+    db = get_db(tenant)
+    return await generate_digest(db, api_key, tenant, force=force)
 
 
 @router.get("/history")
