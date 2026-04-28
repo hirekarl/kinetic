@@ -206,6 +206,70 @@ class SqliteClient:
             await db.commit()
             return checkin_id
 
+    async def insert_checkin_at(
+        self,
+        payload: CheckInPayload,
+        message: str,
+        timestamp: datetime,
+        liaison_feedback: str | None = None,
+    ) -> str:
+        """Insert a parsed check-in with an explicit timestamp (used for simulation)."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            checkin_id = str(uuid.uuid4())
+
+            await db.execute(
+                "INSERT INTO checkins (id, timestamp, message, liaison_feedback) VALUES (?, ?, ?, ?)",
+                (checkin_id, timestamp, message, liaison_feedback),
+            )
+
+            if payload.bio:
+                await db.execute(
+                    "INSERT INTO bio_metrics (id, checkin_id, sleep_hours, nutrition_quality, energy_level) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        str(uuid.uuid4()),
+                        checkin_id,
+                        payload.bio.sleep_hours,
+                        payload.bio.nutrition_quality,
+                        payload.bio.energy_level,
+                    ),
+                )
+
+            if payload.logistics:
+                for task in payload.logistics.tasks:
+                    await db.execute(
+                        """
+                        INSERT INTO tasks (name, priority, subtasks, completed_subtasks, status)
+                        VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT(name) DO UPDATE SET
+                            priority=excluded.priority,
+                            subtasks=excluded.subtasks,
+                            completed_subtasks=excluded.completed_subtasks,
+                            status=excluded.status
+                        """,
+                        (
+                            task.name,
+                            task.priority,
+                            json.dumps(task.subtasks),
+                            json.dumps(task.completed_subtasks),
+                            task.status,
+                        ),
+                    )
+                    await db.execute(
+                        "INSERT INTO checkin_tasks (checkin_id, task_name, days_overdue) VALUES (?, ?, ?)",
+                        (checkin_id, task.name, task.days_overdue),
+                    )
+
+            if payload.relational:
+                for vibe in payload.relational.vibe_checks:
+                    await db.execute(
+                        "INSERT INTO vibe_checks (checkin_id, person, score, days_since_contact) VALUES (?, ?, ?, ?)",
+                        (checkin_id, vibe.person, vibe.score, vibe.days_since_contact),
+                    )
+
+            await db.commit()
+            return checkin_id
+
     async def get_latest_bio(self) -> dict[str, Any] | None:
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)

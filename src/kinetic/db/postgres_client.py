@@ -199,6 +199,78 @@ class PostgresClient:
                     )
         return checkin_id
 
+    async def insert_checkin_at(
+        self,
+        payload: CheckInPayload,
+        message: str,
+        timestamp: datetime,
+        liaison_feedback: str | None = None,
+    ) -> str:
+        """Insert a parsed check-in with an explicit timestamp (used for simulation)."""
+        checkin_id = str(uuid.uuid4())
+        async with self.pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                "INSERT INTO checkins (id, tenant, timestamp, message, liaison_feedback)"
+                " VALUES ($1, $2, $3, $4, $5)",
+                checkin_id,
+                self.tenant,
+                timestamp,
+                message,
+                liaison_feedback,
+            )
+            if payload.bio:
+                await conn.execute(
+                    "INSERT INTO bio_metrics"
+                    " (id, tenant, checkin_id, sleep_hours, nutrition_quality, energy_level)"
+                    " VALUES ($1, $2, $3, $4, $5, $6)",
+                    str(uuid.uuid4()),
+                    self.tenant,
+                    checkin_id,
+                    payload.bio.sleep_hours,
+                    payload.bio.nutrition_quality,
+                    payload.bio.energy_level,
+                )
+            if payload.logistics:
+                for task in payload.logistics.tasks:
+                    await conn.execute(
+                        "INSERT INTO tasks"
+                        " (tenant, name, priority, subtasks, completed_subtasks, status)"
+                        " VALUES ($1, $2, $3, $4, $5, $6)"
+                        " ON CONFLICT (name, tenant) DO UPDATE SET"
+                        "   priority = EXCLUDED.priority,"
+                        "   subtasks = EXCLUDED.subtasks,"
+                        "   completed_subtasks = EXCLUDED.completed_subtasks,"
+                        "   status = EXCLUDED.status",
+                        self.tenant,
+                        task.name,
+                        task.priority,
+                        json.dumps(task.subtasks),
+                        json.dumps(task.completed_subtasks),
+                        task.status,
+                    )
+                    await conn.execute(
+                        "INSERT INTO checkin_tasks"
+                        " (tenant, checkin_id, task_name, days_overdue)"
+                        " VALUES ($1, $2, $3, $4)",
+                        self.tenant,
+                        checkin_id,
+                        task.name,
+                        task.days_overdue,
+                    )
+            if payload.relational:
+                for vibe in payload.relational.vibe_checks:
+                    await conn.execute(
+                        "INSERT INTO vibe_checks"
+                        " (tenant, checkin_id, person, score, days_since_contact)"
+                        " VALUES ($1, $2, $3, $4, $5)",
+                        self.tenant,
+                        checkin_id,
+                        vibe.person,
+                        vibe.score,
+                        vibe.days_since_contact,
+                    )
+        return checkin_id
+
     async def get_latest_bio(self) -> dict[str, Any] | None:
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(

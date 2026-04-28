@@ -12,6 +12,7 @@ from kinetic.models.outputs import DigestResponse, SystemHealthPayload
 from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate, orchestrate_stream
 from kinetic.parsing.llm_parser import parse_checkin
 from kinetic.services.digest_generator import generate_digest
+from kinetic.services.simulate import simulate_week
 
 router = APIRouter(prefix="/api")
 
@@ -19,6 +20,18 @@ router = APIRouter(prefix="/api")
 class CheckInRequest(BaseModel):
     message: str
     history: list[dict[str, str]] = Field(default_factory=list)
+
+
+@router.post("/demo/simulate")
+async def demo_simulate(
+    tenant: str = Depends(get_current_tenant),
+) -> dict[str, int]:
+    """Replay 5 scripted check-ins across the past 7 days (demo tenant only)."""
+    if tenant != "demo":
+        raise HTTPException(status_code=403, detail="Available only for the demo tenant")
+    db = get_db(tenant)
+    count = await simulate_week(db)
+    return {"inserted": count}
 
 
 @router.get("/digest", response_model=DigestResponse)

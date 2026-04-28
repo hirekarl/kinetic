@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
 from kinetic.models.inputs import CheckInPayload
@@ -10,6 +11,14 @@ from kinetic.models.outputs import BehavioralProfile, BehavioralSummary
 class DatabaseClient(Protocol):
     async def insert_checkin(
         self, payload: CheckInPayload, message: str, liaison_feedback: str | None = None
+    ) -> str: ...
+
+    async def insert_checkin_at(
+        self,
+        payload: CheckInPayload,
+        message: str,
+        timestamp: datetime,
+        liaison_feedback: str | None = None,
     ) -> str: ...
 
     async def get_latest_bio(self) -> dict[str, Any] | None: ...

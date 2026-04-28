@@ -11,6 +11,7 @@ from kinetic.db.sqlite_client import SqliteClient
 
 REQUIRED_METHODS = [
     "insert_checkin",
+    "insert_checkin_at",
     "get_latest_bio",
     "get_all_tasks",
     "get_all_vibes",
