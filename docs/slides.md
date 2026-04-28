@@ -1,47 +1,44 @@
----
-marp: true
-theme: dracula
-paginate: true
-_class: lead
----
+# !pyfiglet Kinetic
 
-# Kinetic
 ### Bio-Operational Triage Engine
 **Personal Infrastructure for High-Performance Engineers**
 
 ---
 
 ## The Problem: Jordan
+
 - **Senior SWE:** Optimized for output, ships 50+ hours/week.
 - **The Blind Spot:** Instruments CI/CD and on-call, but runs personal life on "instinct."
-- **The Debt Spiral:** Sleep deficit → cognitive decline → domestic backlog → relational drift.
-- **The Only Alert:** Burnout. (And burnout only fires after the crash.)
+- **The Debt Spiral:** Sleep deficit -> cognitive decline.
+- **Domestic Backlog:** Tasks now require a full weekend to clear.
+- **Relational Drift:** Marcus outreach 11 days overdue.
+- **The Only Alert:** Burnout. (Fires after the crash.)
 
 ---
 
 ## The Root Cause: Observability Gap
+
 > "You're operating critical infrastructure without a dashboard."
 
 - No SLO for sleep.
 - No alerting on laundry thresholds.
 - No triage list for connection margin.
-- **Kinetic provides the observability layer Jordan is missing.**
+
+**Kinetic provides the observability layer Jordan is missing.**
 
 ---
 
 ## The Architecture
 
-::: columns
 ### Backend
 - **Gemini 2.5 Flash + Instructor**
 - FastAPI / Pydantic v2
 - SQLite (Local) / Postgres (Prod)
-:::
+
 ### Frontend
 - **React 18 / TypeScript**
 - SSE (Server-Sent Events)
 - Vanilla CSS / Sparklines
-:::
 
 ---
 
@@ -58,6 +55,7 @@ _class: lead
 ---
 
 ## [DEMO] Live Walkthrough
+
 1. **Onboarding:** Keyboard-navigable & A11y compliant.
 2. **Behavioral History:** Pattern detection (e.g., `chronic_sleep_deficit`).
 3. **Live Stream:** Token-by-token SSE response.
@@ -66,6 +64,7 @@ _class: lead
 ---
 
 ## Summary & ROI
+
 - **Efficiency:** < 5 mins/day for triage.
 - **Leverage:** 3+ high-leverage actions surfaced weekly.
 - **Prevention:** Avoids 4–8h "recovery events" monthly.
