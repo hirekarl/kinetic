@@ -4,10 +4,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sse_starlette.sse import EventSourceResponse
 
 from kinetic.auth import get_current_tenant
 from kinetic.models.outputs import SystemHealthPayload
-from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate
+from kinetic.orchestrator.lead import get_current_state, get_db, orchestrate, orchestrate_stream
 from kinetic.parsing.llm_parser import parse_checkin
 
 router = APIRouter(prefix="/api")
@@ -49,6 +50,26 @@ async def complete_task(
             status_code=409, detail=f"Task '{task_name}' is already completed"
         ) from e
     return {"status": "completed", "task_name": task_name}
+
+
+@router.post("/checkin/stream")
+async def checkin_stream(
+    body: CheckInRequest,
+    tenant: str = Depends(get_current_tenant),
+) -> EventSourceResponse:
+    """Stream Operational Liaison response as SSE events."""
+    if not body.message.strip():
+        raise HTTPException(status_code=400, detail="message must not be empty")
+
+    try:
+        payload = await parse_checkin(body.message, body.history)
+    except OSError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
+
+    db = get_db(tenant)
+    return EventSourceResponse(orchestrate_stream(payload, body.message, body.history, db=db))
 
 
 @router.post("/checkin", response_model=SystemHealthPayload)

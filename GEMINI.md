@@ -102,15 +102,15 @@ src/kinetic/
     bio_archivist.py       sleep/nutrition tracking + burnout forecast
     logistics_fixer.py     task triage + outsourcing ROI
     relational_diplomat.py connection margin + interaction sprints
-    operational_liaison.py Instructor-based structured router; accepts behavioral context + live agent status; returns LiaisonResponse (text, responding_agent, contact_pauses)
+    operational_liaison.py Instructor-based structured router; LiaisonResponse + LiaisonMetadata models; _build_prompt_parts() shared helper; stream_text() async generator (raw token streaming via google-genai); extract_metadata() lightweight post-stream Instructor call; _METADATA_KEYWORDS keyword guard
   orchestrator/
-    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; dual-mode get_db(tenant): PostgresClient when _pg_pool set, SqliteClient otherwise
+    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; dual-mode get_db(tenant): PostgresClient when _pg_pool set, SqliteClient otherwise; orchestrate_stream() async generator yielding agents/token/done SSE event dicts
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
     __init__.py            package init
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
-    routes.py              FastAPI APIRouter (POST /api/checkin, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant
+    routes.py              FastAPI APIRouter (POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette
   db/
     base.py                DatabaseClient Protocol — shared interface satisfied by both SqliteClient and PostgresClient (Sprint 9)
     sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses()
@@ -126,18 +126,20 @@ tests/
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
   unit/test_db_protocol.py DatabaseClient Protocol completeness: all 13 method names, isinstance check against SqliteClient
+  unit/test_streaming.py   17 tests for LiaisonMetadata defaults, stream_text() chunking, extract_metadata() keyword guard + Instructor path + failure fallback, orchestrate_stream() event order + persistence + agent failure recovery + side effects
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
   integration/test_postgres_client.py  29 PostgresClient integration tests; all methods + tenant isolation; skipped without DATABASE_URL
+  integration/test_stream_route.py  6 SSE endpoint tests: 400 on empty, 503 on OSError, content-type header, agents/token/done event presence
   integration/             end-to-end API tests (Phase 3+)
   scenarios/               deterministic scenario fixtures for adversarial/multi-turn coverage (Sprint 6b)
 
 frontend/src/
-  types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser (username, tenant, display_name)
-  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header
+  types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload
+  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state
   components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
-  components/ChatPanel/    natural-language input + streaming display
+  components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
   components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, agent dispatch log
     SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
     AgentDispatchLog.tsx   collapsible agent routing history; per-entry expandable agent summaries + responding_agent badge
@@ -146,7 +148,7 @@ frontend/src/
   hooks/
     useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
   api/
-    client.ts              fetchCheckin, fetchHistory, completeTask (all accept optional token); login, fetchMe, logout; authHeaders() helper
+    client.ts              fetchCheckin, fetchHistory, completeTask (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
 ```
@@ -170,7 +172,7 @@ frontend/src/
 | Sprint 7 | `v1.2.0` | Agent Dispatch Log | ✅ |
 | Sprint 8 | `v1.3.0` | Multi-Tenant Auth | ✅ |
 | Sprint 9 | `v1.4.0` | PostgreSQL Migration | ✅ |
-| Sprint 10 | `v1.5.0` | Streaming Responses | ⬜ |
+| Sprint 10 | `v1.5.0` | Streaming Responses | ✅ |
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ⬜ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ⬜ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ⬜ |
@@ -347,6 +349,8 @@ The Python models in `src/kinetic/models/` are the single source of truth for da
 - `SystemHealthPayload` — returned by orchestrator, consumed by frontend; one consistent shape regardless of which agents fired; includes `behavioral_summary: BehavioralSummary | None`, `responding_agent: str | None`, `active_pauses: list[ContactPause]`
 - Sub-models: `BioStatus`, `LogisticsStatus`, `RelationalStatus`, `TriageItem`, `ROISummary`, `BioTrend` (includes `sleep_series: list[float]` — per-day hours oldest→newest), `RecurringTask`, `RelationalDrift`, `BehavioralSummary`, `BehavioralProfile`, `ContactPause`
 - Internal agent model: `LiaisonResponse` (in `agents/operational_liaison.py`) — `text: str`, `responding_agent: RespondingAgent`, `contact_pauses: list[ContactPauseDirective]`
+- Internal streaming metadata: `LiaisonMetadata` (in `agents/operational_liaison.py`) — lightweight post-stream extraction: `responding_agent`, `contact_pauses`, `task_completions`
+- Frontend streaming contract: `StreamDonePayload` (in `frontend/src/types/index.ts`) — `responding_agent`, `contact_pauses: ContactPauseDirective[]`, `task_completions`, `active_pauses`, `behavioral_profiles`, `behavioral_summary`; `ContactPauseDirective` mirrors Python model
 
 ---
 

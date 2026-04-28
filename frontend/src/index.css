@@ -28,3 +28,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-700;
 }
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.streaming-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  animation: blink 1s step-start infinite;
+}

@@ -54,6 +54,7 @@ const MOCK_USER = { username: 'demo', tenant: 'demo', display_name: 'Demo' };
 
 const mockFetchHistory = vi.fn();
 const mockFetchCheckin = vi.fn();
+const mockStreamCheckin = vi.fn();
 const mockCompleteTask = vi.fn();
 
 vi.mock('./api/client', () => ({
@@ -61,6 +62,8 @@ vi.mock('./api/client', () => ({
   fetchHistory: (...args: unknown[]) => mockFetchHistory(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchCheckin: (...args: unknown[]) => mockFetchCheckin(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  streamCheckin: (...args: unknown[]) => mockStreamCheckin(...args),
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   completeTask: (...args: unknown[]) => mockCompleteTask(...args),
   login: vi.fn(),
@@ -87,9 +90,11 @@ describe('App — split-panel shell', () => {
   beforeEach(() => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
+    mockStreamCheckin.mockReset();
     mockCompleteTask.mockReset();
     mockUseAuth.mockReturnValue(defaultAuthState);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockStreamCheckin.mockResolvedValue(undefined);
     // Suppress onboarding so these tests stay focused on the dashboard shell
     vi.stubGlobal('localStorage', {
       getItem: vi.fn().mockReturnValue('true'),
@@ -135,7 +140,27 @@ describe('App — split-panel shell', () => {
   });
 
   it('adds liaison feedback to the chat feed after a check-in', async () => {
-    mockFetchCheckin.mockResolvedValue(mockHealth);
+    mockStreamCheckin.mockImplementation(
+      (
+        _msg: string,
+        _hist: unknown,
+        _tok: unknown,
+        onAgents: (p: typeof mockHealth) => void,
+        onToken: (t: string) => void,
+        onDone: (d: unknown) => void
+      ) => {
+        onAgents(mockHealth);
+        onToken('Focus on sleep first.');
+        onDone({
+          responding_agent: 'liaison',
+          contact_pauses: [],
+          task_completions: [],
+          active_pauses: [],
+          behavioral_profiles: [],
+          behavioral_summary: null,
+        });
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -160,7 +185,19 @@ describe('App — split-panel shell', () => {
   // ── Error state — softened copy ────────────────────────────────────────────
 
   it('shows softened "Analysis unavailable" heading when check-in fails', async () => {
-    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    mockStreamCheckin.mockImplementation(
+      (
+        _m: unknown,
+        _h: unknown,
+        _t: unknown,
+        _oA: unknown,
+        _oT: unknown,
+        _oD: unknown,
+        onError: (d: string) => void
+      ) => {
+        onError('Service unavailable');
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -174,7 +211,19 @@ describe('App — split-panel shell', () => {
   });
 
   it('does not use alarming "SYSTEM ERROR" copy in the error banner', async () => {
-    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    mockStreamCheckin.mockImplementation(
+      (
+        _m: unknown,
+        _h: unknown,
+        _t: unknown,
+        _oA: unknown,
+        _oT: unknown,
+        _oD: unknown,
+        onError: (d: string) => void
+      ) => {
+        onError('Service unavailable');
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -188,7 +237,19 @@ describe('App — split-panel shell', () => {
   });
 
   it('shows a Retry button in the error banner after a failed check-in', async () => {
-    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    mockStreamCheckin.mockImplementation(
+      (
+        _m: unknown,
+        _h: unknown,
+        _t: unknown,
+        _oA: unknown,
+        _oT: unknown,
+        _oD: unknown,
+        onError: (d: string) => void
+      ) => {
+        onError('Service unavailable');
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -203,9 +264,41 @@ describe('App — split-panel shell', () => {
 
   it('Retry button re-submits the last message and clears the banner on success', async () => {
     const user = userEvent.setup();
-    mockFetchCheckin
-      .mockRejectedValueOnce(new Error('Service unavailable'))
-      .mockResolvedValueOnce({ ...mockHealth, liaison_feedback: 'All systems restored.' });
+    mockStreamCheckin
+      .mockImplementationOnce(
+        (
+          _m: unknown,
+          _h: unknown,
+          _t: unknown,
+          _oA: unknown,
+          _oT: unknown,
+          _oD: unknown,
+          onError: (d: string) => void
+        ) => {
+          onError('Service unavailable');
+        }
+      )
+      .mockImplementationOnce(
+        (
+          _msg: string,
+          _hist: unknown,
+          _tok: unknown,
+          onAgents: (p: typeof mockHealth) => void,
+          onToken: (t: string) => void,
+          onDone: (d: unknown) => void
+        ) => {
+          onAgents(mockHealth);
+          onToken('All systems restored.');
+          onDone({
+            responding_agent: 'liaison',
+            contact_pauses: [],
+            task_completions: [],
+            active_pauses: [],
+            behavioral_profiles: [],
+            behavioral_summary: null,
+          });
+        }
+      );
 
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
@@ -220,7 +313,7 @@ describe('App — split-panel shell', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(/analysis unavailable/i)).not.toBeInTheDocument();
-      expect(mockFetchCheckin).toHaveBeenCalledTimes(2);
+      expect(mockStreamCheckin).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -232,7 +325,19 @@ describe('App — split-panel shell', () => {
   });
 
   it('chat feed shows softened error copy when check-in fails', async () => {
-    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    mockStreamCheckin.mockImplementation(
+      (
+        _m: unknown,
+        _h: unknown,
+        _t: unknown,
+        _oA: unknown,
+        _oT: unknown,
+        _oD: unknown,
+        onError: (d: string) => void
+      ) => {
+        onError('Service unavailable');
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -246,7 +351,19 @@ describe('App — split-panel shell', () => {
   });
 
   it('chat feed does not use alarming "[CRITICAL ERROR]" prefix', async () => {
-    mockFetchCheckin.mockRejectedValue(new Error('Service unavailable'));
+    mockStreamCheckin.mockImplementation(
+      (
+        _m: unknown,
+        _h: unknown,
+        _t: unknown,
+        _oA: unknown,
+        _oT: unknown,
+        _oD: unknown,
+        onError: (d: string) => void
+      ) => {
+        onError('Service unavailable');
+      }
+    );
     render(<App />);
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
@@ -313,6 +430,8 @@ describe('App — Onboarding', () => {
   beforeEach(() => {
     mockFetchHistory.mockReset();
     mockFetchCheckin.mockReset();
+    mockStreamCheckin.mockReset();
+    mockStreamCheckin.mockResolvedValue(undefined);
     mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
     mockUseAuth.mockReturnValue(defaultAuthState);
     store = new Map();

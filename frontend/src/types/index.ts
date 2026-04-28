@@ -142,3 +142,18 @@ export interface AuthUser {
   tenant: string;
   display_name: string;
 }
+
+export interface ContactPauseDirective {
+  person: string;
+  pause_days: number;
+  reason: string | null;
+}
+
+export interface StreamDonePayload {
+  responding_agent: string;
+  contact_pauses: ContactPauseDirective[];
+  task_completions: string[];
+  active_pauses: ContactPause[];
+  behavioral_profiles: BehavioralProfile[];
+  behavioral_summary: BehavioralSummary | null;
+}

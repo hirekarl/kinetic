@@ -66,4 +66,34 @@ describe('ChatPanel', () => {
     expect(screen.getByText('Hello system.')).toBeInTheDocument();
     expect(screen.getByText('Roger that.')).toBeInTheDocument();
   });
+
+  it('shows streaming bubble with cursor when streamingContent is non-null', () => {
+    render(<ChatPanel onSendMessage={noop} isLoading={true} messages={[]} streamingContent="" />);
+    expect(screen.getByTestId('streaming-cursor')).toBeInTheDocument();
+  });
+
+  it('does not show streaming cursor when streamingContent is null', () => {
+    render(
+      <ChatPanel onSendMessage={noop} isLoading={false} messages={[]} streamingContent={null} />
+    );
+    expect(screen.queryByTestId('streaming-cursor')).not.toBeInTheDocument();
+  });
+
+  it('does not show streaming cursor when streamingContent is undefined', () => {
+    render(<ChatPanel onSendMessage={noop} isLoading={false} messages={[]} />);
+    expect(screen.queryByTestId('streaming-cursor')).not.toBeInTheDocument();
+  });
+
+  it('displays partial streamed text in the bubble', () => {
+    render(
+      <ChatPanel
+        onSendMessage={noop}
+        isLoading={true}
+        messages={[]}
+        streamingContent="Hello world"
+      />
+    );
+    expect(screen.getByText(/hello world/i)).toBeInTheDocument();
+    expect(screen.getByTestId('streaming-cursor')).toBeInTheDocument();
+  });
 });

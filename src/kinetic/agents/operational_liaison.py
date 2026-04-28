@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncGenerator
 from typing import Any, Literal
 
 import instructor
 from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
 from kinetic.models.outputs import (
@@ -18,6 +20,9 @@ from kinetic.models.outputs import (
 )
 
 _HISTORY_WINDOW = 10  # max prior messages forwarded to the LLM
+_METADATA_KEYWORDS: frozenset[str] = frozenset(
+    {"pause", "break", "no contact", "done with", "completed", "finished"}
+)
 
 RespondingAgent = Literal["liaison", "bio_archivist", "logistics_fixer", "relational_diplomat"]
 
@@ -26,6 +31,14 @@ class ContactPauseDirective(BaseModel):
     person: str = Field(description="Full name of the contact to pause outreach for")
     pause_days: int = Field(ge=1, le=365, description="Number of days to pause contact")
     reason: str | None = Field(default=None, description="Brief reason for the pause")
+
+
+class LiaisonMetadata(BaseModel):
+    """Lightweight metadata extracted after streaming — responding agent and side-effect directives."""
+
+    responding_agent: RespondingAgent = "liaison"
+    contact_pauses: list[ContactPauseDirective] = Field(default_factory=list)
+    task_completions: list[str] = Field(default_factory=list)
 
 
 class LiaisonResponse(BaseModel):
@@ -63,6 +76,7 @@ class OperationalLiaison:
         api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise OSError("GEMINI_API_KEY is not set for OperationalLiaison")
+        self._raw_client = genai.Client(api_key=api_key)
         self.client = instructor.from_genai(
             client=genai.Client(api_key=api_key),
             mode=instructor.Mode.GENAI_STRUCTURED_OUTPUTS,
@@ -81,10 +95,44 @@ class OperationalLiaison:
         relational_status: RelationalStatus | None = None,
     ) -> LiaisonResponse:
         """Route message to the appropriate specialist and return a structured response."""
+        _, messages = self._build_prompt_parts(
+            message=message,
+            overall_status=overall_status,
+            triage_items=triage_items,
+            behavioral_summary=behavioral_summary,
+            behavioral_profiles=behavioral_profiles,
+            history=history,
+            bio_status=bio_status,
+            logistics_status=logistics_status,
+            relational_status=relational_status,
+        )
+        try:
+            return LiaisonResponse.model_validate(
+                self.client.chat.completions.create(
+                    model="gemini-2.5-flash",
+                    messages=messages,
+                    response_model=LiaisonResponse,
+                ).model_dump()
+            )
+        except Exception as e:
+            return LiaisonResponse(text=f"[SYSTEM ERROR] Liaison processing failure: {e}")
+
+    def _build_prompt_parts(
+        self,
+        message: str,
+        overall_status: StatusLevel,
+        triage_items: list[TriageItem],
+        behavioral_summary: BehavioralSummary | None = None,
+        behavioral_profiles: list[BehavioralProfile] | None = None,
+        history: list[dict[str, str]] | None = None,
+        bio_status: BioStatus | None = None,
+        logistics_status: LogisticsStatus | None = None,
+        relational_status: RelationalStatus | None = None,
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Return (system_prompt, openai_style_messages) for use by process() and stream_text()."""
         triage_summary = "\n".join(
             [f"- [{item.priority}] {item.description}: {item.action}" for item in triage_items]
         )
-
         system_prompt = (
             "You are the Operational Liaison for a high-performance engineer running Kinetic, "
             "a personal infrastructure system staffed by three specialist agents:\n"
@@ -131,7 +179,6 @@ class OperationalLiaison:
             "proceed against advice), do not re-argue the point. Pivot immediately to risk mitigation: "
             "what can be done to reduce harm given the chosen path."
         )
-
         system_context = (
             f"OVERALL SYSTEM STATUS: {overall_status.upper()}\n"
             f"TRIAGE ITEMS:\n{triage_summary if triage_items else 'All systems nominal.'}"
@@ -157,17 +204,80 @@ class OperationalLiaison:
                 role = "user" if msg.get("role") == "user" else "assistant"
                 messages.append({"role": role, "content": msg["content"]})
         messages.append({"role": "user", "content": message})
+        return system_prompt, messages
 
+    async def stream_text(
+        self,
+        message: str,
+        overall_status: StatusLevel,
+        triage_items: list[TriageItem],
+        behavioral_summary: BehavioralSummary | None = None,
+        behavioral_profiles: list[BehavioralProfile] | None = None,
+        history: list[dict[str, str]] | None = None,
+        bio_status: BioStatus | None = None,
+        logistics_status: LogisticsStatus | None = None,
+        relational_status: RelationalStatus | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """Yield raw text chunks from Gemini streaming using the same prompt as process()."""
+        system_prompt, openai_messages = self._build_prompt_parts(
+            message=message,
+            overall_status=overall_status,
+            triage_items=triage_items,
+            behavioral_summary=behavioral_summary,
+            behavioral_profiles=behavioral_profiles,
+            history=history,
+            bio_status=bio_status,
+            logistics_status=logistics_status,
+            relational_status=relational_status,
+        )
+        # Convert OpenAI-style messages to genai content format (skip system → system_instruction)
+        genai_contents: list[dict[str, Any]] = []
+        for msg in openai_messages:
+            if msg["role"] == "system":
+                continue
+            role = "user" if msg["role"] == "user" else "model"
+            genai_contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+
+        config = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            response_mime_type="text/plain",
+        )
+        stream = await self._raw_client.aio.models.generate_content_stream(
+            model="gemini-2.5-flash",
+            contents=genai_contents,
+            config=config,
+        )
+        async for chunk in stream:
+            if chunk.text:
+                yield chunk.text
+
+    async def extract_metadata(self, streamed_text: str, message: str) -> LiaisonMetadata:
+        """Extract responding_agent / contact_pauses / task_completions from streamed text.
+
+        Skips the Instructor call entirely when the message contains no relevant keywords,
+        avoiding an extra round-trip for the common case of a plain check-in message.
+        """
+        if not any(kw in message.lower() for kw in _METADATA_KEYWORDS):
+            return LiaisonMetadata()
         try:
-            return LiaisonResponse.model_validate(
+            return LiaisonMetadata.model_validate(
                 self.client.chat.completions.create(
                     model="gemini-2.5-flash",
-                    messages=messages,
-                    response_model=LiaisonResponse,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": (
+                                "Extract structured metadata from the following liaison exchange.\n\n"
+                                f"User message: {message}\n\n"
+                                f"Liaison response: {streamed_text}"
+                            ),
+                        }
+                    ],
+                    response_model=LiaisonMetadata,
                 ).model_dump()
             )
-        except Exception as e:
-            return LiaisonResponse(text=f"[SYSTEM ERROR] Liaison processing failure: {e}")
+        except Exception:
+            return LiaisonMetadata()
 
 
 # ── Context formatters ────────────────────────────────────────────────────────

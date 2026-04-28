@@ -30,6 +30,7 @@ interface ChatPanelProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   messages: Message[];
+  streamingContent?: string | null;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -38,7 +39,12 @@ const SUGGESTED_PROMPTS = [
   'Marcus vibe check: 4/10, saw him 11 days ago.',
 ];
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ onSendMessage, isLoading, messages }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({
+  onSendMessage,
+  isLoading,
+  messages,
+  streamingContent,
+}) => {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -120,25 +126,39 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSendMessage, isLoading, 
           </div>
         ))}
 
-        {isLoading && (
-          <div className="flex items-start">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-none px-4 py-3">
-              <div className="flex gap-1">
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
-                  style={{ animationDelay: '300ms' }}
-                />
-              </div>
+        {streamingContent !== null && streamingContent !== undefined ? (
+          <div className="flex flex-col items-start">
+            <div className="max-w-[85%] rounded-2xl rounded-tl-none border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm leading-relaxed text-zinc-300 font-mono">
+              <span className="block text-[10px] font-bold mb-1 uppercase tracking-widest text-emerald-500">
+                [SYSTEM READOUT]
+              </span>
+              {streamingContent}
+              <span data-testid="streaming-cursor" aria-hidden="true" className="streaming-cursor">
+                |
+              </span>
             </div>
           </div>
+        ) : (
+          isLoading && (
+            <div className="flex items-start">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-none px-4 py-3">
+                <div className="flex gap-1">
+                  <div
+                    className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  />
+                  <div
+                    className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  />
+                  <div
+                    className="h-1.5 w-1.5 rounded-full bg-zinc-700 animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )
         )}
       </div>
 

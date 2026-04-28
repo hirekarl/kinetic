@@ -1,5 +1,5 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as client from '../api/client';
 
 vi.mock('../api/client', () => ({
@@ -9,6 +9,7 @@ vi.mock('../api/client', () => ({
   fetchCheckin: vi.fn(),
   fetchHistory: vi.fn(),
   completeTask: vi.fn(),
+  streamCheckin: vi.fn(),
 }));
 
 const mockLogin = vi.mocked(client.login);
@@ -24,9 +25,27 @@ async function getHook() {
 }
 
 describe('useAuth', () => {
+  let store: Map<string, string>;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
+    store = new Map();
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => store.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store.set(key, value);
+      }),
+      removeItem: vi.fn((key: string) => {
+        store.delete(key);
+      }),
+      clear: vi.fn(() => {
+        store.clear();
+      }),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('initial state: isLoading=false, user=null, token=null when no localStorage token', async () => {

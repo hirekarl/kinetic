@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
+from collections.abc import AsyncGenerator
 from datetime import date, timedelta
 from typing import Any
 
@@ -10,7 +12,7 @@ import asyncpg
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
-from kinetic.agents.operational_liaison import OperationalLiaison
+from kinetic.agents.operational_liaison import LiaisonMetadata, OperationalLiaison
 from kinetic.agents.relational_diplomat import RelationalDiplomat, RelationalDiplomatResult
 from kinetic.db.base import DatabaseClient
 from kinetic.db.postgres_client import PostgresClient
@@ -360,6 +362,165 @@ async def orchestrate(
         behavioral_summary=behavioral_summary,
         active_pauses=active_pauses,
     )
+
+
+async def orchestrate_stream(
+    payload: CheckInPayload,
+    message: str = "",
+    history: list[dict[str, str]] | None = None,
+    db: DatabaseClient | None = None,
+) -> AsyncGenerator[dict[str, str], None]:
+    """Async-generator variant of orchestrate(): yields SSE event dicts.
+
+    Event sequence:
+      1. {"event": "agents", "data": <SystemHealthPayload JSON, no liaison text>}
+      2. {"event": "token",  "data": {"text": "<chunk>"}}  — one per Liaison token
+      3. {"event": "done",   "data": <metadata + active_pauses JSON>}
+    """
+    if db is None:
+        db = get_db()
+
+    payload = await _merge_history(payload, db)
+    rolling_metrics: dict[str, Any] = {"bio": await db.get_recent_bio(limit=7)}
+
+    bio_task = asyncio.create_task(BioArchivist().process(payload, rolling_metrics))
+    logistics_task = asyncio.create_task(LogisticsFixer().process(payload, rolling_metrics))
+    relational_task = asyncio.create_task(RelationalDiplomat().process(payload, rolling_metrics))
+    results = await asyncio.gather(
+        bio_task, logistics_task, relational_task, return_exceptions=True
+    )
+
+    bio_result = results[0] if isinstance(results[0], BioArchivistResult) else None
+    logistics_result = results[1] if isinstance(results[1], LogisticsFixerResult) else None
+    relational_result = results[2] if isinstance(results[2], RelationalDiplomatResult) else None
+
+    if isinstance(results[0], Exception):
+        logger.error(f"BioArchivist failed in stream: {results[0]}")
+        bio_result = BioArchivistResult(
+            success=False,
+            error_message="BioArchivist unavailable.",
+            status=BioStatus(status="yellow", burnout_score=0, forecast="Agent failure."),
+        )
+    if isinstance(results[1], Exception):
+        logger.error(f"LogisticsFixer failed in stream: {results[1]}")
+        logistics_result = LogisticsFixerResult(
+            success=False,
+            error_message="LogisticsFixer unavailable.",
+            status=LogisticsStatus(status="yellow"),
+        )
+    if isinstance(results[2], Exception):
+        logger.error(f"RelationalDiplomat failed in stream: {results[2]}")
+        relational_result = RelationalDiplomatResult(
+            success=False,
+            error_message="RelationalDiplomat unavailable.",
+            status=RelationalStatus(status="yellow", connection_margin_score=0),
+        )
+
+    bio_status = bio_result.status if bio_result else None
+    logistics_status = logistics_result.status if logistics_result else None
+    relational_status = relational_result.status if relational_result else None
+
+    raw_triage: list[TriageItem] = []
+    for agent_result in (bio_result, logistics_result, relational_result):
+        if agent_result is not None:
+            raw_triage.extend(agent_result.triage_items)
+    triage_items = _assign_stable_ids(sorted(raw_triage, key=lambda t: t.priority, reverse=True))
+
+    overall = _aggregate_status(
+        bio_status.status if bio_status else None,
+        logistics_status.status if logistics_status else None,
+        relational_status.status if relational_status else None,
+    )
+    roi = _calculate_roi(bio_status, logistics_status, relational_status)
+
+    behavioral_summary = None
+    behavioral_profiles: list[BehavioralProfile] = []
+    try:
+        behavioral_summary = await db.get_behavioral_summary()
+        behavioral_profiles = await db.get_behavioral_profiles()
+    except Exception:
+        logger.exception("Failed to fetch behavioral context in stream")
+
+    # ── Event 1: agent cards ───────────────────────────────────────────────────
+    agents_payload = SystemHealthPayload(
+        overall_status=overall,
+        bio=bio_status,
+        logistics=logistics_status,
+        relational=relational_status,
+        triage_items=triage_items,
+        roi_summary=roi,
+        behavioral_profiles=behavioral_profiles,
+        behavioral_summary=behavioral_summary,
+        active_pauses=[],
+    )
+    yield {"event": "agents", "data": agents_payload.model_dump_json()}
+
+    # ── Events 2..N: Liaison token stream ─────────────────────────────────────
+    liaison = OperationalLiaison()
+    accumulated_text = ""
+    async for chunk in liaison.stream_text(
+        message=message,
+        overall_status=overall,
+        triage_items=triage_items,
+        behavioral_summary=behavioral_summary,
+        behavioral_profiles=behavioral_profiles,
+        history=history,
+        bio_status=bio_status,
+        logistics_status=logistics_status,
+        relational_status=relational_status,
+    ):
+        accumulated_text += chunk
+        yield {"event": "token", "data": json.dumps({"text": chunk})}
+
+    # ── Metadata extraction + side effects ────────────────────────────────────
+    metadata: LiaisonMetadata = await liaison.extract_metadata(accumulated_text, message)
+
+    for directive in metadata.contact_pauses:
+        paused_until = date.today() + timedelta(days=directive.pause_days)
+        await db.upsert_contact_pause(directive.person, paused_until.isoformat(), directive.reason)
+
+    active_pauses: list[ContactPause] = []
+    try:
+        raw_pauses = await db.get_active_pauses()
+        active_pauses = [ContactPause(**r) for r in raw_pauses]
+    except Exception:
+        logger.exception("Failed to load active pauses in stream")
+
+    for task_name in metadata.task_completions:
+        try:
+            await db.complete_task(task_name)
+        except KeyError:
+            logger.warning(f"complete_task: task not found in stream: {task_name!r}")
+
+    triage_items = _filter_paused_contacts(triage_items, active_pauses)
+
+    if message:
+        await db.insert_checkin(payload, message, accumulated_text)
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if behavioral_summary is not None:
+        task = asyncio.create_task(
+            detect_and_update_patterns(db, behavioral_summary, behavioral_profiles, api_key=api_key)
+        )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
+
+    # ── Event final: done ─────────────────────────────────────────────────────
+    yield {
+        "event": "done",
+        "data": json.dumps(
+            {
+                "responding_agent": metadata.responding_agent,
+                "contact_pauses": [p.model_dump() for p in metadata.contact_pauses],
+                "task_completions": metadata.task_completions,
+                "active_pauses": [p.model_dump() for p in active_pauses],
+                "behavioral_profiles": [p.model_dump() for p in behavioral_profiles],
+                "behavioral_summary": (
+                    behavioral_summary.model_dump() if behavioral_summary else None
+                ),
+            }
+        ),
+    }
 
 
 async def get_current_state(db: DatabaseClient | None = None) -> dict[str, Any]:

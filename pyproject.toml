@@ -17,6 +17,7 @@ dependencies = [
     "pyjwt>=2.8",
     "bcrypt>=4.0",
     "asyncpg>=0.31.0",
+    "sse-starlette>=1.8",
 ]
 
 [dependency-groups]
@@ -109,6 +110,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "asyncpg"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sse_starlette.*"
 ignore_missing_imports = true
 
 # ── Pytest ────────────────────────────────────────────────────────────────────

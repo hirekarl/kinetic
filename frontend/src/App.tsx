@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChatPanel, Message, RespondingAgent } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
@@ -10,9 +10,9 @@ import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
 import { LoginScreen } from './components/LoginScreen';
-import { fetchCheckin, fetchHistory, completeTask } from './api/client';
+import { streamCheckin, fetchHistory, completeTask } from './api/client';
 import { useAuth } from './hooks/useAuth';
-import { AgentLogEntry, SystemHealthPayload } from './types';
+import { AgentLogEntry, StreamDonePayload, SystemHealthPayload } from './types';
 import { buildAgentLogEntry } from './utils/agentLog';
 
 function App() {
@@ -25,6 +25,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
+  const [streamingContent, setStreamingContent] = useState<string | null>(null);
+  const accumulatedRef = useRef('');
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('kinetic_onboarded')
   );
@@ -71,40 +73,51 @@ function App() {
 
   const handleSendMessage = (content: string) => {
     setLastMessage(content);
-
-    const userMsg: Message = { role: 'user', content };
-    setMessages((prev) => [...prev, userMsg]);
-
+    setMessages((prev) => [...prev, { role: 'user', content }]);
     setIsLoading(true);
     setError(null);
+    setStreamingContent('');
+    accumulatedRef.current = '';
 
     const timestamp = new Date().toISOString();
 
-    void fetchCheckin(content, messages, token ?? undefined)
-      .then((result) => {
+    void streamCheckin(
+      content,
+      messages,
+      token ?? undefined,
+      (result) => {
         setHealth(result);
-        setLastMessage(null);
         setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
-        if (result.liaison_feedback) {
-          const systemMsg: Message = {
-            role: 'system',
-            content: result.liaison_feedback,
-            agent: (result.responding_agent as RespondingAgent | null) ?? 'liaison',
-          };
-          setMessages((prev) => [...prev, systemMsg]);
+      },
+      (text) => {
+        accumulatedRef.current += text;
+        setStreamingContent(accumulatedRef.current);
+      },
+      (done: StreamDonePayload) => {
+        setIsLoading(false);
+        setStreamingContent(null);
+        setLastMessage(null);
+        if (accumulatedRef.current) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'system',
+              content: accumulatedRef.current,
+              agent: (done.responding_agent as RespondingAgent | null) ?? 'liaison',
+            },
+          ]);
         }
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Failed to update system health.';
-        setError(msg);
+      },
+      (detail: string) => {
+        setIsLoading(false);
+        setStreamingContent(null);
+        setError(detail);
         setMessages((prev) => [
           ...prev,
-          { role: 'system', content: `Check-in could not be processed. ${msg}` },
+          { role: 'system', content: `Check-in could not be processed. ${detail}` },
         ]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      }
+    );
   };
 
   const handleRetry = () => {
@@ -159,7 +172,12 @@ function App() {
       {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
       {/* Left Panel: Operational Liaison Feed */}
       <div className="w-[420px] shrink-0">
-        <ChatPanel onSendMessage={handleSendMessage} isLoading={isLoading} messages={messages} />
+        <ChatPanel
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          messages={messages}
+          streamingContent={streamingContent}
+        />
       </div>
 
       {/* Right Panel: Mission Control Dashboard */}

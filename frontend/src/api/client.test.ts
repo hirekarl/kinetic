@@ -1,5 +1,14 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { fetchCheckin, fetchHistory, completeTask, login, fetchMe, logout } from './client';
+import {
+  fetchCheckin,
+  fetchHistory,
+  completeTask,
+  login,
+  fetchMe,
+  logout,
+  streamCheckin,
+} from './client';
+import type { SystemHealthPayload, StreamDonePayload } from '../types';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -168,6 +177,164 @@ describe('API client', () => {
           headers: { Authorization: 'Bearer my-token' },
         })
       );
+    });
+  });
+
+  describe('streamCheckin', () => {
+    const mockHealth: SystemHealthPayload = {
+      overall_status: 'green',
+      bio: null,
+      logistics: null,
+      relational: null,
+      triage_items: [],
+      roi_summary: null,
+      liaison_feedback: null,
+      responding_agent: null,
+      behavioral_profiles: [],
+      behavioral_summary: null,
+      active_pauses: [],
+    };
+
+    const mockDone: StreamDonePayload = {
+      responding_agent: 'liaison',
+      contact_pauses: [],
+      task_completions: [],
+      active_pauses: [],
+      behavioral_profiles: [],
+      behavioral_summary: null,
+    };
+
+    function makeSSEStream(events: { event: string; data: string }[]): ReadableStream<Uint8Array> {
+      const encoder = new TextEncoder();
+      const text = events.map(({ event, data }) => `event: ${event}\ndata: ${data}\n\n`).join('');
+      return new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(text));
+          controller.close();
+        },
+      });
+    }
+
+    const noop = vi.fn();
+
+    beforeEach(() => {
+      noop.mockClear();
+    });
+
+    it('sends POST to /api/checkin/stream with auth header', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: makeSSEStream([
+          { event: 'agents', data: JSON.stringify(mockHealth) },
+          { event: 'done', data: JSON.stringify(mockDone) },
+        ]),
+      });
+
+      await streamCheckin('hello', [], 'test-token', noop, noop, noop, noop);
+
+      const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain('/api/checkin/stream');
+      expect((opts.headers as Record<string, string>).Authorization).toBe('Bearer test-token');
+      expect(opts.method).toBe('POST');
+    });
+
+    it('calls onAgents when agents event fires', async () => {
+      const onAgents = vi.fn();
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: makeSSEStream([
+          { event: 'agents', data: JSON.stringify(mockHealth) },
+          { event: 'done', data: JSON.stringify(mockDone) },
+        ]),
+      });
+
+      await streamCheckin('hello', [], undefined, onAgents, noop, noop, noop);
+
+      expect(onAgents).toHaveBeenCalledOnce();
+      expect(onAgents).toHaveBeenCalledWith(expect.objectContaining({ overall_status: 'green' }));
+    });
+
+    it('calls onToken for each token event', async () => {
+      const onToken = vi.fn();
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: makeSSEStream([
+          { event: 'agents', data: JSON.stringify(mockHealth) },
+          { event: 'token', data: JSON.stringify({ text: 'Hello ' }) },
+          { event: 'token', data: JSON.stringify({ text: 'world.' }) },
+          { event: 'done', data: JSON.stringify(mockDone) },
+        ]),
+      });
+
+      await streamCheckin('hello', [], undefined, noop, onToken, noop, noop);
+
+      expect(onToken).toHaveBeenCalledTimes(2);
+      expect(onToken).toHaveBeenNthCalledWith(1, 'Hello ');
+      expect(onToken).toHaveBeenNthCalledWith(2, 'world.');
+    });
+
+    it('calls onDone with StreamDonePayload on done event', async () => {
+      const onDone = vi.fn();
+      const done: StreamDonePayload = { ...mockDone, responding_agent: 'bio_archivist' };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: makeSSEStream([
+          { event: 'agents', data: JSON.stringify(mockHealth) },
+          { event: 'done', data: JSON.stringify(done) },
+        ]),
+      });
+
+      await streamCheckin('hello', [], undefined, noop, noop, onDone, noop);
+
+      expect(onDone).toHaveBeenCalledOnce();
+      expect(onDone).toHaveBeenCalledWith(
+        expect.objectContaining({ responding_agent: 'bio_archivist' })
+      );
+    });
+
+    it('calls onError on error event', async () => {
+      const onError = vi.fn();
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: makeSSEStream([{ event: 'error', data: JSON.stringify({ detail: 'LLM failure' }) }]),
+      });
+
+      await streamCheckin('hello', [], undefined, noop, noop, noop, onError);
+
+      expect(onError).toHaveBeenCalledOnce();
+      expect(onError).toHaveBeenCalledWith('LLM failure');
+    });
+
+    it('falls back to fetchCheckin on non-200 response', async () => {
+      const onAgents = vi.fn();
+      const onToken = vi.fn();
+      const onDone = vi.fn();
+      mockFetch
+        .mockResolvedValueOnce({ ok: false, status: 503, body: null })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ ...mockHealth, liaison_feedback: 'Fallback response' }),
+        });
+
+      await streamCheckin('hello', [], 'tok', onAgents, onToken, onDone, noop);
+
+      expect(onAgents).toHaveBeenCalledOnce();
+      expect(onToken).toHaveBeenCalledWith('Fallback response');
+      expect(onDone).toHaveBeenCalledOnce();
+    });
+
+    it('falls back to fetchCheckin on network error', async () => {
+      const onAgents = vi.fn();
+      const onDone = vi.fn();
+      mockFetch.mockRejectedValueOnce(new TypeError('Network error')).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockHealth),
+      });
+
+      await streamCheckin('hello', [], undefined, onAgents, noop, onDone, noop);
+
+      expect(onAgents).toHaveBeenCalledOnce();
+      expect(onDone).toHaveBeenCalledOnce();
     });
   });
 });
