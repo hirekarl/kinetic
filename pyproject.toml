@@ -165,4 +165,4 @@ tag_format = "v$version"
 update_changelog_on_bump = true
 changelog_file = "CHANGELOG.md"
 changelog_incremental = true
-bump_message = "chore(release): v{current_version} → v{new_version} [skip ci]"
+bump_message = "chore(release): v$current_version → v$new_version [skip ci]"
