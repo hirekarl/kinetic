@@ -443,6 +443,8 @@ class SqliteClient:
 
     async def get_burnout_series(self, days: int = 14) -> list[float]:
         """Return per-entry burnout scores for the last `days` days, oldest→newest."""
+        if days <= 0:
+            return []
         offset = f"-{days} days"
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)

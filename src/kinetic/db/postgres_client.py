@@ -421,6 +421,8 @@ class PostgresClient:
 
     async def get_burnout_series(self, days: int = 14) -> list[float]:
         """Return per-entry burnout scores for the last `days` days, oldest→newest."""
+        if days <= 0:
+            return []
         cutoff = datetime.now() - timedelta(days=days)
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
