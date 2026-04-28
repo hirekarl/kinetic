@@ -7,7 +7,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.4.0-blue)](CHANGELOG.md)
 
 ---
 
@@ -60,12 +60,16 @@ The orchestrator aggregates agent outputs into a single `SystemHealthPayload` �
 **Backend**
 - Python 3.12, [uv](https://docs.astral.sh/uv/) for environment + dependency management
 - [FastAPI](https://fastapi.tiangolo.com/) · [Pydantic v2](https://docs.pydantic.dev/) · [Instructor](https://python.useinstructor.com/) + [Gemini 2.5 Flash](https://ai.google.dev/)
+- [asyncpg](https://magicstack.github.io/asyncpg/) + PostgreSQL (Render) · aiosqlite (local dev fallback)
 - mypy strict · ruff · pytest + pytest-cov
 
 **Frontend**
 - React 18 · TypeScript strict · [Vite](https://vitejs.dev/)
 - [Vitest](https://vitest.dev/) · [Playwright](https://playwright.dev/) · [@axe-core/playwright](https://github.com/dequelabs/axe-core-npm)
 - ESLint flat config (TypeScript-ESLint + jsx-a11y strict) · Prettier
+
+**Deployment**
+- [Render](https://render.com/) — `render.yaml` Blueprint deploys API service + static frontend + PostgreSQL in one step
 
 **Tooling**
 - [Commitizen](https://commitizen-tools.github.io/commitizen/) SemVer (Conventional Commits)
@@ -88,7 +92,8 @@ git clone https://github.com/hirekarl/kinetic.git
 cd kinetic
 
 # Backend
-cp .env.example .env          # add your GEMINI_API_KEY
+cp .env.example .env          # add GEMINI_API_KEY (DATABASE_URL optional — omit to use SQLite)
+cp credentials.toml.example credentials.toml  # fill in bcrypt hashes for your tenants
 uv sync                       # installs Python deps + creates .venv
 pre-commit install            # wire up commit hooks (run once)
 uv run uvicorn kinetic.main:app --reload --port 8000
@@ -99,14 +104,16 @@ npm install
 npm run dev                   # Vite dev server on :5173, proxies /api → :8000
 ```
 
-Open `http://localhost:5173`.
+Open `http://localhost:5173` and log in with a tenant defined in `credentials.toml`.
 
 ### Running tests
 
 ```bash
-# Python
-uv run pytest                 # unit tests + coverage report
-uv run pytest -m integration  # integration tests (requires GEMINI_API_KEY)
+# Python — unit + integration (SQLite, no external services)
+uv run pytest
+
+# Python — PostgreSQL integration tests (requires a running PostgreSQL instance)
+DATABASE_URL=postgresql://user:pass@localhost/kinetic uv run pytest tests/integration/test_postgres_client.py -v
 
 # Frontend
 cd frontend
@@ -130,6 +137,9 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 5 | Behavioral memory — SQLite patterns + profile panel | `v0.6.0` | ✅ Released |
 | Sprint 6 | Polish + demo prep — onboarding, a11y, empty states | `v1.0.0` | ✅ Released |
 | Sprint 6b | Dashboard interactivity + liaison hardening | `v1.1.0` | ✅ Released |
+| Sprint 7 | Agent dispatch log — collapsible multi-agent routing panel | `v1.2.0` | ✅ Released |
+| Sprint 8 | Multi-tenant auth — JWT sessions, bcrypt credentials, per-tenant DB isolation | `v1.3.0` | ✅ Released |
+| Sprint 9 | PostgreSQL migration — asyncpg dual-mode DB layer + Render Blueprint | `v1.4.0` | ✅ Released |
 
 **Demo deadline:** 2026-05-03 · **MVP deadline:** 2026-05-05
 
@@ -158,7 +168,16 @@ Every commit follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ## Deployment
 
-Kinetic runs locally. Backend on `:8000`, frontend on `:5173` (Vite proxies `/api` → `:8000`). See [Getting Started](#getting-started) above.
+**Render (production):** `render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the full stack in one click — Python API service, React static site, and a managed PostgreSQL database (basic-256mb). After deploying:
+
+1. Upload `credentials.toml` as a Secret File at `/etc/secrets/credentials.toml`
+2. Set `GEMINI_API_KEY` in the API service environment
+3. Set `FRONTEND_URL` (API service) and `VITE_API_BASE_URL` (frontend service) to each other's Render URLs
+4. Redeploy the frontend so Vite bakes `VITE_API_BASE_URL` in at build time
+
+`DATABASE_URL` is wired automatically from the managed database — no manual configuration needed.
+
+**Local dev:** backend on `:8000`, frontend on `:5173` (Vite proxies `/api` → `:8000`). SQLite is used by default when `DATABASE_URL` is absent. See [Getting Started](#getting-started) above.
 
 ---
 
