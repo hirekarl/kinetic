@@ -454,7 +454,7 @@ Migrate the database layer from per-tenant SQLite files to Render's managed Post
 - [x] `/qa-reviewer` approval — APPROVED
 - [x] `/security-reviewer` approval — APPROVED (bandit 0 issues; pip-audit 1 informational; npm audit 6 moderate dev-only)
 - [x] `/docs-keeper` updates complete
-- [ ] `v1.4.0` release ceremony complete
+- [x] `v1.4.0` release ceremony complete
 
 ---
 
@@ -472,4 +472,4 @@ Migrate the database layer from per-tenant SQLite files to Render's managed Post
 | `v1.1.0` | Sprint 6b — Dashboard Interactivity + Liaison Hardening | Phase 4+ | ✅ |
 | `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
 | `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | ✅ Released |
-| `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Pending release |
+| `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Released |
