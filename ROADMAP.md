@@ -458,6 +458,109 @@ Migrate the database layer from per-tenant SQLite files to Render's managed Post
 
 ---
 
+## Sprint 10 — Streaming Responses ⬜
+**Dates:** TBD · **Target version:** `v1.5.0`
+
+Stream the Operational Liaison's reply token-by-token via Server-Sent Events. The dashboard updates the moment the first token arrives, eliminating the dead pause during a live demo.
+
+### Backend
+- [ ] Add `sse-starlette` dependency (`uv add sse-starlette`)
+- [ ] New endpoint `POST /api/checkin/stream` — SSE variant of `/api/checkin`; requires `get_current_tenant`
+- [ ] Emit `event: agents` first — full `SystemHealthPayload` with agent status cards (no liaison text yet); frontend can render cards immediately
+- [ ] Stream Liaison reply via `generate_content_stream` (google-genai streaming API); emit `event: token` per chunk
+- [ ] Emit `event: done` with final `responding_agent` + `contact_pauses` + `task_completions` metadata
+- [ ] Unit tests: SSE event sequence, agent-event shape, done-event shape (mock Gemini stream)
+- [ ] Integration tests: full SSE round-trip with mocked stream
+
+### Frontend
+- [ ] Replace `fetchCheckin` with a streaming client using `fetch` + `ReadableStream` (no `EventSource` — needs POST + auth header)
+- [ ] `ChatPanel`: render agent cards as soon as `agents` event arrives; append Liaison tokens to the in-progress message bubble character-by-character
+- [ ] Show blinking cursor during streaming; remove on `done`
+- [ ] Graceful fallback: if SSE fails, retry with standard `POST /api/checkin`
+- [ ] Vitest: streaming render states (pending, mid-stream, done, error)
+- [ ] Playwright e2e: submit → cards appear → text streams in → cursor disappears
+
+### Quality Gates
+- [ ] `uv run pytest` passes — all existing tests still green
+- [ ] `uv run mypy src/kinetic --strict` → 0 errors
+- [ ] `npm run test:coverage` ≥ 80%
+- [ ] Playwright e2e + axe → 0 WCAG 2.1 AA violations
+- [ ] `/qa-reviewer` + `/security-reviewer` + `/docs-keeper` approvals
+- [ ] `v1.5.0` release ceremony complete
+
+---
+
+## Sprint 11 — Burnout Trend Chart ⬜
+**Target version:** `v1.6.0`
+
+Surface the 14-day burnout score history as a line chart in the Bio card. The data already exists in `bio_metrics`; this is purely a visualization sprint — no new backend data model required.
+
+### Backend
+- [ ] New method `SqliteClient.get_burnout_series(days: int = 14) -> list[float]` — ordered oldest→newest; mirrors the existing `get_sleep_series` pattern
+- [ ] Mirror in `PostgresClient.get_burnout_series()` (ordered by `inserted_at ASC`)
+- [ ] Add `get_burnout_series` to `DatabaseClient` Protocol (`base.py`)
+- [ ] Orchestrator: populate `BioTrend.burnout_series: list[float]` field (add to model + TS type)
+- [ ] Unit tests: empty series, partial series, full 14-day series
+
+### Frontend
+- [ ] `BurnoutTrendChart` component — SVG polyline matching `SleepSparkline` visual language; red/amber/emerald stroke from trend direction; `aria-hidden` with adjacent screen-reader text
+- [ ] Render below burnout score in `BioStatusCard`; null/hidden for < 2 data points
+- [ ] Vitest: renders, declining trend shows red stroke, empty state hidden
+- [ ] Playwright + axe: zero violations
+
+### Quality Gates
+- [ ] All prior gates passing
+- [ ] `v1.6.0` release ceremony complete
+
+---
+
+## Sprint 12 — Weekly Digest ⬜
+**Target version:** `v1.7.0`
+
+A single Gemini call that ingests 14 days of bio/logistics/relational data and returns a prose "state of the system" paragraph. Shown as a collapsible "Weekly Review" card in the dashboard.
+
+### Backend
+- [ ] New endpoint `GET /api/digest` — requires `get_current_tenant`; fetches `get_behavioral_summary(days=14)` + `get_behavioral_profiles()` + last 14 `get_checkin_history()` entries; passes to Gemini with a structured prompt; returns `DigestResponse(summary: str, generated_at: datetime)`
+- [ ] `DigestResponse` Pydantic model in `models/outputs.py`; mirrored in `frontend/src/types/index.ts`
+- [ ] Rate-limit guard: cache digest for 6 hours per tenant (store in a `digest_cache` table or in-memory dict); return cached version if fresh
+- [ ] Unit tests: digest generation (mocked Gemini), cache hit/miss, empty-history fallback
+- [ ] Integration tests: full endpoint round-trip
+
+### Frontend
+- [ ] `WeeklyDigestCard` component — collapsible disclosure; "Weekly Review" heading; prose paragraph; "Generated X minutes ago" timestamp; "Refresh" button (re-fetches, shows spinner)
+- [ ] `App.tsx`: fetch digest on mount (after auth); refresh on explicit user action only
+- [ ] `client.ts`: `fetchDigest(token)` API call
+- [ ] Vitest: loading state, populated state, error state, refresh action
+- [ ] Playwright + axe: zero violations
+
+### Quality Gates
+- [ ] All prior gates passing
+- [ ] `v1.7.0` release ceremony complete
+
+---
+
+## Sprint 13 — Demo Polish + Shareable Deploy ⬜
+**Target version:** `v1.8.0`
+
+Make the live Render deploy presentation-ready: a pre-seeded `demo` tenant, a one-command seed script, and a "Simulate Week" feature that fast-replays a compelling scripted check-in sequence to show data accumulation to judges.
+
+### Demo Tenant Seeding
+- [ ] Extend `scripts/seed_demo.py` to target the PostgreSQL backend via `DATABASE_URL` (currently SQLite-only)
+- [ ] Seed script populates 14 days of bio metrics, tasks, vibe checks, and behavioral profiles for the `demo` tenant
+- [ ] `credentials.toml.example` documents the `demo` tenant; Render Secret File instructions updated in `render.yaml` header comments
+
+### Simulate Week Feature
+- [ ] New endpoint `POST /api/demo/simulate` (guarded by `demo` tenant only — reject for any other tenant) — replays 5 pre-scripted check-in messages with timestamps spread across 7 days, populating bio/logistics/relational history
+- [ ] Frontend: "Simulate Week" button visible only when `user.tenant === "demo"`; triggers simulate then auto-refreshes digest + trend chart
+- [ ] Unit tests: tenant guard (non-demo tenant → 403), simulation inserts correct row count
+
+### Quality Gates
+- [ ] Render deploy verified end-to-end with seeded demo tenant
+- [ ] All prior gates passing
+- [ ] `v1.8.0` release ceremony complete
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -473,3 +576,7 @@ Migrate the database layer from per-tenant SQLite files to Render's managed Post
 | `v1.2.0` | Sprint 7 — Agent Dispatch Log | Phase 4+ | ✅ Released |
 | `v1.3.0` | Sprint 8 — Multi-Tenant Auth | Phase 4+ | ✅ Released |
 | `v1.4.0` | Sprint 9 — PostgreSQL Migration | Phase 4+ | ✅ Released |
+| `v1.5.0` | Sprint 10 — Streaming Responses | Phase 4+ | ⬜ Not started |
+| `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ⬜ Not started |
+| `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ⬜ Not started |
+| `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ⬜ Not started |

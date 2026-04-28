@@ -123,6 +123,10 @@ frontend/src/
 | Sprint 7 | `v1.2.0` | Agent Dispatch Log | ✅ |
 | Sprint 8 | `v1.3.0` | Multi-Tenant Auth | ✅ |
 | Sprint 9 | `v1.4.0` | PostgreSQL Migration | ✅ |
+| Sprint 10 | `v1.5.0` | Streaming Responses | ⬜ |
+| Sprint 11 | `v1.6.0` | Burnout Trend Chart | ⬜ |
+| Sprint 12 | `v1.7.0` | Weekly Digest | ⬜ |
+| Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ⬜ |
 
 ---
 
