@@ -4,16 +4,16 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.7.0 (2026-04-28)
 
-### Added
-- `DigestResponse(summary, generated_at)` Pydantic model and `GET /api/digest?force=false` endpoint — returns a Gemini-generated 14-day prose summary cached for 6 hours per tenant; `force=true` regenerates immediately
-- `src/kinetic/services/digest_generator.py` — `generate_digest()` service with in-memory TTL cache, empty-history guard, and exception-safe Gemini call
-- `WeeklyDigestCard` component — collapsible "Weekly Review" panel in the Mission Control dashboard; shows 14-day prose digest, relative "Generated X minutes ago" timestamp, and a Refresh button with loading spinner; handles loading, no-data, and error (`[DIGEST ERROR]`) states
-- `fetchDigest(token?, force?)` API client function; `DigestResponse` TypeScript interface mirroring the Python model
+### Feat
 
-### Fixed
-- `get_burnout_series(days=0)` now returns `[]` immediately instead of producing a datetime precision race against SQLite's `datetime('now')` on UTC CI runners
+- **ui**: WeeklyDigestCard — collapsible digest with refresh, timestamp, error states (Sprint 12)
+- **digest**: weekly digest backend — GET /api/digest + generate_digest service (Sprint 12)
+
+### Fix
+
+- **db**: guard get_burnout_series against days<=0 to prevent datetime precision race on CI
 
 ## v1.6.0 (2026-04-28)
 
