@@ -112,6 +112,12 @@ frontend/src/
     client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
+    live-demo.spec.ts      Playwright demo recording script: 12-section mocked flow (login error, onboarding, Simulate Week, Behavioral Profile, Weekly Digest, 3 chat turns, task check-off, 503/retry, Agent Dispatch Log, mobile viewport); smooth scroll + mouse cursor overlay; 1920×1080 headless capture
+  playwright-demo.config.ts  Playwright config for demo video recording: headless 1920×1080, video: on, 300s timeout, reuses dev server
+
+docs/
+  DEMO.md                  Live in-person presentation script: 5-section verbal guide (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines and typed inputs for all 3 check-in turns
+  NARRATION.md             Video voiceover script: 3-part (~4 min) narration track for the Playwright video artifact; Part 1 over stock footage, Part 2 over screen recording with [HOLD] markers, Part 3 outro
 ```
 
 ---

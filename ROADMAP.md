@@ -575,11 +575,12 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 - [x] One-paragraph architecture summary
 - [x] Local demo run instructions
 
-### D — Demo Script Update (`docs/DEMO.md`)
-- [x] Add 5-section opening: Problem → Root Cause → Solution (before current Step 1)
-- [x] Add "What's Next" close (Simulate Week / Render deploy as the pitch)
-- [x] Fix stale "why no streaming" Q&A answer (streaming shipped in Sprint 10)
-- [x] Slot for live Render URL once deploy is verified
+### D — Demo Script Update (`docs/DEMO.md`) + Video Artifact
+- [x] Complete rewrite of `docs/DEMO.md` as live in-person presentation script (Problem → Root Cause → Solution → Live Demo → What's Next); exact verbal lines + typed inputs for all 3 check-in turns; pre-demo setup checklist; troubleshooting table
+- [x] `docs/NARRATION.md` — video voiceover script (~4 min) for Playwright-recorded video artifact; Jordan narrative arc, metric methodology explanations, [HOLD] markers
+- [x] `frontend/e2e/live-demo.spec.ts` — 12-section Playwright demo recording script with mocked API, smooth scroll, mouse cursor overlay, simulated latency; all rubric requirements covered
+- [x] `frontend/playwright-demo.config.ts` — dedicated Playwright config for demo video recording (headless, 1920×1080, 300s timeout)
+- [x] Video artifact generated and verified at 1920×1080
 
 ### E — Render Deploy
 - [ ] Configure Render dashboard: `GEMINI_API_KEY`, `FRONTEND_URL`, `VITE_API_BASE_URL`, `credentials.toml` Secret File

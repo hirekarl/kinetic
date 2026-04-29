@@ -4,6 +4,22 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Added
+- `frontend/e2e/live-demo.spec.ts` — Playwright demo recording script: 12-section mocked flow covering all rubric requirements; smooth scroll, mouse cursor overlay, simulated Gemini latency delays, 1920×1080 headless video capture
+- `frontend/playwright-demo.config.ts` — dedicated Playwright config for demo recording (headless, 300s timeout, video: on, 1920×1080)
+- `docs/NARRATION.md` — video voiceover script (~4 min) for the Playwright video artifact; three-part structure with [HOLD] markers aligned to screen recording beats
+
+### Changed
+- `docs/DEMO.md` — complete rewrite as live in-person presentation script; rubric-ordered (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines, typed inputs, pre-demo setup checklist, and troubleshooting table
+
+### Fixed
+- `WeeklyDigestCard.tsx` — removed erroneous `if (!digest && !isLoading) return null` guard that broke the intentional no-data empty state
+- `BehavioralProfilePanel.tsx` — removed useless `= []` default on required non-optional prop
+- `ROISummaryCard.tsx` — removed unreachable `if (!data) return null` guard on non-nullable prop
+- `RelationalStatusCard.tsx` — removed unnecessary `?? []` fallbacks on `string[]` fields that TypeScript already guarantees non-null
+
 ## v1.8.0 (2026-04-28)
 
 ### Feat
