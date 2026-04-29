@@ -86,6 +86,26 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
                   }}
                 />
               </div>
+              {task.subtasks.length > 0 && (
+                <ul className="mt-2 space-y-1 pl-1">
+                  {task.subtasks.map((step) => (
+                    <li key={step} className="flex items-center gap-2 text-[10px] text-zinc-500">
+                      <div
+                        className={`h-1 w-1 rounded-full ${
+                          task.completed_subtasks.includes(step) ? 'bg-status-green' : 'bg-zinc-700'
+                        }`}
+                      />
+                      <span
+                        className={
+                          task.completed_subtasks.includes(step) ? 'line-through opacity-50' : ''
+                        }
+                      >
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ))}
         </div>

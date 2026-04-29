@@ -8,6 +8,7 @@ interface ROISummaryCardProps {
 
 export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading }) => {
   if (isLoading) {
+    // ... skeleton ...
     return (
       <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.01] p-8 animate-pulse">
         <div className="flex items-center gap-3 mb-6">

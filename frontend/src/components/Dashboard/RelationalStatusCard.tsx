@@ -28,6 +28,9 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({
     );
   }
 
+  const atRisk = data.at_risk_relationships;
+  const sprints = data.interaction_sprints;
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition-colors hover:border-zinc-700">
       <div className="flex items-center justify-between mb-6">
@@ -50,13 +53,13 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({
         </div>
       </div>
 
-      {data.at_risk_relationships.length > 0 && (
+      {atRisk.length > 0 && (
         <div className="mb-6">
           <div className="text-[10px] uppercase tracking-wider text-zinc-400 mb-2">
             Degraded Links
           </div>
           <div className="flex flex-wrap gap-2">
-            {data.at_risk_relationships.map((person) => (
+            {atRisk.map((person) => (
               <span
                 key={person}
                 className="rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-300 uppercase tracking-tight"
@@ -68,12 +71,12 @@ export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({
         </div>
       )}
 
-      {data.interaction_sprints.length > 0 && (
+      {sprints.length > 0 && (
         <div className="space-y-3">
           <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
             Interaction Sprints
           </div>
-          {data.interaction_sprints.map((sprint, i) => (
+          {sprints.map((sprint, i) => (
             <div
               key={i}
               className="rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400 flex items-start gap-3"

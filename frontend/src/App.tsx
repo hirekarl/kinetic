@@ -174,7 +174,16 @@ function App() {
   };
 
   const handleCompleteTask = async (taskName: string) => {
-    await completeTask(taskName, token ?? undefined);
+    try {
+      await completeTask(taskName, token ?? undefined);
+      // Re-fetch history to update ROI and Triage items globally
+      if (token) {
+        const data = await fetchHistory(token);
+        setHealth(data.health);
+      }
+    } catch (err) {
+      console.error('Failed to complete task', err);
+    }
   };
 
   const handleReset = async () => {
