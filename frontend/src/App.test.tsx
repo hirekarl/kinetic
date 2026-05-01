@@ -637,4 +637,63 @@ describe('App — Auth gating', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(/invalid credentials/i);
     });
   });
+
+  it('unauthenticated user navigating to /app is redirected to LandingPage', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    renderApp(['/app']);
+    expect(
+      screen.getByRole('heading', { name: /your infrastructure is showing/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/username/i)).not.toBeInTheDocument();
+  });
+
+  it('authenticated user navigating to / is redirected to the dashboard', async () => {
+    mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockFetchDigest.mockResolvedValue({ summary: 'x', generated_at: new Date().toISOString() });
+    mockUseAuth.mockReturnValue(defaultAuthState);
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue('true'),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    renderApp(['/']);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
+    });
+  });
+
+  it('authenticated user navigating to /login is redirected to the dashboard', async () => {
+    mockFetchHistory.mockResolvedValue({ health: null, messages: [] });
+    mockFetchDigest.mockResolvedValue({ summary: 'x', generated_at: new Date().toISOString() });
+    mockUseAuth.mockReturnValue(defaultAuthState);
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue('true'),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    renderApp(['/login']);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
+    });
+  });
+
+  it('wildcard route redirects unauthenticated user to LandingPage', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    renderApp(['/some/unknown/path']);
+    expect(
+      screen.getByRole('heading', { name: /your infrastructure is showing/i })
+    ).toBeInTheDocument();
+  });
 });

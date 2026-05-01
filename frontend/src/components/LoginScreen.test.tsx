@@ -68,4 +68,11 @@ describe('LoginScreen', () => {
     expect(usernameInput).toHaveAttribute('type', 'text');
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
+
+  it('renders a "Return to base" back-link pointing to /', () => {
+    renderScreen();
+    const link = screen.getByRole('link', { name: /return to base/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/');
+  });
 });
