@@ -263,3 +263,9 @@ Every commit follows [Conventional Commits](https://www.conventionalcommits.org/
 **Karl Johnson** · [hirekarl@proton.me](mailto:hirekarl@proton.me) · [LinkedIn](https://www.linkedin.com/in/hirekarl)
 
 Built for the [Pursuit](https://www.pursuit.org/) AI-Native L1 Capstone.
+
+---
+
+## License
+
+[MIT](LICENSE)
