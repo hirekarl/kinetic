@@ -13,13 +13,17 @@
  */
 
 import { chromium } from '@playwright/test';
-import { mkdir } from 'fs/promises';
+import { copyFile, mkdir } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dir, '..', '..', 'assets', 'brand');
+const PUBLIC = join(__dir, '..', 'public');
 const LANDING_URL = process.env.LANDING_URL ?? 'http://localhost:5173';
+
+// Assets that must also be served by Vite (referenced in index.html meta tags)
+const WEB_ASSETS = new Set(['og-card.png', 'twitter-card.png', 'icon-512.png', 'icon-192.png']);
 
 // ── Shared ───────────────────────────────────────────────────────────────────
 
@@ -256,8 +260,12 @@ async function main() {
   for (const asset of STANDALONE) {
     const page = await browser.newPage({ viewport: { width: asset.w, height: asset.h } });
     await page.setContent(asset.html, { waitUntil: 'networkidle' });
-    await page.screenshot({ path: join(OUT, asset.file), type: 'png' });
+    const outPath = join(OUT, asset.file);
+    await page.screenshot({ path: outPath, type: 'png' });
     await page.close();
+    if (WEB_ASSETS.has(asset.file)) {
+      await copyFile(outPath, join(PUBLIC, asset.file));
+    }
     console.log(`  ✓  ${asset.file.padEnd(22)} ${asset.w}×${asset.h}`);
   }
 

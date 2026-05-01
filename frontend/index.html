@@ -2,9 +2,91 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- ── Viewport & theme ───────────────────────────────────────────────── -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- ── Primary SEO ───────────────────────────────────────────────────── -->
     <title>Kinetic — Bio-Operational Triage Engine</title>
+    <meta
+      name="description"
+      content="Personal infrastructure for high-performance engineers. AI triage across biology, logistics, and relationships — one prioritized action feed, seconds after check-in."
+    />
+    <meta name="author" content="Karl Johnson" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://kinetic-frontend.onrender.com" />
+
+    <!-- ── Open Graph ─────────────────────────────────────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kinetic-frontend.onrender.com" />
+    <meta property="og:site_name" content="Kinetic" />
+    <meta property="og:title" content="Kinetic — Bio-Operational Triage Engine" />
+    <meta
+      property="og:description"
+      content="Personal infrastructure for high-performance engineers. Send a free-text check-in; Kinetic's AI agents triage your biology, logistics, and relationships in seconds — surfacing one prioritized action feed so you stay sustainable at peak velocity."
+    />
+    <meta
+      property="og:image"
+      content="https://kinetic-frontend.onrender.com/og-card.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Kinetic — Your infrastructure is showing. Personal infrastructure for high-performance engineers."
+    />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ── Twitter / X Card ──────────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@full_stack_karl" />
+    <meta name="twitter:creator" content="@full_stack_karl" />
+    <meta name="twitter:title" content="Kinetic — Bio-Operational Triage Engine" />
+    <meta
+      name="twitter:description"
+      content="Personal infrastructure for high-performance engineers. AI triage across biology, logistics, and relationships — one prioritized action feed, seconds after check-in."
+    />
+    <meta
+      name="twitter:image"
+      content="https://kinetic-frontend.onrender.com/twitter-card.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Kinetic — Your infrastructure is showing."
+    />
+
+    <!-- ── Icons & PWA manifest ───────────────────────────────────────────── -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- ── Structured data (JSON-LD) ─────────────────────────────────────── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Kinetic",
+        "headline": "Your infrastructure is showing.",
+        "description": "Personal infrastructure for high-performance engineers. AI triage across biology, logistics, and relationships — one prioritized action feed, seconds after check-in.",
+        "url": "https://kinetic-frontend.onrender.com",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Web",
+        "screenshot": "https://kinetic-frontend.onrender.com/og-card.png",
+        "author": {
+          "@type": "Person",
+          "name": "Karl Johnson",
+          "sameAs": [
+            "https://x.com/full_stack_karl",
+            "https://www.linkedin.com/in/hirekarl",
+            "https://github.com/hirekarl"
+          ]
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
