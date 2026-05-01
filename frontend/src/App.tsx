@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { LandingPage } from './components/LandingPage';
 import { ChatPanel, Message, RespondingAgent } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
@@ -18,6 +20,7 @@ import { buildAgentLogEntry } from './utils/agentLog';
 
 function App() {
   const { user, token, isLoading: authLoading, login: authLogin, logout: authLogout } = useAuth();
+  const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [health, setHealth] = useState<SystemHealthPayload | null>(null);
@@ -40,6 +43,7 @@ function App() {
     setLoginError(null);
     try {
       await authLogin(username, password);
+      navigate('/app');
     } catch {
       setLoginError('Invalid credentials. Please try again.');
     }
@@ -53,6 +57,7 @@ function App() {
     setError(null);
     setLastMessage(null);
     setDigestData(null);
+    navigate('/');
   };
 
   const handleSimulateWeek = async () => {
@@ -208,7 +213,6 @@ function App() {
     }
   };
 
-  // Auth loading — validating stored session
   if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950">
@@ -217,12 +221,7 @@ function App() {
     );
   }
 
-  // Not authenticated — show login screen
-  if (!user) {
-    return <LoginScreen onLogin={handleLogin} error={loginError} isLoading={false} />;
-  }
-
-  return (
+  const dashboardElement = user ? (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
       {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
       {/* Left Panel: Operational Liaison Feed */}
@@ -387,6 +386,24 @@ function App() {
         </div>
       </main>
     </div>
+  ) : null;
+
+  return (
+    <Routes>
+      <Route path="/" element={user ? <Navigate to="/app" replace /> : <LandingPage />} />
+      <Route
+        path="/login"
+        element={
+          user ? (
+            <Navigate to="/app" replace />
+          ) : (
+            <LoginScreen onLogin={handleLogin} error={loginError} isLoading={false} />
+          )
+        }
+      />
+      <Route path="/app" element={user ? dashboardElement : <Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

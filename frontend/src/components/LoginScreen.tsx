@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface Props {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -86,6 +87,11 @@ export const LoginScreen: React.FC<Props> = ({ onLogin, error, isLoading }) => {
             {isLoading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <p className="mt-6 text-center text-xs text-zinc-500">
+          <Link to="/" className="transition-colors hover:text-zinc-300">
+            ← Return to base
+          </Link>
+        </p>
       </div>
     </div>
   );

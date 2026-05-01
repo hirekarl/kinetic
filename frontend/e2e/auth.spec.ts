@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 test.describe('Kinetic — Auth Flow', () => {
   test('shows login screen when no token in localStorage', async ({ page }) => {
     // No addInitScript — localStorage starts empty
-    await page.goto('/');
+    await page.goto('/login');
     await expect(page.getByRole('heading', { name: /^kinetic$/i })).toBeVisible();
     await expect(page.getByLabel(/username/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
@@ -26,7 +26,7 @@ test.describe('Kinetic — Auth Flow', () => {
       await route.fulfill({ json: { health: null, messages: [] } });
     });
 
-    await page.goto('/');
+    await page.goto('/login');
     await expect(page.getByLabel(/username/i)).toBeVisible();
 
     await page.getByLabel(/username/i).fill('demo');
@@ -34,7 +34,7 @@ test.describe('Kinetic — Auth Flow', () => {
     await page.getByRole('button', { name: /^sign in$/i }).click();
 
     await expect(page.getByRole('heading', { name: /mission control/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^kinetic$/i })).not.toBeVisible();
+    await expect(page.getByLabel(/username/i)).not.toBeVisible();
   });
 
   test('invalid credentials shows error message', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Kinetic — Auth Flow', () => {
       await route.fulfill({ status: 401, json: { detail: 'Invalid credentials' } });
     });
 
-    await page.goto('/');
+    await page.goto('/login');
     await expect(page.getByLabel(/username/i)).toBeVisible();
 
     await page.getByLabel(/username/i).fill('demo');
@@ -77,13 +77,14 @@ test.describe('Kinetic — Auth Flow', () => {
 
     await page.getByRole('button', { name: /sign out/i }).click();
 
-    await expect(page.getByRole('heading', { name: /^kinetic$/i })).toBeVisible();
-    await expect(page.getByLabel(/username/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /your infrastructure is showing/i })
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: /mission control/i })).not.toBeVisible();
   });
 
   test('login screen passes axe accessibility audit', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/login');
     await expect(page.getByRole('heading', { name: /^kinetic$/i })).toBeVisible();
 
     const results = await new AxeBuilder({ page })

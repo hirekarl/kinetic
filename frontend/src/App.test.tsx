@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import { SystemHealthPayload } from './types';
 
@@ -92,6 +93,13 @@ const defaultAuthState = {
   logout: vi.fn(),
 };
 
+const renderApp = (initialEntries = ['/app']) =>
+  render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <App />
+    </MemoryRouter>
+  );
+
 describe('App — split-panel shell', () => {
   beforeEach(() => {
     mockFetchHistory.mockReset();
@@ -121,21 +129,21 @@ describe('App — split-panel shell', () => {
   });
 
   it('renders the chat panel heading', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /operational liaison/i })).toBeInTheDocument();
     });
   });
 
   it('renders the dashboard panel heading', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
     });
   });
 
   it('renders the initial idle state after history loads', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /system idle/i })).toBeInTheDocument();
     });
@@ -143,7 +151,7 @@ describe('App — split-panel shell', () => {
 
   it('populates the dashboard when history returns health data', async () => {
     mockFetchHistory.mockResolvedValue({ health: mockHealth, messages: [] });
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByText('Sector Status')).toBeInTheDocument();
       expect(screen.getByText('Bio-Metric Archivist')).toBeInTheDocument();
@@ -174,7 +182,7 @@ describe('App — split-panel shell', () => {
         });
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -188,7 +196,7 @@ describe('App — split-panel shell', () => {
 
   it('prompts for confirmation when Reset System is clicked', async () => {
     vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /reset system/i }));
@@ -211,7 +219,7 @@ describe('App — split-panel shell', () => {
         onError('Service unavailable');
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -237,7 +245,7 @@ describe('App — split-panel shell', () => {
         onError('Service unavailable');
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -263,7 +271,7 @@ describe('App — split-panel shell', () => {
         onError('Service unavailable');
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -313,7 +321,7 @@ describe('App — split-panel shell', () => {
         }
       );
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -331,7 +339,7 @@ describe('App — split-panel shell', () => {
   });
 
   it('error banner is absent when no error has occurred', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
     expect(screen.queryByText(/analysis unavailable/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /retry/i })).not.toBeInTheDocument();
@@ -351,7 +359,7 @@ describe('App — split-panel shell', () => {
         onError('Service unavailable');
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -377,7 +385,7 @@ describe('App — split-panel shell', () => {
         onError('Service unavailable');
       }
     );
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
 
     const textarea = screen.getByPlaceholderText(/what's your status/i);
@@ -408,7 +416,7 @@ describe('App — split-panel shell', () => {
     mockFetchHistory.mockResolvedValue({ health: healthWithLogisticsItem, messages: [] });
     mockCompleteTask.mockResolvedValue(undefined);
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /mark laundry complete/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /mark laundry complete/i }));
@@ -419,13 +427,13 @@ describe('App — split-panel shell', () => {
   });
 
   it('displays the authenticated user display name in the header', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /mission control/i }));
     expect(screen.getByText('Demo')).toBeInTheDocument();
   });
 
   it('renders a Sign out button in the header', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /sign out/i }));
   });
 
@@ -436,19 +444,19 @@ describe('App — split-panel shell', () => {
       ...defaultAuthState,
       user: { username: 'personal', tenant: 'personal', display_name: 'Personal' },
     });
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /mission control/i }));
     expect(screen.queryByRole('button', { name: /simulate week/i })).not.toBeInTheDocument();
   });
 
   it('Simulate Week button is rendered for demo tenant', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
   });
 
   it('clicking Simulate Week calls simulateWeek then triggers a forced digest refresh', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
 
     await user.click(screen.getByRole('button', { name: /simulate week/i }));
@@ -468,7 +476,7 @@ describe('App — split-panel shell', () => {
         })
     );
 
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /simulate week/i }));
@@ -524,7 +532,7 @@ describe('App — Onboarding', () => {
   });
 
   it('shows onboarding modal on first visit (no localStorage flag)', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: /personal infrastructure/i })).toBeInTheDocument();
@@ -533,20 +541,20 @@ describe('App — Onboarding', () => {
 
   it('does not show onboarding when kinetic_onboarded is already set', async () => {
     store.set('kinetic_onboarded', 'true');
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('heading', { name: /system idle/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('sets kinetic_onboarded in localStorage when onboarding is dismissed via Skip', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('dialog'));
     fireEvent.click(screen.getByRole('button', { name: /skip/i }));
     expect(mockLocalStorage.setItem).toHaveBeenCalledWith('kinetic_onboarded', 'true');
   });
 
   it('modal disappears after Skip', async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() => screen.getByRole('dialog'));
     fireEvent.click(screen.getByRole('button', { name: /skip/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -576,7 +584,7 @@ describe('App — Auth gating', () => {
       login: vi.fn(),
       logout: vi.fn(),
     });
-    render(<App />);
+    renderApp(['/login']);
     expect(screen.getByRole('heading', { name: /^kinetic$/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
   });
@@ -589,7 +597,7 @@ describe('App — Auth gating', () => {
       login: vi.fn(),
       logout: vi.fn(),
     });
-    render(<App />);
+    renderApp();
     // Neither the login screen heading nor the main app heading should be present
     expect(screen.queryByRole('heading', { name: /^kinetic$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /mission control/i })).not.toBeInTheDocument();
@@ -603,7 +611,7 @@ describe('App — Auth gating', () => {
       setItem: vi.fn(),
       removeItem: vi.fn(),
     });
-    render(<App />);
+    renderApp();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
     });
@@ -620,7 +628,7 @@ describe('App — Auth gating', () => {
       logout: vi.fn(),
     });
     const user = userEvent.setup();
-    render(<App />);
+    renderApp(['/login']);
     await user.type(screen.getByLabelText(/username/i), 'demo');
     await user.type(screen.getByLabelText(/password/i), 'wrong');
     await user.click(screen.getByRole('button', { name: /^sign in$/i }));
