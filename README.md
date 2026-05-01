@@ -46,7 +46,7 @@ Kinetic is a mission-control dashboard that surfaces that debt before it compoun
      │
      ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Kinetic                              ● YELLOW           │
+│  Kinetic                              ● YELLOW          │
 ├──────────────────────┬──────────────────────────────────┤
 │  > Slept 5 hours,    │  BIO          ● yellow           │
 │    ate okay,         │  Burnout: 62  Sleep debt: 3.5h   │
@@ -228,6 +228,6 @@ Every commit follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ## Author
 
-**Karl Johnson** · [hirekarl@proton.me](mailto:hirekarl@proton.me)
+**Karl Johnson** · [hirekarl@proton.me](mailto:hirekarl@proton.me) · [LinkedIn](https://www.linkedin.com/in/hirekarl)
 
 Built for the [Pursuit](https://www.pursuit.org/) AI-Native L1 Capstone.
