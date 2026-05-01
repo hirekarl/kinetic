@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- Marketing landing page at `/` with hero, agent domain cards, and how-it-works sections
+- `KineticLogo` SVG mark (three-line K convergence) used in landing page and as favicon
+- URL-based routing via react-router-dom (`/` landing, `/login` auth, `/app` dashboard)
+- Brand asset generator (`npm run brand`) producing og-card, twitter-card, icon-512, icon-192, wordmark PNGs
+- Comprehensive SEO metadata: Open Graph, Twitter Card, JSON-LD structured data, PWA manifest
+- `← Return to base` back-link on login screen
 - `frontend/e2e/live-demo.spec.ts` — Playwright demo recording script: 12-section mocked flow covering all rubric requirements; smooth scroll, mouse cursor overlay, simulated Gemini latency delays, 1920×1080 headless video capture
 - `frontend/playwright-demo.config.ts` — dedicated Playwright config for demo recording (headless, 300s timeout, video: on, 1920×1080)
 - `docs/NARRATION.md` — video voiceover script (~4 min) for the Playwright video artifact; three-part structure with [HOLD] markers aligned to screen recording beats

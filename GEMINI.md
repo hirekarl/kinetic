@@ -142,8 +142,11 @@ tests/
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload, DigestResponse
-  App.tsx                  split-panel root component; auth-gated (loading spinner → LoginScreen → dashboard); onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback; isSimulating state + handleSimulateWeek; "Simulate Week" button (demo tenant only, aria-label toggles during loading); mobile-responsive layout (flex-col lg:flex-row, h-[45vh] lg:h-auto, p-4 md:p-8)
-  components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support
+  App.tsx                  react-router-dom Routes root; routes: `/` → LandingPage (unauthenticated), `/login` → LoginScreen, `/app` → Dashboard shell; useNavigate for post-login/logout redirects; auth-gated dashboard; onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback; isSimulating state + handleSimulateWeek; "Simulate Week" button (demo tenant only, aria-label toggles during loading); mobile-responsive layout (flex-col lg:flex-row, h-[45vh] lg:h-auto, p-4 md:p-8)
+  main.tsx                 entry point; wraps <App /> in <BrowserRouter>
+  components/LandingPage.tsx  marketing landing page: nav with logo + CTA, hero section, three domain cards (bio/logistics/relational), how-it-works steps, footer; KineticLogo inline SVG sub-component (three-line K convergence mark)
+  components/LandingPage.test.tsx  7 Vitest tests: hero text, CTA button, domain card names, nav links, footer, eyebrow label, how-it-works steps
+  components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support; "← Return to base" back-link to landing page
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
   components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, weekly digest card, agent dispatch log
@@ -161,6 +164,17 @@ frontend/src/
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
     live-demo.spec.ts      Playwright demo recording script: 12-section mocked flow (login error, onboarding, Simulate Week, Behavioral Profile, Weekly Digest, 3 chat turns, task check-off, 503/retry, Agent Dispatch Log, mobile viewport); smooth scroll + mouse cursor overlay; 1920×1080 headless capture
   playwright-demo.config.ts  Playwright config for demo video recording: headless 1920×1080, video: on, 300s timeout, reuses dev server
+  scripts/
+    generate-brand-assets.mjs  Playwright script; renders HTML templates to PNG; outputs og-card (1200×630), twitter-card (1200×675), icon-512, icon-192, wordmark (900×200), landing-1920x1080 to assets/brand/; copies web assets to frontend/public/; run with `npm run brand`
+  public/
+    favicon.svg            KineticLogo SVG favicon (three-line K convergence mark)
+    og-card.png            Open Graph social card (1200×630)
+    twitter-card.png       Twitter Card social image (1200×675)
+    icon-512.png           PWA icon 512×512
+    icon-192.png           PWA icon 192×192
+    site.webmanifest       PWA manifest: name, icons, theme color, display mode
+
+assets/brand/              generated brand PNGs (project root, git-ignored output): og-card, twitter-card, icon-512, icon-192, wordmark, landing-1920x1080
 
 docs/
   DEMO.md                  Live in-person presentation script: 5-section verbal guide (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines and typed inputs for all 3 check-in turns
@@ -216,6 +230,7 @@ npm run dev
 npm run test:coverage
 npm run lint
 npm run e2e
+npm run brand                  # generate brand asset PNGs → assets/brand/ + frontend/public/
 
 # Pre-commit
 pre-commit install
@@ -244,6 +259,7 @@ npm run dev
 npm run test:coverage
 npm run lint
 npm run e2e
+npm run brand                  # generate brand asset PNGs → assets/brand/ + frontend/public/
 
 # Pre-commit
 pre-commit install

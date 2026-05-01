@@ -19,7 +19,7 @@ Narration is written to be read aloud at a natural pace (~130 wpm). Sections mar
 Jordan is a senior engineer running at full load. By every external measure — output,
 velocity, shipping — Jordan is performing.
 
-But there is a cost those measures don't show.
+But there's a cost those measures don't show.
 
 Sleep goes first. Not dramatically — just an hour here, forty minutes there, until the
 average quietly drops below six. Domestic tasks accumulate until one of them becomes a
@@ -28,7 +28,7 @@ decision.
 
 And every morning, before Jordan has done a single piece of real work, thirty to
 forty-five minutes disappear to a question he can't answer clearly: what is actually
-most important right now? Across bio, logistics, relationships — three separate domains,
+most important right now? Across biological, logistics, relationships — three separate domains,
 no shared language, no priority rank, and a brain already running on a deficit.
 
 `[HOLD — 3 seconds]`

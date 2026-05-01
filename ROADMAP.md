@@ -594,6 +594,14 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 - [x] Write measurable success metric sentence
 - [x] Technology choices + rationale paragraph (Gemini + Instructor, SQLite → PostgreSQL, SSE streaming)
 
+### G — Landing Page + Brand Assets + SEO
+- [x] Marketing landing page at `/` — nav, hero, domain cards, how-it-works, footer; `KineticLogo` inline SVG (three-line K convergence mark)
+- [x] URL-based routing via react-router-dom: `/` landing, `/login` auth, `/app` dashboard; `useNavigate` post-login/logout redirects; `← Return to base` back-link on login screen
+- [x] Brand asset generator `npm run brand` (Playwright-based PNG renderer): og-card (1200×630), twitter-card (1200×675), icon-512, icon-192, wordmark (900×200), landing-1920x1080 → `assets/brand/` + `frontend/public/`
+- [x] SEO metadata in `index.html`: Open Graph, Twitter Card, JSON-LD structured data
+- [x] PWA manifest (`site.webmanifest`): name, icons, theme color, display standalone
+- [x] 7 Vitest tests for `LandingPage` component (hero, CTA, domain names, nav links, footer, eyebrow, how-it-works steps)
+
 ### Quality Gates
 - [ ] Mobile layout verified at 375px viewport (no overflow, all interactions reachable)
 - [ ] All prior gates passing (247 backend tests, 220 frontend tests)
