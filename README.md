@@ -77,6 +77,33 @@ A single natural-language check-in message is parsed by **Gemini 2.5 Flash + Ins
 
 The orchestrator aggregates agent outputs into a single `SystemHealthPayload` — one consistent shape the React frontend consumes, regardless of which agents fired.
 
+```mermaid
+flowchart TD
+    A([User check-in\nfree-text message]) --> B
+
+    B["LLM Parser\nGemini 2.5 Flash + Instructor"]
+    B --> C["CheckInPayload\ntyped Pydantic model"]
+
+    C --> D["Lead Orchestrator"]
+
+    D --> E["Bio-Metric Archivist"]
+    D --> F["Logistics Fixer"]
+    D --> G["Relational Diplomat"]
+
+    E --> H["BioStatus"]
+    F --> I["LogisticsStatus"]
+    G --> J["RelationalStatus"]
+
+    H --> K["Operational Liaison\nstreams response via SSE"]
+    I --> K
+    J --> K
+
+    K --> L["SystemHealthPayload"]
+
+    L --> M["React Dashboard\nTriage list · Status cards · ROI summary"]
+    L --> N["SQLite / PostgreSQL\nper-tenant persistence"]
+```
+
 ---
 
 ## Stack
