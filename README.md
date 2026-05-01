@@ -2,12 +2,15 @@
 
 **Bio-Operational Triage Engine** — personal infrastructure management for high-performance engineers.
 
+[![CI](https://github.com/hirekarl/kinetic/actions/workflows/ci.yml/badge.svg)](https://github.com/hirekarl/kinetic/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![uv](https://img.shields.io/badge/uv-managed-blueviolet?logo=astral&logoColor=white)](https://docs.astral.sh/uv/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Version](https://img.shields.io/badge/version-v1.8.0-blue)](CHANGELOG.md)
+
+**Live demo:** <!-- https://kinetic-frontend.onrender.com — update once deploy is verified -->
 
 ---
 
@@ -40,6 +43,8 @@
 High-performing engineers routinely fall into the **High-Performance Trap**: relentless output accumulates hidden personal debt — sleep, logistics, relationships — until a crash forces a reset.
 
 Kinetic is a mission-control dashboard that surfaces that debt before it compounds. You brief it in natural language once a day. It routes your input through three domain agents and an operational liaison, then hands back a prioritized, data-driven triage list so you can clear high-leverage actions in minutes and return to flow.
+
+![Kinetic landing page](assets/brand/landing-1920x1080.png)
 
 ```
 "Slept 5 hours, ate okay, feeling disconnected from Marcus."
