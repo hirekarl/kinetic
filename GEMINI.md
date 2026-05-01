@@ -174,7 +174,7 @@ frontend/src/
     icon-192.png           PWA icon 192×192
     site.webmanifest       PWA manifest: name, icons, theme color, display mode
 
-assets/brand/              generated brand PNGs (project root, git-ignored output): og-card, twitter-card, icon-512, icon-192, wordmark, landing-1920x1080
+assets/brand/              generated brand PNGs (project root, tracked in git): og-card, twitter-card, icon-512, icon-192, wordmark, landing-1920x1080, video-thumbnail
 
 docs/
   DEMO.md                  Live in-person presentation script: 5-section verbal guide (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines and typed inputs for all 3 check-in turns
