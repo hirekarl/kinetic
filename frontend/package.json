@@ -18,7 +18,8 @@
     "e2e": "playwright test",
     "test:demo:record": "playwright test -c playwright-demo.config.ts",
     "e2e:ui": "playwright test --ui",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "brand": "node scripts/generate-brand-assets.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
