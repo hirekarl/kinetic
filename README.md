@@ -27,6 +27,10 @@
 
 **Demo script and presentation reference:** [`docs/DEMO.md`](docs/DEMO.md) · [`docs/PRESENTATION.md`](docs/PRESENTATION.md)
 
+**Video demo:**
+
+[![Kinetic demo video](assets/video-thumbnail.png)](https://www.youtube.com/watch?v=P03BV-CmaG8)
+
 ---
 
 ## What It Is
