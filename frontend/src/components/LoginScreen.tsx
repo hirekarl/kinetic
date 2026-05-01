@@ -87,8 +87,8 @@ export const LoginScreen: React.FC<Props> = ({ onLogin, error, isLoading }) => {
             {isLoading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p className="mt-6 text-center text-xs text-zinc-500">
-          <Link to="/" className="transition-colors hover:text-zinc-300">
+        <p className="mt-6 text-center text-xs text-zinc-400">
+          <Link to="/" className="transition-colors hover:text-zinc-200">
             ← Return to base
           </Link>
         </p>
