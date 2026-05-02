@@ -34,17 +34,17 @@ services:
     startCommand: uv run uvicorn kinetic.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
-      - name: PYTHON_VERSION
+      - key: PYTHON_VERSION
         value: "3.12.0"
-      - name: SECRET_KEY
+      - key: SECRET_KEY
         generateValue: true
-      - name: CREDENTIALS_PATH
+      - key: CREDENTIALS_PATH
         value: /etc/secrets/credentials.toml
-      - name: GEMINI_API_KEY
+      - key: GEMINI_API_KEY
         sync: false        # set in Render dashboard (step 2 above)
-      - name: FRONTEND_URL
+      - key: FRONTEND_URL
         sync: false        # set in Render dashboard (step 3 above)
-      - name: DATABASE_URL
+      - key: DATABASE_URL
         fromDatabase:
           name: kinetic-db
           property: connectionString
@@ -53,13 +53,12 @@ services:
   - type: web
     name: kinetic-frontend
     runtime: static
-    region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
-      - name: VITE_API_BASE_URL
+      - key: VITE_API_BASE_URL
         sync: false        # set in Render dashboard (steps 4-5 above)
     routes:
       - type: rewrite
