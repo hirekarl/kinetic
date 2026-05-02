@@ -10,7 +10,7 @@
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Version](https://img.shields.io/badge/version-v1.8.0-blue)](CHANGELOG.md)
 
-**Live demo:** <!-- https://kinetic-frontend.onrender.com — update once deploy is verified -->
+**Live demo:** [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com)
 
 ---
 
