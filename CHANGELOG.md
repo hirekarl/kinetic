@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- `scripts/migrate.py` — standalone asyncpg pre-deploy DDL migration script; run as `preDeployCommand` on Render before the app starts; imports `_DDL` from `postgres_client` as single source of truth; idempotent, safe to re-run
+- `docs/DEPLOY.md` — end-to-end Render deployment checklist: credentials.toml prep, Blueprint deploy, Secret File upload, per-service env var tables, post-deploy verification, tenant lifecycle, SECRET_KEY rotation
+
+### Changed
+- `render.yaml` — `kinetic-api` upgraded to `plan: starter` (always-on, eliminates cold-start spin-down for demos); added `healthCheckPath: /health` so Render gates traffic on a live 200 response; added `preDeployCommand: uv run python scripts/migrate.py` to run DDL migrations before startup
 - Marketing landing page at `/` with hero, agent domain cards, and how-it-works sections
 - `KineticLogo` SVG mark (three-line K convergence) used in landing page and as favicon
 - URL-based routing via react-router-dom (`/` landing, `/login` auth, `/app` dashboard)

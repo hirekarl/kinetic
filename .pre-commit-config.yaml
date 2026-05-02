@@ -13,7 +13,7 @@ repos:
     hooks:
       - id: mypy
         args: [--strict]
-        exclude: '^tests/'
+        exclude: '^(tests|scripts)/'
         additional_dependencies:
           - pydantic>=2.10
           - fastapi>=0.115

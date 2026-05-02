@@ -28,9 +28,11 @@ services:
     name: kinetic-api
     runtime: python
     region: oregon
-    plan: free
+    plan: starter          # starter keeps the service always-on (no cold-start spin-down)
     buildCommand: pip install uv && uv sync --no-dev
+    preDeployCommand: uv run python scripts/migrate.py
     startCommand: uv run uvicorn kinetic.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - name: PYTHON_VERSION
         value: "3.12.0"

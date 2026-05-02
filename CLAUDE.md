@@ -132,6 +132,14 @@ assets/brand/              generated brand PNGs (project root, tracked in git): 
 docs/
   DEMO.md                  Live in-person presentation script: 5-section verbal guide (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines and typed inputs for all 3 check-in turns
   NARRATION.md             Video voiceover script: 3-part (~4 min) narration track for the Playwright video artifact; Part 1 over stock footage, Part 2 over screen recording with [HOLD] markers, Part 3 outro
+  DEPLOY.md                End-to-end Render deployment checklist: credentials.toml prep + bcrypt hash generation, Blueprint deploy steps, Secret File upload, per-service env var tables, post-deploy verification, tenant add/rotate/remove lifecycle, SECRET_KEY rotation
+
+scripts/
+  release.sh               SemVer release ceremony: validates conventional commits, previews bump, runs cz bump --changelog, creates release commit + tag
+  migrate.py               Pre-deploy PostgreSQL DDL migration: reads DATABASE_URL, opens asyncpg connection, executes _DDL from postgres_client; run by Render preDeployCommand before app starts
+  seed_demo.py             Seeds demo SQLite DB with 7 days of declining sleep trend + behavioral profiles for local demo
+  run_scenarios.py         Fires 5 adversarial scenarios against running backend at /api/checkin; validates agent routing and status output
+  present.py               CLI slide presenter using Rich; reads markdown files split by ---; interactive navigation
 ```
 
 ---

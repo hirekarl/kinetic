@@ -245,12 +245,9 @@ Every commit follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ## Deployment
 
-**Render (production):** `render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the full stack in one click — Python API service, React static site, and a managed PostgreSQL database (basic-256mb). After deploying:
+**Render (production):** `render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the full stack in one click — Python API service (starter plan, always-on), React static site, and a managed PostgreSQL database. The API service runs `scripts/migrate.py` as a pre-deploy step to apply DDL before traffic arrives, and uses `GET /health` as its health check gate.
 
-1. Upload `credentials.toml` as a Secret File at `/etc/secrets/credentials.toml`
-2. Set `GEMINI_API_KEY` in the API service environment
-3. Set `FRONTEND_URL` (API service) and `VITE_API_BASE_URL` (frontend service) to each other's Render URLs
-4. Redeploy the frontend so Vite bakes `VITE_API_BASE_URL` in at build time
+See **[`docs/DEPLOY.md`](docs/DEPLOY.md)** for the complete step-by-step deployment checklist, including credentials setup, environment variable configuration, tenant management, and post-deploy verification.
 
 `DATABASE_URL` is wired automatically from the managed database — no manual configuration needed.
 

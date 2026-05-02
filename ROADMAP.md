@@ -583,6 +583,9 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 - [x] Video artifact generated and verified at 1920×1080
 
 ### E — Render Deploy
+- [x] `render.yaml` — `healthCheckPath: /health`, `preDeployCommand: uv run python scripts/migrate.py`, `plan: starter` (always-on)
+- [x] `scripts/migrate.py` — standalone asyncpg pre-deploy DDL migration script
+- [x] `docs/DEPLOY.md` — end-to-end deployment checklist with env vars, credentials setup, tenant lifecycle
 - [ ] Configure Render dashboard: `GEMINI_API_KEY`, `FRONTEND_URL`, `VITE_API_BASE_URL`, `credentials.toml` Secret File
 - [ ] Extend `scripts/seed_demo.py` to target PostgreSQL backend via `DATABASE_URL` (currently SQLite-only)
 - [ ] Seed `demo` tenant on live PostgreSQL
