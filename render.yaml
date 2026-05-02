@@ -8,11 +8,11 @@
 #      (copy credentials.toml.example, fill in real bcrypt hashes)
 #   2. Environment → GEMINI_API_KEY: your Gemini API key
 #   3. Environment → FRONTEND_URL: your kinetic-frontend URL
-#      (e.g. https://kinetic-frontend.onrender.com)
+#      https://kinetic-frontend-c2bd.onrender.com
 #
 #  kinetic-frontend:
 #   4. Environment → VITE_API_BASE_URL: your kinetic-api URL
-#      (e.g. https://kinetic-api.onrender.com)
+#      https://kinetic-api-drk6.onrender.com
 #   5. Trigger a manual redeploy of kinetic-frontend so Vite bakes VITE_API_BASE_URL in.
 #
 databases:

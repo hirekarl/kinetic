@@ -84,7 +84,7 @@ Navigate to **kinetic-api → Environment → Environment Variables**.
 | Variable | Value | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | `AIza…` | From aistudio.google.com |
-| `FRONTEND_URL` | `https://kinetic-frontend.onrender.com` | Set after the frontend service URL is known; enables CORS |
+| `FRONTEND_URL` | `https://kinetic-frontend-c2bd.onrender.com` | Set after the frontend service URL is known; enables CORS |
 | `SECRET_KEY` | *(auto-generated)* | Already set by Blueprint — do not override unless rotating |
 | `CREDENTIALS_PATH` | `/etc/secrets/credentials.toml` | Already set by Blueprint — do not change |
 | `DATABASE_URL` | *(auto-injected)* | Already set by Blueprint binding — do not change |
@@ -98,7 +98,7 @@ Navigate to **kinetic-frontend → Environment → Environment Variables**.
 
 | Variable | Value | Notes |
 |---|---|---|
-| `VITE_API_BASE_URL` | `https://kinetic-api.onrender.com` | Vite bakes this into the JS bundle at build time |
+| `VITE_API_BASE_URL` | `https://kinetic-api-drk6.onrender.com` | Vite bakes this into the JS bundle at build time |
 
 After saving, **manually trigger a redeploy** of `kinetic-frontend` (Deploy → Deploy latest commit) so Vite rebuilds with the correct API URL baked in.
 
@@ -108,19 +108,19 @@ After saving, **manually trigger a redeploy** of `kinetic-frontend` (Deploy → 
 
 **5a. Health check:**
 ```
-GET https://kinetic-api.onrender.com/health
+GET https://kinetic-api-drk6.onrender.com/health
 → {"status": "ok"}
 ```
 
 **5b. Auth endpoint:**
 ```
-POST https://kinetic-api.onrender.com/api/auth/login
+POST https://kinetic-api-drk6.onrender.com/api/auth/login
 Content-Type: application/json
 {"username": "demo", "password": "<your-demo-password>"}
 → {"access_token": "...", "token_type": "bearer"}
 ```
 
-**5c. Frontend loads:** open `https://kinetic-frontend.onrender.com` — you should see the landing page, and be able to log in with a tenant from credentials.toml.
+**5c. Frontend loads:** open `https://kinetic-frontend-c2bd.onrender.com` — you should see the landing page, and be able to log in with a tenant from credentials.toml.
 
 **5d. Simulate Week (demo tenant only):** after logging in as `demo`, click **Simulate Week** to seed historical data and verify the full dashboard renders.
 
