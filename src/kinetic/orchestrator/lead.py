@@ -305,17 +305,28 @@ async def orchestrate_stream(
     payload = await _merge_history(payload, db)
     run = await _run_agents(payload, db)
 
+    # Load pre-existing pauses before the first event so the agents card is already filtered
+    active_pauses: list[ContactPause] = []
+    try:
+        raw_pauses = await db.get_active_pauses()
+        active_pauses = [ContactPause(**r) for r in raw_pauses]
+    except Exception:
+        logger.exception("Failed to load active pauses in stream")
+
+    filtered_triage = filter_paused_contacts(run.triage_items, active_pauses)
+    filtered_relational = filter_paused_relational_status(run.relational_status, active_pauses)
+
     # ── Event 1: agent cards ───────────────────────────────────────────────────
     agents_payload = SystemHealthPayload(
         overall_status=run.overall,
         bio=run.bio_status,
         logistics=run.logistics_status,
-        relational=run.relational_status,
-        triage_items=run.triage_items,
+        relational=filtered_relational,
+        triage_items=filtered_triage,
         roi_summary=run.roi,
         behavioral_profiles=run.behavioral_profiles,
         behavioral_summary=run.behavioral_summary,
-        active_pauses=[],
+        active_pauses=active_pauses,
     )
     yield {"event": "agents", "data": agents_payload.model_dump_json()}
 
@@ -325,13 +336,13 @@ async def orchestrate_stream(
     async for chunk in liaison.stream_text(
         message=message,
         overall_status=run.overall,
-        triage_items=run.triage_items,
+        triage_items=filtered_triage,
         behavioral_summary=run.behavioral_summary,
         behavioral_profiles=run.behavioral_profiles,
         history=history,
         bio_status=run.bio_status,
         logistics_status=run.logistics_status,
-        relational_status=run.relational_status,
+        relational_status=filtered_relational,
     ):
         accumulated_text += chunk
         yield {"event": "token", "data": json.dumps({"text": chunk})}
@@ -343,12 +354,12 @@ async def orchestrate_stream(
         paused_until = date.today() + timedelta(days=directive.pause_days)
         await db.upsert_contact_pause(directive.person, paused_until.isoformat(), directive.reason)
 
-    active_pauses: list[ContactPause] = []
+    # Reload after upserting — done event must reflect any pauses added this turn
     try:
         raw_pauses = await db.get_active_pauses()
         active_pauses = [ContactPause(**r) for r in raw_pauses]
     except Exception:
-        logger.exception("Failed to load active pauses in stream")
+        logger.exception("Failed to reload active pauses after upsert in stream")
 
     for task_name in metadata.task_completions:
         try:
