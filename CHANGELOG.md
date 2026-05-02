@@ -7,6 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- `src/kinetic/orchestrator/triage.py` — pure aggregation/filter helpers extracted from `lead.py`: `calculate_roi`, `aggregate_status`, `assign_stable_ids`, `filter_paused_contacts`, `filter_paused_relational_status`
+- `src/kinetic/agents/liaison_context.py` — context formatter functions extracted from `operational_liaison.py`: `format_bio_status`, `format_logistics_status`, `format_relational_status`, `format_behavioral_summary`, `format_profiles`
+- `frontend/src/hooks/useChat.ts` — custom hook owning all chat/streaming state and handlers; extracted from `App.tsx`
+- `frontend/src/hooks/useDigest.ts` — custom hook owning digest state and refresh logic; extracted from `App.tsx`
+
+### Changed
+- `src/kinetic/orchestrator/lead.py` — added `_AgentRunResult` dataclass and `_run_agents()` async helper to deduplicate the agent-execution block shared between `orchestrate()` and `orchestrate_stream()`; added `_fire_pattern_detection()` helper; imports triage helpers from `triage.py`
+- `src/kinetic/agents/operational_liaison.py` — formatter functions moved to `liaison_context.py`; all models and the `OperationalLiaison` class unchanged
+- `frontend/src/App.tsx` — reduced from ~410 to ~220 lines; chat and digest state fully delegated to `useChat` and `useDigest` hooks
+
+### Added
 - `scripts/migrate.py` — standalone asyncpg pre-deploy DDL migration script; run as `preDeployCommand` on Render before the app starts; imports `_DDL` from `postgres_client` as single source of truth; idempotent, safe to re-run
 - `docs/DEPLOY.md` — end-to-end Render deployment checklist: credentials.toml prep, Blueprint deploy, Secret File upload, per-service env var tables, post-deploy verification, tenant lifecycle, SECRET_KEY rotation
 

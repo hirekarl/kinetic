@@ -102,9 +102,11 @@ src/kinetic/
     bio_archivist.py       sleep/nutrition tracking + burnout forecast
     logistics_fixer.py     task triage + outsourcing ROI
     relational_diplomat.py connection margin + interaction sprints
-    operational_liaison.py Instructor-based structured router; LiaisonResponse + LiaisonMetadata models; _build_prompt_parts() shared helper; stream_text() async generator (raw token streaming via google-genai); extract_metadata() lightweight post-stream Instructor call; _METADATA_KEYWORDS keyword guard
+    operational_liaison.py Instructor-based structured router; LiaisonResponse + LiaisonMetadata + ContactPauseDirective models; _build_prompt_parts() shared helper; stream_text() async generator (raw token streaming via google-genai); extract_metadata() lightweight post-stream Instructor call; _METADATA_KEYWORDS keyword guard; imports context formatters from liaison_context.py
+    liaison_context.py     context formatter functions for _build_prompt_parts(): format_bio_status, format_logistics_status, format_relational_status, format_behavioral_summary, format_profiles
   orchestrator/
-    lead.py                routing logic + status aggregation + behavioral memory wiring + contact pause persistence + triage filtering; dual-mode get_db(tenant): PostgresClient when _pg_pool set, SqliteClient otherwise; orchestrate_stream() async generator yielding agents/token/done SSE event dicts
+    lead.py                get_db(tenant) dual-mode DB factory; _merge_history() payload hydration; _AgentRunResult dataclass + _run_agents() async helper (fires all 3 agents in parallel, aggregates results, fetches behavioral context — shared by orchestrate() and orchestrate_stream()); _fire_pattern_detection() background task helper; orchestrate() blocking path; orchestrate_stream() SSE generator yielding agents/token/done events; get_current_state(); imports triage helpers from triage.py
+    triage.py              pure aggregation/filter helpers (no async, no agents): calculate_roi, aggregate_status, assign_stable_ids, filter_paused_contacts, filter_paused_relational_status
   parsing/
     llm_parser.py          Gemini 2.5 Flash + Instructor integration
   api/
@@ -142,7 +144,7 @@ tests/
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload, DigestResponse
-  App.tsx                  react-router-dom Routes root; routes: `/` → LandingPage (unauthenticated), `/login` → LoginScreen, `/app` → Dashboard shell; useNavigate for post-login/logout redirects; auth-gated dashboard; onboarding gate via localStorage; Sign Out + display name in header; uses streamCheckin with accumulatedRef + streamingContent state; digestData/digestLoading/digestRefreshing state + handleRefreshDigest callback; isSimulating state + handleSimulateWeek; "Simulate Week" button (demo tenant only, aria-label toggles during loading); mobile-responsive layout (flex-col lg:flex-row, h-[45vh] lg:h-auto, p-4 md:p-8)
+  App.tsx                  react-router-dom Routes root; routes: `/` → LandingPage (unauthenticated), `/login` → LoginScreen, `/app` → Dashboard shell; auth + routing + layout + simulation coordination only; chat/streaming state delegated to useChat hook; digest state delegated to useDigest hook; useNavigate for post-login/logout redirects; onboarding gate via localStorage; "Simulate Week" button (demo tenant only); mobile-responsive layout
   main.tsx                 entry point; wraps <App /> in <BrowserRouter>
   components/LandingPage.tsx  marketing landing page: nav with logo + CTA, hero section, three domain cards (bio/logistics/relational), how-it-works steps, footer; KineticLogo inline SVG sub-component (three-line K convergence mark)
   components/LandingPage.test.tsx  7 Vitest tests: hero text, CTA button, domain card names, nav links, footer, eyebrow label, how-it-works steps
@@ -158,6 +160,8 @@ frontend/src/
     agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
   hooks/
     useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
+    useChat.ts             useChat(token): health/messages/agentLog/isLoading/error/streamingContent state; history hydration useEffect; handleSendMessage, handleRetry, handleCompleteTask, handleReset; exposes setHealth + setMessages for simulation; clearSession for logout
+    useDigest.ts           useDigest(token): digestData/digestLoading/digestRefreshing state; fetch-on-mount useEffect; handleRefreshDigest (force=true); clearDigest for logout
   api/
     client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap

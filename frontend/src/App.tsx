@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage';
-import { ChatPanel, Message, RespondingAgent } from './components/ChatPanel';
+import { ChatPanel } from './components/ChatPanel';
 import { BioStatusCard } from './components/Dashboard/BioStatusCard';
 import { LogisticsStatusCard } from './components/Dashboard/LogisticsStatusCard';
 import { RelationalStatusCard } from './components/Dashboard/RelationalStatusCard';
@@ -13,30 +13,39 @@ import { AgentDispatchLog } from './components/Dashboard/AgentDispatchLog';
 import { StatusBadge } from './components/Dashboard/StatusBadge';
 import { OnboardingModal } from './components/OnboardingModal';
 import { LoginScreen } from './components/LoginScreen';
-import { streamCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek } from './api/client';
+import { simulateWeek, fetchHistory } from './api/client';
 import { useAuth } from './hooks/useAuth';
-import { AgentLogEntry, DigestResponse, StreamDonePayload, SystemHealthPayload } from './types';
-import { buildAgentLogEntry } from './utils/agentLog';
+import { useChat } from './hooks/useChat';
+import { useDigest } from './hooks/useDigest';
 
 function App() {
   const { user, token, isLoading: authLoading, login: authLogin, logout: authLogout } = useAuth();
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const [health, setHealth] = useState<SystemHealthPayload | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [agentLog, setAgentLog] = useState<AgentLogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastMessage, setLastMessage] = useState<string | null>(null);
-  const [streamingContent, setStreamingContent] = useState<string | null>(null);
-  const accumulatedRef = useRef('');
+  const {
+    health,
+    messages,
+    agentLog,
+    isLoading,
+    error,
+    lastMessage,
+    streamingContent,
+    handleSendMessage,
+    handleRetry,
+    handleCompleteTask,
+    handleReset,
+    setHealth,
+    setMessages,
+    clearSession,
+  } = useChat(token);
+
+  const { digestData, digestLoading, digestRefreshing, handleRefreshDigest, clearDigest } =
+    useDigest(token);
+
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem('kinetic_onboarded')
   );
-  const [digestData, setDigestData] = useState<DigestResponse | null>(null);
-  const [digestLoading, setDigestLoading] = useState(false);
-  const [digestRefreshing, setDigestRefreshing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
 
   const handleLogin = async (username: string, password: string) => {
@@ -51,12 +60,8 @@ function App() {
 
   const handleLogout = async () => {
     await authLogout();
-    setHealth(null);
-    setMessages([]);
-    setAgentLog([]);
-    setError(null);
-    setLastMessage(null);
-    setDigestData(null);
+    clearSession();
+    clearDigest();
     navigate('/');
   };
 
@@ -76,141 +81,9 @@ function App() {
     }
   };
 
-  const handleRefreshDigest = async () => {
-    if (!token) return;
-    setDigestRefreshing(true);
-    try {
-      const data = await fetchDigest(token, true);
-      setDigestData(data);
-    } catch (err) {
-      console.error('Failed to refresh digest', err);
-    } finally {
-      setDigestRefreshing(false);
-    }
-  };
-
   const handleDismissOnboarding = () => {
     localStorage.setItem('kinetic_onboarded', 'true');
     setShowOnboarding(false);
-  };
-
-  // Hydrate state from backend when authenticated
-  useEffect(() => {
-    if (!token) return;
-    setIsLoading(true);
-    setDigestLoading(true);
-    void fetchHistory(token)
-      .then((data) => {
-        setHealth(data.health);
-        setMessages(data.messages);
-      })
-      .catch((err: unknown) => {
-        console.error('Failed to hydrate state', err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-    void fetchDigest(token)
-      .then((data) => {
-        setDigestData(data);
-      })
-      .catch((err: unknown) => {
-        console.error('Failed to fetch digest', err);
-      })
-      .finally(() => {
-        setDigestLoading(false);
-      });
-  }, [token]);
-
-  const handleSendMessage = (content: string) => {
-    setLastMessage(content);
-    setMessages((prev) => [...prev, { role: 'user', content }]);
-    setIsLoading(true);
-    setError(null);
-    setStreamingContent('');
-    accumulatedRef.current = '';
-
-    const timestamp = new Date().toISOString();
-
-    void streamCheckin(
-      content,
-      messages,
-      token ?? undefined,
-      (result) => {
-        setHealth(result);
-        setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
-      },
-      (text) => {
-        accumulatedRef.current += text;
-        setStreamingContent(accumulatedRef.current);
-      },
-      (done: StreamDonePayload) => {
-        setIsLoading(false);
-        setStreamingContent(null);
-        setLastMessage(null);
-        if (accumulatedRef.current) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: 'system',
-              content: accumulatedRef.current,
-              agent: (done.responding_agent as RespondingAgent | null) ?? 'liaison',
-            },
-          ]);
-        }
-      },
-      (detail: string) => {
-        setIsLoading(false);
-        setStreamingContent(null);
-        setError(detail);
-        setMessages((prev) => [
-          ...prev,
-          { role: 'system', content: `Check-in could not be processed. ${detail}` },
-        ]);
-      }
-    );
-  };
-
-  const handleRetry = () => {
-    if (lastMessage) {
-      setError(null);
-      handleSendMessage(lastMessage);
-    }
-  };
-
-  const handleCompleteTask = async (taskName: string) => {
-    try {
-      await completeTask(taskName, token ?? undefined);
-      // Re-fetch history to update ROI and Triage items globally
-      if (token) {
-        const data = await fetchHistory(token);
-        setHealth(data.health);
-      }
-    } catch (err) {
-      console.error('Failed to complete task', err);
-    }
-  };
-
-  const handleReset = async () => {
-    if (!confirm('Are you sure you want to wipe all system data? This cannot be undone.')) return;
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/debug/reset`,
-        {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-      if (response.ok) {
-        setHealth(null);
-        setMessages([]);
-        setError(null);
-        setLastMessage(null);
-      }
-    } catch (err) {
-      console.error('Reset failed', err);
-    }
   };
 
   if (authLoading) {
