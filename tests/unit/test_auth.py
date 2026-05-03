@@ -138,3 +138,29 @@ async def test_get_current_tenant_returns_tenant_string() -> None:
     user = CurrentUser(username="demo_user", tenant="demo")
     tenant = await get_current_tenant(user)
     assert tenant == "demo"
+
+
+def test_create_access_token_raises_when_secret_key_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """create_access_token raises RuntimeError when SECRET_KEY env var is empty."""
+    monkeypatch.delenv("SECRET_KEY")
+    with pytest.raises(RuntimeError, match="SECRET_KEY is not set"):
+        create_access_token("demo_user", "demo")
+
+
+async def test_get_current_user_missing_sub_in_payload_raises_401() -> None:
+    """Token missing 'sub' claim → get_current_user raises 401."""
+    from datetime import UTC, datetime, timedelta
+
+    import jwt as _jwt
+
+    no_sub_payload = {
+        "tenant": "demo",
+        "exp": datetime.now(tz=UTC) + timedelta(hours=1),
+    }
+    token = _jwt.encode(no_sub_payload, TEST_SECRET, algorithm="HS256")
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(creds)
+    assert exc_info.value.status_code == 401

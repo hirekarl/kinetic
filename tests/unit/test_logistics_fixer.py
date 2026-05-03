@@ -136,3 +136,48 @@ async def test_triage_items_carry_source_id_equal_to_task_name() -> None:
             f"source_id must not be None for logistics item {item.description}"
         )
         assert item.source_id in {"laundry", "groceries"}
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_completed_task_is_skipped() -> None:
+    """A task with status='completed' is excluded from triage even when overdue."""
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(name="laundry", days_overdue=5, priority="high", status="completed")
+            ]
+        )
+    )
+    result = await LogisticsFixer().process(payload)
+
+    assert result.status is not None
+    assert result.status.status == "green"
+    assert "laundry" not in result.status.critical_tasks
+    assert result.triage_items == []
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_task_with_incomplete_subtasks_shows_next_step() -> None:
+    """Triage action includes NEXT STEP when task has incomplete subtasks."""
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(
+                    name="laundry",
+                    days_overdue=3,
+                    priority="high",
+                    subtasks=["sort clothes", "wash", "dry", "fold"],
+                    completed_subtasks=["sort clothes"],
+                )
+            ]
+        )
+    )
+    result = await LogisticsFixer().process(payload)
+
+    assert result.status is not None
+    assert result.status.status == "red"
+    assert len(result.triage_items) >= 1
+    assert any("NEXT STEP" in item.action for item in result.triage_items)
+    assert any("wash" in item.action for item in result.triage_items)

@@ -458,6 +458,19 @@ async def test_process_history_maps_system_role_to_assistant() -> None:
     assert history_turns[0]["role"] == "assistant"
 
 
+# ── Constructor guard ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_operational_liaison_raises_when_api_key_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """OperationalLiaison.__init__ raises OSError when GEMINI_API_KEY is unset."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    with pytest.raises(OSError, match="GEMINI_API_KEY is not set"):
+        OperationalLiaison()
+
+
 # ── Prompt hardening rules (Task B1) ─────────────────────────────────────────
 
 

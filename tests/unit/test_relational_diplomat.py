@@ -122,3 +122,20 @@ async def test_interaction_sprints_generated_for_at_risk() -> None:
     assert result.status is not None
     assert len(result.status.interaction_sprints) > 0
     assert any("Marcus" in sprint for sprint in result.status.interaction_sprints)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_historical_vibe_merges_new_person_into_checks() -> None:
+    """Historical vibe data for a person not in the payload is merged into the check list."""
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=6, days_since_contact=5)]
+        )
+    )
+    history = {"relational": [{"person": "Priya", "score": 4, "days_since_contact": 10}]}
+    result = await RelationalDiplomat().process(payload, history=history)
+
+    assert result.status is not None
+    # Priya merged in from history — she's at risk (score=4 < 5)
+    assert "Priya" in result.status.at_risk_relationships

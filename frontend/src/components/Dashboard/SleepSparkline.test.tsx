@@ -60,6 +60,12 @@ describe('SleepSparkline', () => {
     });
   });
 
+  it('uses 0 as fallback when last series element is undefined (nullish guard)', () => {
+    const seriesWithHole = [7.0, 6.5, undefined as unknown as number];
+    const { container } = render(<SleepSparkline series={seriesWithHole} />);
+    expect(container.querySelector('circle')).not.toBeNull();
+  });
+
   it('renders exactly 2 points with a 2-element series', () => {
     const { container } = render(<SleepSparkline series={[8.0, 6.0]} />);
     const polyline = container.querySelector('polyline');

@@ -66,6 +66,38 @@ describe('WeeklyDigestCard', () => {
     expect(screen.getByText(/minutes ago/i)).toBeInTheDocument();
   });
 
+  it('shows "1 hour ago" (singular) when generated ~61 min ago', async () => {
+    const user = userEvent.setup();
+    const digest = digestWithOffset(61 * 60 * 1000);
+    render(<WeeklyDigestCard digest={digest} />);
+    await user.click(screen.getByRole('button', { name: /weekly review/i }));
+    expect(screen.getByText(/1 hour ago/i)).toBeInTheDocument();
+  });
+
+  it('shows "just now" when generated less than 1 minute ago', async () => {
+    const user = userEvent.setup();
+    const digest = digestWithOffset(30 * 1000); // 30 seconds ago
+    render(<WeeklyDigestCard digest={digest} />);
+    await user.click(screen.getByRole('button', { name: /weekly review/i }));
+    expect(screen.getByText(/just now/i)).toBeInTheDocument();
+  });
+
+  it('shows "2 hours ago" (plural) when generated 2+ hours ago', async () => {
+    const user = userEvent.setup();
+    const digest = digestWithOffset(130 * 60 * 1000); // 130 minutes = 2 hours
+    render(<WeeklyDigestCard digest={digest} />);
+    await user.click(screen.getByRole('button', { name: /weekly review/i }));
+    expect(screen.getByText(/2 hours ago/i)).toBeInTheDocument();
+  });
+
+  it('shows "1 minute ago" (singular) when generated exactly 1 minute ago', async () => {
+    const user = userEvent.setup();
+    const digest = digestWithOffset(60 * 1000); // exactly 1 minute ago
+    render(<WeeklyDigestCard digest={digest} />);
+    await user.click(screen.getByRole('button', { name: /weekly review/i }));
+    expect(screen.getByText(/1 minute ago/i)).toBeInTheDocument();
+  });
+
   it('shows no-data message when digest is null and expanded', async () => {
     const user = userEvent.setup();
     render(<WeeklyDigestCard digest={null} />);

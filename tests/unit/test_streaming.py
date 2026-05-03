@@ -470,3 +470,72 @@ async def test_orchestrate_stream_handles_missing_task_gracefully() -> None:
             events.append(event)
 
     assert events[-1]["event"] == "done"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_orchestrate_stream_uses_default_db_when_none_passed() -> None:
+    """orchestrate_stream() calls get_db() when no db argument is provided."""
+    mock_db = _mock_db()
+    with (
+        patch("kinetic.orchestrator.lead.get_db", return_value=mock_db) as mock_get_db,
+        patch("kinetic.orchestrator.lead.OperationalLiaison") as mock_liaison_cls,
+        patch("kinetic.orchestrator.lead.detect_and_update_patterns", new_callable=AsyncMock),
+    ):
+        mock_liaison = MagicMock()
+        mock_liaison.stream_text = MagicMock(return_value=_fake_stream_text())
+        mock_liaison.extract_metadata = AsyncMock(return_value=LiaisonMetadata())
+        mock_liaison_cls.return_value = mock_liaison
+
+        events: list[dict[str, str]] = []
+        async for event in orchestrate_stream(CheckInPayload(), message="no db passed"):
+            events.append(event)
+
+    mock_get_db.assert_called_once()
+    assert any(e["event"] == "agents" for e in events)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_orchestrate_stream_survives_initial_pauses_load_failure() -> None:
+    """orchestrate_stream() continues when the first get_active_pauses call raises."""
+    mock_db = _mock_db()
+    mock_db.get_active_pauses = AsyncMock(side_effect=RuntimeError("DB down"))
+    with (
+        patch("kinetic.orchestrator.lead.OperationalLiaison") as mock_liaison_cls,
+        patch("kinetic.orchestrator.lead.detect_and_update_patterns", new_callable=AsyncMock),
+    ):
+        mock_liaison = MagicMock()
+        mock_liaison.stream_text = MagicMock(return_value=_fake_stream_text())
+        mock_liaison.extract_metadata = AsyncMock(return_value=LiaisonMetadata())
+        mock_liaison_cls.return_value = mock_liaison
+
+        events: list[dict[str, str]] = []
+        async for event in orchestrate_stream(CheckInPayload(), message="pauses fail", db=mock_db):
+            events.append(event)
+
+    assert any(e["event"] == "agents" for e in events)
+    assert events[-1]["event"] == "done"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_orchestrate_stream_survives_pauses_reload_failure() -> None:
+    """orchestrate_stream() continues when the post-upsert get_active_pauses reload raises."""
+    mock_db = _mock_db()
+    # First call (before agents event) succeeds; second call (after metadata) fails
+    mock_db.get_active_pauses = AsyncMock(side_effect=[[], RuntimeError("reload failed")])
+    with (
+        patch("kinetic.orchestrator.lead.OperationalLiaison") as mock_liaison_cls,
+        patch("kinetic.orchestrator.lead.detect_and_update_patterns", new_callable=AsyncMock),
+    ):
+        mock_liaison = MagicMock()
+        mock_liaison.stream_text = MagicMock(return_value=_fake_stream_text())
+        mock_liaison.extract_metadata = AsyncMock(return_value=LiaisonMetadata())
+        mock_liaison_cls.return_value = mock_liaison
+
+        events: list[dict[str, str]] = []
+        async for event in orchestrate_stream(CheckInPayload(), message="reload fail", db=mock_db):
+            events.append(event)
+
+    assert events[-1]["event"] == "done"

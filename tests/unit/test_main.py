@@ -92,3 +92,20 @@ async def test_lifespan_with_database_url_creates_and_closes_pool(
 
         assert lead_module._pg_pool is None
         mock_pool.close.assert_called_once()
+
+
+@pytest.mark.unit
+def test_frontend_url_env_var_added_to_cors_origins(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When FRONTEND_URL is set, it is appended to the CORS allowed origins list."""
+    import importlib
+
+    import kinetic.main as main_module
+
+    monkeypatch.setenv("FRONTEND_URL", "https://kinetic-frontend.onrender.com/")
+    importlib.reload(main_module)
+
+    assert "https://kinetic-frontend.onrender.com" in main_module._origins
+
+    # Restore original module state for other tests
+    monkeypatch.delenv("FRONTEND_URL", raising=False)
+    importlib.reload(main_module)

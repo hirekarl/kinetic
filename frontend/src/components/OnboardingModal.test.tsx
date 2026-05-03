@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OnboardingModal } from './OnboardingModal';
 
@@ -123,6 +123,25 @@ describe('OnboardingModal', () => {
     render(<OnboardingModal onClose={onClose} />);
     fireEvent.click(screen.getByRole('dialog'));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('Tab on last focusable element wraps focus to first element', () => {
+    render(<OnboardingModal onClose={onClose} />);
+    const dialog = screen.getByRole('dialog');
+    const buttons = within(dialog).getAllByRole('button');
+    const last = buttons[buttons.length - 1]!;
+    last.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: false });
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('Shift+Tab on first focusable element wraps focus to last element', () => {
+    render(<OnboardingModal onClose={onClose} />);
+    const dialog = screen.getByRole('dialog');
+    const buttons = within(dialog).getAllByRole('button');
+    buttons[0]!.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(buttons[buttons.length - 1]);
   });
 
   it('step 2 shows all three agent names', () => {

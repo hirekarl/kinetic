@@ -243,3 +243,80 @@ async def test_upsert_exception_does_not_propagate() -> None:
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         # Must not raise
         await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
+
+
+# ── _build_prompt branches ────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_build_prompt_includes_recurring_tasks() -> None:
+    """_build_prompt includes recurring task lines when summary has recurring_tasks."""
+    from kinetic.models.outputs import RecurringTask
+    from kinetic.services.pattern_detector import _build_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=_summary().bio_trend,
+        recurring_tasks=[
+            RecurringTask(name="laundry", times_overdue=3, avg_days_overdue=4.5, priority="high")
+        ],
+        relational_drifts=[],
+        days_analyzed=5,
+        generated_at=_NOW,
+    )
+    prompt = _build_prompt(summary, [])
+
+    assert "laundry" in prompt
+    assert "3x" in prompt or "3)" in prompt
+
+
+@pytest.mark.unit
+def test_build_prompt_includes_relational_drifts() -> None:
+    """_build_prompt includes relational drift lines when summary has relational_drifts."""
+    from kinetic.models.outputs import RelationalDrift
+    from kinetic.services.pattern_detector import _build_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=_summary().bio_trend,
+        recurring_tasks=[],
+        relational_drifts=[
+            RelationalDrift(
+                person="Marcus",
+                contact_trend=1.5,
+                avg_vibe_score=5.5,
+                last_known_days_since_contact=9,
+            )
+        ],
+        days_analyzed=5,
+        generated_at=_NOW,
+    )
+    prompt = _build_prompt(summary, [])
+
+    assert "Marcus" in prompt
+    assert "+1.50" in prompt
+
+
+# ── _parse_patterns edge cases ────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_parse_patterns_raises_on_unmatched_bracket() -> None:
+    """_parse_patterns raises ValueError when brackets are unmatched (no opening '[')."""
+    from kinetic.services.pattern_detector import _parse_patterns
+
+    with pytest.raises(ValueError, match="Unmatched brackets"):
+        _parse_patterns("no opening bracket here ]")
+
+
+@pytest.mark.unit
+async def test_non_dict_entry_in_response_is_skipped() -> None:
+    """A non-dict entry in Gemini's JSON array is skipped via _is_valid_entry."""
+    db = _mock_db()
+    mock_instance = MagicMock()
+    mock_instance.models.generate_content.return_value = _gemini_response(
+        ["not_a_dict", {"profile_key": "valid", "insight": "Good.", "evidence": {}}]
+    )
+
+    with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
+        await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
+
+    assert db.upsert_behavioral_profile.call_count == 1

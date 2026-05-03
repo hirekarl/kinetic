@@ -437,6 +437,20 @@ describe('App — split-panel shell', () => {
     await waitFor(() => screen.getByRole('button', { name: /sign out/i }));
   });
 
+  it('Sign out button calls authLogout and navigates away', async () => {
+    const user = userEvent.setup();
+    const mockLogout = vi.fn().mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({ ...defaultAuthState, logout: mockLogout });
+
+    renderApp();
+    await waitFor(() => screen.getByRole('button', { name: /sign out/i }));
+    await user.click(screen.getByRole('button', { name: /sign out/i }));
+
+    await waitFor(() => {
+      expect(mockLogout).toHaveBeenCalledOnce();
+    });
+  });
+
   // ── Simulate Week ──────────────────────────────────────────────────────────
 
   it('Simulate Week button is not rendered for non-demo tenant', async () => {
@@ -454,6 +468,39 @@ describe('App — split-panel shell', () => {
     await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
   });
 
+  it('clicking Refresh in WeeklyDigestCard triggers handleRefreshDigest with force=true', async () => {
+    mockFetchHistory.mockResolvedValue({ health: mockHealth, messages: [] });
+
+    const user = userEvent.setup();
+    renderApp();
+
+    await waitFor(() => screen.getByText('Sector Status'));
+
+    await user.click(screen.getByRole('button', { name: /weekly review/i }));
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }));
+
+    await waitFor(() => {
+      expect(mockFetchDigest).toHaveBeenCalledWith(expect.anything(), true);
+    });
+  });
+
+  it('Simulate Week does nothing when token is null', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { username: 'demo', tenant: 'demo', display_name: 'Demo' },
+      token: null,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    renderApp();
+    await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /simulate week/i }));
+
+    expect(mockSimulateWeek).not.toHaveBeenCalled();
+  });
+
   it('clicking Simulate Week calls simulateWeek then triggers a forced digest refresh', async () => {
     const user = userEvent.setup();
     renderApp();
@@ -465,6 +512,25 @@ describe('App — split-panel shell', () => {
       expect(mockSimulateWeek).toHaveBeenCalledTimes(1);
       expect(mockFetchDigest).toHaveBeenCalledWith(expect.anything(), true);
     });
+  });
+
+  it('clicking Simulate Week logs error when simulateWeek rejects', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    mockSimulateWeek.mockRejectedValueOnce(new Error('network error'));
+
+    renderApp();
+    await waitFor(() => screen.getByRole('button', { name: /simulate week/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /simulate week/i }));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/simulation failed/i),
+        expect.any(Error)
+      );
+    });
+
+    consoleSpy.mockRestore();
   });
 
   it('Simulate Week button is disabled while simulating', async () => {
@@ -616,6 +682,33 @@ describe('App — Auth gating', () => {
       expect(screen.getByRole('heading', { name: /mission control/i })).toBeInTheDocument();
     });
     expect(screen.queryByLabelText(/username/i)).not.toBeInTheDocument();
+  });
+
+  it('successful login navigates away from the login screen', async () => {
+    const mockLogin = vi.fn().mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({
+      user: null,
+      token: null,
+      isLoading: false,
+      login: mockLogin,
+      logout: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderApp(['/login']);
+
+    await user.type(screen.getByLabelText(/username/i), 'demo');
+    await user.type(screen.getByLabelText(/password/i), 'password');
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }));
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('demo', 'password');
+    });
+    // After login, navigate('/app') is called — with null user the /app route redirects to LandingPage
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /your infrastructure is showing/i })
+      ).toBeInTheDocument();
+    });
   });
 
   it('login failure sets error message shown on LoginScreen', async () => {

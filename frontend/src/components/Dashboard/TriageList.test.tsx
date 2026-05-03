@@ -129,6 +129,15 @@ describe('TriageList — task completion', () => {
     expect(screen.queryByRole('button', { name: /mark .* complete/i })).not.toBeInTheDocument();
   });
 
+  it('handleComplete returns early when onCompleteTask is not provided', async () => {
+    render(<TriageList items={[logisticsItemWithSource]} />);
+    fireEvent.click(screen.getByRole('button', { name: /mark laundry complete/i }));
+    // Item remains visible — no optimistic removal without handler
+    await waitFor(() => {
+      expect(screen.getByText('Laundry critically overdue')).toBeInTheDocument();
+    });
+  });
+
   it('calls onCompleteTask with source_id when button is clicked', async () => {
     const onCompleteTask = vi.fn().mockResolvedValue(undefined);
     render(<TriageList items={[logisticsItemWithSource]} onCompleteTask={onCompleteTask} />);

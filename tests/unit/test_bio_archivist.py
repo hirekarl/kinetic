@@ -115,3 +115,18 @@ async def test_historical_sleep_debt_increases_burnout() -> None:
     assert res3.status.sleep_debt_hours == pytest.approx(13.0)
     # debt > 10 → score should increase
     assert res3.status.burnout_score > res1.status.burnout_score
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_empty_payload_with_bio_history_falls_back_to_bio_input_default() -> None:
+    """bio=None but bio_history present → BioInput() default used, returns green status."""
+    payload = CheckInPayload()  # bio=None
+    history = {"bio": [{"sleep_hours": 6.0}]}
+    result = await BioArchivist().process(payload, history=history)
+
+    assert result.success is True
+    assert result.status is not None
+    # BioInput() has all-None fields → total_weight == 0.0 → score 0.0 → green
+    assert result.status.status == "green"
+    assert result.status.burnout_score == 0.0

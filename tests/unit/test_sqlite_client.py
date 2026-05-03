@@ -350,3 +350,347 @@ async def test_complete_task_idempotent_for_already_completed(
     laundry = next((t for t in tasks if t["name"] == "laundry"), None)
     assert laundry is not None
     assert laundry["status"] == "completed"
+
+
+# ── insert_checkin (relational branch) ──────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_insert_checkin_persists_vibe_checks(tmp_path: pytest.TempPathFactory) -> None:
+    """insert_checkin stores vibe_checks rows when relational data is present."""
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=7, days_since_contact=3)]
+        )
+    )
+    await client.insert_checkin(payload, "checked in")
+
+    vibes = await client.get_all_vibes()
+    assert any(v["person"] == "Marcus" for v in vibes)
+    marcus = next(v for v in vibes if v["person"] == "Marcus")
+    assert marcus["score"] == 7
+    assert marcus["days_since_contact"] == 3
+
+
+# ── insert_checkin_at ────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_insert_checkin_at_stores_bio_with_explicit_timestamp(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """insert_checkin_at persists bio data and uses the supplied timestamp."""
+    client = _make_client(tmp_path)
+    ts = datetime(2026, 4, 1, 22, 0, 0)
+    payload = CheckInPayload(bio=BioInput(sleep_hours=6.5, nutrition_quality=7, energy_level=6))
+    checkin_id = await client.insert_checkin_at(payload, "night check-in", ts)
+
+    assert checkin_id
+    bio = await client.get_latest_bio()
+    assert bio is not None
+    assert bio["sleep_hours"] == pytest.approx(6.5)
+
+
+@pytest.mark.unit
+async def test_insert_checkin_at_stores_task_data(tmp_path: pytest.TempPathFactory) -> None:
+    """insert_checkin_at persists logistics task data with explicit timestamp."""
+    client = _make_client(tmp_path)
+    ts = datetime(2026, 4, 1, 22, 0, 0)
+    task = LogisticsTask(name="dishes", days_overdue=1, priority="medium")
+    payload = CheckInPayload(logistics=LogisticsInput(tasks=[task]))
+    await client.insert_checkin_at(payload, "doing tasks", ts)
+
+    tasks = await client.get_all_tasks()
+    assert any(t["name"] == "dishes" for t in tasks)
+
+
+@pytest.mark.unit
+async def test_insert_checkin_at_stores_relational_data(tmp_path: pytest.TempPathFactory) -> None:
+    """insert_checkin_at persists vibe checks with explicit timestamp."""
+    client = _make_client(tmp_path)
+    ts = datetime(2026, 4, 1, 22, 0, 0)
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Priya", score=8, days_since_contact=2)]
+        )
+    )
+    await client.insert_checkin_at(payload, "relational check-in", ts)
+
+    vibes = await client.get_all_vibes()
+    assert any(v["person"] == "Priya" for v in vibes)
+
+
+# ── get_latest_bio ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_get_latest_bio_empty_db_returns_none(tmp_path: pytest.TempPathFactory) -> None:
+    """get_latest_bio returns None when no bio data has been stored."""
+    client = _make_client(tmp_path)
+    result = await client.get_latest_bio()
+    assert result is None
+
+
+@pytest.mark.unit
+async def test_get_latest_bio_returns_most_recent_row(tmp_path: pytest.TempPathFactory) -> None:
+    """get_latest_bio returns the most recent bio row (highest rowid)."""
+    client = _make_client(tmp_path)
+    older = CheckInPayload(bio=BioInput(sleep_hours=7.0, nutrition_quality=8, energy_level=7))
+    newer = CheckInPayload(bio=BioInput(sleep_hours=5.5, nutrition_quality=6, energy_level=5))
+    await _seed_checkin(client, older, datetime.now() - timedelta(days=1))
+    await _seed_checkin(client, newer, datetime.now())
+
+    bio = await client.get_latest_bio()
+    assert bio is not None
+    assert bio["sleep_hours"] == pytest.approx(5.5)
+
+
+# ── get_all_vibes ────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_get_all_vibes_returns_latest_per_person(tmp_path: pytest.TempPathFactory) -> None:
+    """get_all_vibes returns only the most recent vibe for each person."""
+    client = _make_client(tmp_path)
+    old_payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=8, days_since_contact=2)]
+        )
+    )
+    new_payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=4, days_since_contact=9)]
+        )
+    )
+    await _seed_checkin(client, old_payload, datetime.now() - timedelta(days=2))
+    await _seed_checkin(client, new_payload, datetime.now() - timedelta(days=1))
+
+    vibes = await client.get_all_vibes()
+    marcus_vibes = [v for v in vibes if v["person"] == "Marcus"]
+    assert len(marcus_vibes) == 1
+    assert marcus_vibes[0]["score"] == 4
+
+
+@pytest.mark.unit
+async def test_get_all_vibes_returns_multiple_people(tmp_path: pytest.TempPathFactory) -> None:
+    """get_all_vibes returns one row per distinct person."""
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[
+                VibeCheck(person="Marcus", score=7, days_since_contact=3),
+                VibeCheck(person="Priya", score=9, days_since_contact=1),
+            ]
+        )
+    )
+    await _seed_checkin(client, payload, datetime.now())
+
+    vibes = await client.get_all_vibes()
+    people = {v["person"] for v in vibes}
+    assert "Marcus" in people
+    assert "Priya" in people
+
+
+# ── get_recent_bio ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_get_recent_bio_returns_limited_rows(tmp_path: pytest.TempPathFactory) -> None:
+    """get_recent_bio returns at most `limit` rows."""
+    client = _make_client(tmp_path)
+    for offset, sleep in enumerate([7.0, 6.5, 6.0, 5.5, 5.0]):
+        payload = CheckInPayload(
+            bio=BioInput(sleep_hours=sleep, nutrition_quality=7, energy_level=6)
+        )
+        await _seed_checkin(client, payload, datetime.now() - timedelta(days=offset))
+
+    rows = await client.get_recent_bio(limit=3)
+    assert len(rows) == 3
+
+
+@pytest.mark.unit
+async def test_get_recent_bio_empty_db(tmp_path: pytest.TempPathFactory) -> None:
+    """get_recent_bio returns an empty list when no bio data exists."""
+    client = _make_client(tmp_path)
+    rows = await client.get_recent_bio()
+    assert rows == []
+
+
+# ── upsert_contact_pause / get_active_pauses ────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_upsert_contact_pause_inserts_new_row(tmp_path: pytest.TempPathFactory) -> None:
+    """upsert_contact_pause inserts a new pause record."""
+    client = _make_client(tmp_path)
+    future = (datetime.now() + timedelta(days=14)).date().isoformat()
+    await client.upsert_contact_pause("Marcus", future, "needs space")
+
+    pauses = await client.get_active_pauses()
+    assert any(p["person"] == "Marcus" for p in pauses)
+
+
+@pytest.mark.unit
+async def test_upsert_contact_pause_updates_existing_row(tmp_path: pytest.TempPathFactory) -> None:
+    """upsert_contact_pause with same person replaces paused_until and reason."""
+    client = _make_client(tmp_path)
+    first_date = (datetime.now() + timedelta(days=7)).date().isoformat()
+    second_date = (datetime.now() + timedelta(days=30)).date().isoformat()
+
+    await client.upsert_contact_pause("Marcus", first_date, "initial")
+    await client.upsert_contact_pause("Marcus", second_date, "extended")
+
+    pauses = await client.get_active_pauses()
+    marcus = next(p for p in pauses if p["person"] == "Marcus")
+    assert marcus["paused_until"] == second_date
+    assert marcus["reason"] == "extended"
+
+
+@pytest.mark.unit
+async def test_get_active_pauses_future_date_included(tmp_path: pytest.TempPathFactory) -> None:
+    """get_active_pauses includes pauses whose paused_until is in the future."""
+    client = _make_client(tmp_path)
+    future = (datetime.now() + timedelta(days=7)).date().isoformat()
+    await client.upsert_contact_pause("Marcus", future, None)
+
+    pauses = await client.get_active_pauses()
+    assert any(p["person"] == "Marcus" for p in pauses)
+
+
+@pytest.mark.unit
+async def test_get_active_pauses_past_date_excluded(tmp_path: pytest.TempPathFactory) -> None:
+    """get_active_pauses excludes pauses whose paused_until is in the past."""
+    client = _make_client(tmp_path)
+    past = (datetime.now() - timedelta(days=1)).date().isoformat()
+    await client.upsert_contact_pause("Marcus", past, None)
+
+    pauses = await client.get_active_pauses()
+    assert not any(p["person"] == "Marcus" for p in pauses)
+
+
+# ── get_history ──────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_get_history_returns_user_messages_in_order(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """get_history returns user messages in chronological order."""
+    client = _make_client(tmp_path)
+    await _seed_checkin(
+        client, CheckInPayload(), datetime.now() - timedelta(hours=2), "first message"
+    )
+
+    history = await client.get_history(limit=10)
+    assert len(history) >= 1
+    assert history[0]["role"] == "user"
+    assert history[0]["content"] == "first message"
+
+
+@pytest.mark.unit
+async def test_get_history_empty_db_returns_empty_list(tmp_path: pytest.TempPathFactory) -> None:
+    """get_history returns an empty list when no check-ins exist."""
+    import aiosqlite
+
+    client = _make_client(tmp_path)
+    async with aiosqlite.connect(client.db_path) as db:
+        await client._init_db(db)
+
+    history = await client.get_history()
+    assert history == []
+
+
+@pytest.mark.unit
+async def test_get_history_respects_limit(tmp_path: pytest.TempPathFactory) -> None:
+    """get_history returns at most `limit` check-ins worth of messages."""
+    client = _make_client(tmp_path)
+    for i in range(5):
+        await _seed_checkin(
+            client, CheckInPayload(), datetime.now() - timedelta(hours=i), f"message {i}"
+        )
+
+    history = await client.get_history(limit=2)
+    user_msgs = [m for m in history if m["role"] == "user"]
+    assert len(user_msgs) <= 2
+
+
+# ── clear_database ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_clear_database_wipes_all_tables(tmp_path: pytest.TempPathFactory) -> None:
+    """clear_database removes all rows from all tables."""
+    from kinetic.models.outputs import BehavioralProfile
+
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        bio=BioInput(sleep_hours=7.0, nutrition_quality=8, energy_level=7),
+        logistics=LogisticsInput(
+            tasks=[LogisticsTask(name="dishes", days_overdue=1, priority="low")]
+        ),
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=7, days_since_contact=3)]
+        ),
+    )
+    await client.insert_checkin(payload, "pre-clear data")
+
+    now = datetime.now()
+    await client.upsert_behavioral_profile(
+        BehavioralProfile(
+            profile_key="test_pattern",
+            insight="Test insight.",
+            evidence={},
+            first_observed=now,
+            last_updated=now,
+            observation_count=1,
+        )
+    )
+
+    await client.clear_database()
+
+    assert await client.get_latest_bio() is None
+    assert await client.get_all_tasks() == []
+    assert await client.get_all_vibes() == []
+    assert await client.get_behavioral_profiles() == []
+
+
+# ── relational drift single-entry guard (line 485) ───────────────────────────
+
+
+@pytest.mark.unit
+async def test_behavioral_summary_single_vibe_entry_no_drift(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """A person with only one vibe-check entry cannot have drift computed — skipped."""
+    client = _make_client(tmp_path)
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=7, days_since_contact=5)]
+        )
+    )
+    await _seed_checkin(client, payload, datetime.now())
+
+    summary = await client.get_behavioral_summary()
+    assert all(d.person != "Marcus" for d in summary.relational_drifts)
+
+
+# ── get_history system message (line 375) ────────────────────────────────────
+
+
+@pytest.mark.unit
+async def test_get_history_includes_system_message_when_feedback_present(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """get_history emits a system message when liaison_feedback is non-null."""
+    client = _make_client(tmp_path)
+    async with aiosqlite.connect(client.db_path) as db:
+        await client._init_db(db)
+        await db.execute(
+            "INSERT INTO checkins (id, timestamp, message, liaison_feedback) VALUES (?, ?, ?, ?)",
+            (str(uuid.uuid4()), datetime.now().isoformat(), "feeling great", "Noted: good energy."),
+        )
+        await db.commit()
+
+    history = await client.get_history()
+    assert any(m["role"] == "system" and "Noted: good energy." in m["content"] for m in history)

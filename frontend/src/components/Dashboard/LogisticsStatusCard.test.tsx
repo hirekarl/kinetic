@@ -86,4 +86,44 @@ describe('LogisticsStatusCard', () => {
     expect(progressbar).toHaveAttribute('aria-valuemin', '0');
     expect(progressbar).toHaveAttribute('aria-valuemax', '100');
   });
+
+  it('progress bar uses green class when task status is completed', () => {
+    const dataWithCompletedTask: LogisticsStatus = {
+      ...mockData,
+      tasks_with_steps: [
+        {
+          name: 'laundry',
+          status: 'completed',
+          days_overdue: 0,
+          priority: 'low',
+          subtasks: ['Sort clothes', 'Wash', 'Fold'],
+          completed_subtasks: ['Sort clothes', 'Wash', 'Fold'],
+          notes: null,
+        },
+      ],
+    };
+    const { container } = render(<LogisticsStatusCard data={dataWithCompletedTask} />);
+    const bar = container.querySelector('.bg-status-green');
+    expect(bar).not.toBeNull();
+  });
+
+  it('progressbar aria-valuenow is 0 when task has empty subtasks', () => {
+    const dataWithNoSubtasks: LogisticsStatus = {
+      ...mockData,
+      tasks_with_steps: [
+        {
+          name: 'grocery run',
+          status: 'pending',
+          days_overdue: 1,
+          priority: 'medium',
+          subtasks: [],
+          completed_subtasks: [],
+          notes: null,
+        },
+      ],
+    };
+    render(<LogisticsStatusCard data={dataWithNoSubtasks} />);
+    const progressbar = screen.getByRole('progressbar', { name: /grocery run progress/i });
+    expect(progressbar).toHaveAttribute('aria-valuenow', '0');
+  });
 });

@@ -123,3 +123,53 @@ def test_complete_task_returns_409_for_already_completed() -> None:
         response = client.patch("/api/tasks/laundry/complete")
 
     assert response.status_code == 409
+
+
+# ── POST /api/debug/reset ─────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_reset_database_returns_200_success() -> None:
+    """POST /api/debug/reset clears the DB and returns {status: success}."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.clear_database = AsyncMock(return_value=None)
+        mock_get_db.return_value = mock_db
+
+        response = client.post("/api/debug/reset")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
+# ── Generic exception handler in checkin routes ───────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_checkin_generic_parse_exception_returns_500() -> None:
+    """If parse_checkin raises a non-OSError exception, /api/checkin returns 500."""
+    with patch(
+        "kinetic.api.routes.parse_checkin",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("unexpected parsing failure"),
+    ):
+        response = client.post("/api/checkin", json={"message": "Slept 8 hours."})
+
+    assert response.status_code == 500
+    assert "LLM Parsing failed" in response.json()["detail"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_checkin_stream_generic_parse_exception_returns_500() -> None:
+    """If parse_checkin raises a non-OSError exception, /api/checkin/stream returns 500."""
+    with patch(
+        "kinetic.api.routes.parse_checkin",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("stream parse failure"),
+    ):
+        response = client.post("/api/checkin/stream", json={"message": "Slept 8 hours."})
+
+    assert response.status_code == 500
+    assert "LLM Parsing failed" in response.json()["detail"]

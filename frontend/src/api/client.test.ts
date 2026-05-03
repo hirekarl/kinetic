@@ -7,6 +7,8 @@ import {
   fetchMe,
   logout,
   streamCheckin,
+  simulateWeek,
+  fetchDigest,
 } from './client';
 import type { SystemHealthPayload, StreamDonePayload } from '../types';
 
@@ -71,6 +73,24 @@ describe('API client', () => {
       });
       await expect(fetchCheckin('test')).rejects.toThrow('Internal Server Error');
     });
+
+    it('uses default message when json parses but has no detail field', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({}),
+      });
+      await expect(fetchCheckin('test')).rejects.toThrow('An unexpected error occurred.');
+    });
+
+    it('uses default message when statusText is empty and json parse fails', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        statusText: '',
+        json: () => Promise.reject(new Error('parse failed')),
+      });
+      await expect(fetchCheckin('test')).rejects.toThrow('An unexpected error occurred.');
+    });
   });
 
   describe('fetchHistory', () => {
@@ -123,6 +143,55 @@ describe('API client', () => {
         expect.objectContaining({ headers: { Authorization: 'Bearer my-token' } })
       );
     });
+
+    it('throws on non-ok response', async () => {
+      mockFetch.mockResolvedValue({ ok: false, statusText: 'Not Found' });
+      await expect(completeTask('unknown')).rejects.toThrow("Failed to complete task 'unknown'");
+    });
+  });
+
+  describe('simulateWeek', () => {
+    it('sends POST to /api/demo/simulate and returns inserted count', async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ inserted: 5 }) });
+      const result = await simulateWeek('my-token');
+      expect(result).toEqual({ inserted: 5 });
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/demo/simulate'),
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    it('throws on non-ok response', async () => {
+      mockFetch.mockResolvedValue({ ok: false });
+      await expect(simulateWeek()).rejects.toThrow('Failed to run simulation.');
+    });
+  });
+
+  describe('fetchDigest', () => {
+    it('sends GET to /api/digest and returns digest data', async () => {
+      const mockDigest = { summary: 'Weekly review.', generated_at: '2026-05-01T12:00:00' };
+      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockDigest) });
+      const result = await fetchDigest('my-token');
+      expect(result).toEqual(mockDigest);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/digest'),
+        expect.objectContaining({ headers: { Authorization: 'Bearer my-token' } })
+      );
+    });
+
+    it('appends ?force=true when force parameter is true', async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+      await fetchDigest(undefined, true);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('?force=true'),
+        expect.anything()
+      );
+    });
+
+    it('throws on non-ok response', async () => {
+      mockFetch.mockResolvedValue({ ok: false });
+      await expect(fetchDigest()).rejects.toThrow('Failed to fetch digest.');
+    });
   });
 
   describe('login', () => {
@@ -144,6 +213,22 @@ describe('API client', () => {
         json: () => Promise.resolve({ detail: 'Invalid credentials' }),
       });
       await expect(login('bad', 'bad')).rejects.toThrow('Invalid credentials');
+    });
+
+    it('falls back to default message when error response body is not JSON', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        json: () => Promise.reject(new Error('parse failed')),
+      });
+      await expect(login('bad', 'bad')).rejects.toThrow('Invalid credentials.');
+    });
+
+    it('uses default message when json parses but has no detail field', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      });
+      await expect(login('bad', 'bad')).rejects.toThrow('Invalid credentials.');
     });
   });
 
@@ -335,6 +420,34 @@ describe('API client', () => {
 
       expect(onAgents).toHaveBeenCalledOnce();
       expect(onDone).toHaveBeenCalledOnce();
+    });
+
+    it('calls onError when fallback fetchCheckin also fails', async () => {
+      const onError = vi.fn();
+      // First call (SSE stream) fails → triggers fallback
+      // Second call (fetchCheckin in fallback) also fails
+      mockFetch
+        .mockResolvedValueOnce({ ok: false, status: 503, body: null })
+        .mockResolvedValueOnce({
+          ok: false,
+          statusText: 'Service Unavailable',
+          json: () => Promise.resolve({ detail: 'API down' }),
+        });
+
+      await streamCheckin('hello', [], 'tok', noop, noop, noop, onError);
+
+      expect(onError).toHaveBeenCalledWith('API down');
+    });
+
+    it('uses "Failed to connect." when fallback throws a non-Error value', async () => {
+      const onError = vi.fn();
+      mockFetch
+        .mockResolvedValueOnce({ ok: false, status: 503, body: null })
+        .mockRejectedValueOnce('string error');
+
+      await streamCheckin('hello', [], 'tok', noop, noop, noop, onError);
+
+      expect(onError).toHaveBeenCalledWith('Failed to connect.');
     });
   });
 });

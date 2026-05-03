@@ -56,4 +56,12 @@ describe('RelationalStatusCard', () => {
     render(<RelationalStatusCard data={withError} />);
     expect(screen.getByText('Vibe check failed')).toBeInTheDocument();
   });
+
+  it('renders On Break section with person name when activePauses is non-empty', () => {
+    const pauses = [{ person: 'Marcus', paused_until: '2026-06-01', reason: 'break' }];
+    render(<RelationalStatusCard data={mockData} activePauses={pauses} />);
+    expect(screen.getByText('On Break')).toBeInTheDocument();
+    expect(screen.getAllByText('Marcus').length).toBeGreaterThan(0);
+    expect(screen.getByText(/until/i)).toBeInTheDocument();
+  });
 });

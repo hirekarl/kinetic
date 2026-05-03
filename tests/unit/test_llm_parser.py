@@ -44,3 +44,31 @@ async def test_parse_checkin_returns_payload_on_success() -> None:
     assert result.bio is not None
     assert result.bio.sleep_hours == 8.0
     assert result.bio.nutrition_quality == 9
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_checkin_extends_messages_with_history() -> None:
+    """When history is provided the messages list includes history entries before user message."""
+    mock_payload = CheckInPayload()
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.return_value = mock_payload
+
+    history = [
+        {"role": "user", "content": "Slept 5 hours."},
+        {"role": "assistant", "content": "Noted."},
+    ]
+
+    with (
+        patch.dict(os.environ, {"GEMINI_API_KEY": "fake_key"}),
+        patch("instructor.from_genai", return_value=mock_client),
+        patch("google.genai.Client"),
+    ):
+        result = await parse_checkin("Slept 7 hours tonight.", history=history)
+
+    call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+    messages_sent = call_kwargs["messages"]
+    contents = [m["content"] for m in messages_sent]
+    assert "Slept 5 hours." in contents
+    assert "Slept 7 hours tonight." in contents
+    assert isinstance(result, CheckInPayload)

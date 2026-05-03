@@ -212,3 +212,186 @@ async def test_generate_digest_gemini_exception_does_not_raise() -> None:
         result = await dg.generate_digest(db, "test-key", "tenant-j")
 
     assert isinstance(result, DigestResponse)
+
+
+# ── _build_digest_prompt formatting branches ──────────────────────────────────
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_includes_bio_trend_stats() -> None:
+    """Prompt contains sleep avg and slope when bio_trend is populated."""
+    from kinetic.models.outputs import BioTrend
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=BioTrend(
+            avg_sleep_hours=6.2,
+            sleep_slope=-0.25,
+            avg_nutrition=7.0,
+            avg_energy=6.5,
+            sleep_series=[7.0, 6.5, 6.0],
+            days_analyzed=3,
+        ),
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=3,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "6.2" in prompt
+    assert "-0.25" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_includes_worst_sleep_day() -> None:
+    """Prompt includes worst_sleep_day when set."""
+    from kinetic.models.outputs import BioTrend
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=BioTrend(
+            avg_sleep_hours=6.0,
+            sleep_slope=-0.1,
+            avg_nutrition=7.0,
+            avg_energy=6.0,
+            sleep_series=[6.0],
+            days_analyzed=1,
+            worst_sleep_day="2026-04-28",
+        ),
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=1,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "2026-04-28" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_no_bio_uses_placeholder() -> None:
+    """Prompt says 'No bio data' when bio_trend is None."""
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=0,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "No bio data" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_includes_recurring_tasks() -> None:
+    """Prompt includes recurring task names and counts when tasks are present."""
+    from kinetic.models.outputs import RecurringTask
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[
+            RecurringTask(name="laundry", times_overdue=3, avg_days_overdue=4.5, priority="high")
+        ],
+        relational_drifts=[],
+        days_analyzed=7,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "laundry" in prompt
+    assert "3" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_no_tasks_uses_placeholder() -> None:
+    """Prompt says 'No recurring overdue tasks' when list is empty."""
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=0,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "No recurring overdue tasks" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_includes_relational_drifts() -> None:
+    """Prompt includes drifting contact names when relational_drifts are present."""
+    from kinetic.models.outputs import RelationalDrift
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[],
+        relational_drifts=[
+            RelationalDrift(
+                person="Marcus",
+                contact_trend=1.5,
+                avg_vibe_score=5.5,
+                last_known_days_since_contact=9,
+            )
+        ],
+        days_analyzed=7,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "Marcus" in prompt
+    assert "1.5" in prompt or "+1.50" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_no_drifts_uses_placeholder() -> None:
+    """Prompt says 'No relational drifts detected' when list is empty."""
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=0,
+        generated_at=datetime.now(),
+    )
+    prompt = _build_digest_prompt(summary, [], [])
+
+    assert "No relational drifts detected" in prompt
+
+
+@pytest.mark.unit
+def test_build_digest_prompt_includes_behavioral_profiles() -> None:
+    """Prompt includes profile insights when profiles list is non-empty."""
+    from kinetic.models.outputs import BehavioralProfile
+    from kinetic.services.digest_generator import _build_digest_prompt
+
+    now = datetime.now()
+    profiles = [
+        BehavioralProfile(
+            profile_key="sleep_deficit",
+            insight="Consistently sleeps under 6 hours on weekdays.",
+            evidence={},
+            first_observed=now,
+            last_updated=now,
+            observation_count=5,
+        )
+    ]
+    summary = BehavioralSummary(
+        bio_trend=None,
+        recurring_tasks=[],
+        relational_drifts=[],
+        days_analyzed=0,
+        generated_at=now,
+    )
+    prompt = _build_digest_prompt(summary, profiles, [])
+
+    assert "sleep_deficit" in prompt
+    assert "6 hours" in prompt

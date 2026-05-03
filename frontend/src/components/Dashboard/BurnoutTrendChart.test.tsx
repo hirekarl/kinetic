@@ -100,4 +100,16 @@ describe('BurnoutTrendChart', () => {
     const circle = container.querySelector('circle');
     expect(circle).toHaveAttribute('fill', polyline?.getAttribute('stroke'));
   });
+
+  it('uses 0 fallback when last series element is undefined (nullish guard at chart level)', () => {
+    const seriesWithHole = [40, 60, undefined as unknown as number];
+    const { container } = render(<BurnoutTrendChart series={seriesWithHole} />);
+    expect(container.querySelector('circle')).not.toBeNull();
+  });
+
+  it('uses 0 fallback in slope loop when series element is undefined', () => {
+    const seriesWithHole = [40, undefined as unknown as number, 60];
+    const { container } = render(<BurnoutTrendChart series={seriesWithHole} />);
+    expect(container.querySelector('polyline')).not.toBeNull();
+  });
 });

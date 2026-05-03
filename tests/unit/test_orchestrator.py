@@ -467,3 +467,270 @@ async def test_no_task_completions_skips_complete_task(
     await orchestrate(CheckInPayload(), message="Just a status check.")
 
     mock_db.complete_task.assert_not_called()
+
+
+# ── _merge_history ────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_populates_bio_from_db_when_payload_has_none(
+    mock_db: MagicMock,
+) -> None:
+    """_merge_history creates payload.bio from DB when payload.bio is None."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_latest_bio.return_value = {
+        "sleep_hours": 6.5,
+        "nutrition_quality": 7,
+        "energy_level": 6,
+    }
+    payload = CheckInPayload()
+    result = await _merge_history(payload, mock_db)
+
+    assert result.bio is not None
+    assert result.bio.sleep_hours == pytest.approx(6.5)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_fills_missing_bio_fields(mock_db: MagicMock) -> None:
+    """_merge_history fills only None fields in an existing payload.bio."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_latest_bio.return_value = {
+        "sleep_hours": 7.0,
+        "nutrition_quality": 9,
+        "energy_level": 8,
+    }
+    payload = CheckInPayload(bio=BioInput(sleep_hours=5.0))
+    result = await _merge_history(payload, mock_db)
+
+    assert result.bio is not None
+    assert result.bio.sleep_hours == pytest.approx(5.0)  # original preserved
+    assert result.bio.nutrition_quality == 9  # filled from DB
+    assert result.bio.energy_level == 8  # filled from DB
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_populates_logistics_from_db_when_none(mock_db: MagicMock) -> None:
+    """_merge_history creates payload.logistics from DB when payload.logistics is None."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "laundry",
+            "priority": "high",
+            "subtasks": [],
+            "completed_subtasks": [],
+            "status": "pending",
+            "days_overdue": 3,
+        }
+    ]
+    payload = CheckInPayload()
+    result = await _merge_history(payload, mock_db)
+
+    assert result.logistics is not None
+    assert any(t.name == "laundry" for t in result.logistics.tasks)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_adds_historical_tasks_not_in_payload(mock_db: MagicMock) -> None:
+    """_merge_history appends DB tasks whose names are absent from the payload."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "dishes",
+            "priority": "low",
+            "subtasks": [],
+            "completed_subtasks": [],
+            "status": "pending",
+            "days_overdue": 1,
+        }
+    ]
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[LogisticsTask(name="laundry", days_overdue=2, priority="high")]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    names = {t.name for t in result.logistics.tasks}
+    assert "laundry" in names
+    assert "dishes" in names
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_populates_relational_from_db_when_none(mock_db: MagicMock) -> None:
+    """_merge_history creates payload.relational from DB when payload.relational is None."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_vibes.return_value = [{"person": "Marcus", "score": 7, "days_since_contact": 4}]
+    payload = CheckInPayload()
+    result = await _merge_history(payload, mock_db)
+
+    assert result.relational is not None
+    assert any(v.person == "Marcus" for v in result.relational.vibe_checks)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_adds_historical_vibes_not_in_payload(mock_db: MagicMock) -> None:
+    """_merge_history appends DB vibes for people absent from the current payload."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_vibes.return_value = [{"person": "Priya", "score": 9, "days_since_contact": 1}]
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=6, days_since_contact=5)]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    people = {v.person for v in result.relational.vibe_checks}
+    assert "Marcus" in people
+    assert "Priya" in people
+
+
+# ── Agent failure handlers: LogisticsFixer, RelationalDiplomat ────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_logistics_fixer_failure_degrades_gracefully() -> None:
+    """If LogisticsFixer raises, the result has a degraded logistics status, not a crash."""
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[LogisticsTask(name="laundry", days_overdue=2, priority="high")]
+        )
+    )
+    with patch(
+        "kinetic.orchestrator.lead.LogisticsFixer.process",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("logistics exploded"),
+    ):
+        result = await orchestrate(payload)
+
+    assert result.logistics is not None
+    assert result.logistics.status == "yellow"
+    assert result.overall_status in ("green", "yellow", "red")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_relational_diplomat_failure_degrades_gracefully() -> None:
+    """If RelationalDiplomat raises, the result has degraded relational status, not a crash."""
+    payload = CheckInPayload(
+        relational=RelationalInput(
+            vibe_checks=[VibeCheck(person="Marcus", score=4, days_since_contact=10)]
+        )
+    )
+    with patch(
+        "kinetic.orchestrator.lead.RelationalDiplomat.process",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("relational exploded"),
+    ):
+        result = await orchestrate(payload)
+
+    assert result.relational is not None
+    assert result.relational.status == "yellow"
+    assert result.overall_status in ("green", "yellow", "red")
+
+
+# ── get_active_pauses exception recovery ─────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_get_active_pauses_exception_does_not_crash(mock_db: MagicMock) -> None:
+    """If get_active_pauses raises, orchestrate still returns a valid payload."""
+    mock_db.get_active_pauses.side_effect = OSError("DB read failed")
+
+    result = await orchestrate(CheckInPayload(), message="test")
+
+    assert result.overall_status in ("green", "yellow", "red")
+    assert result.active_pauses == []
+
+
+# ── triage helpers ────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_aggregate_status_empty_returns_green() -> None:
+    """aggregate_status with no active statuses defaults to 'green'."""
+    from kinetic.orchestrator.triage import aggregate_status
+
+    assert aggregate_status() == "green"
+    assert aggregate_status(None, None) == "green"
+
+
+# ── get_current_state ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_get_current_state_returns_health_and_messages(mock_db: MagicMock) -> None:
+    """get_current_state returns a dict with 'health' and 'messages' keys."""
+    from kinetic.orchestrator.lead import get_current_state
+
+    mock_db.get_history = AsyncMock(return_value=[{"role": "user", "content": "hello"}])
+
+    result = await get_current_state(db=mock_db)
+
+    assert isinstance(result, dict)
+    assert "health" in result
+    assert "messages" in result
+    assert result["messages"] == [{"role": "user", "content": "hello"}]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_get_current_state_without_db_uses_get_db(mock_db: MagicMock) -> None:
+    """get_current_state() with no db arg falls through to get_db()."""
+    from kinetic.orchestrator.lead import get_current_state
+
+    mock_db.get_history = AsyncMock(return_value=[])
+
+    result = await get_current_state()  # db=None → hits line 396: db = get_db()
+
+    assert isinstance(result, dict)
+    assert "health" in result
+
+
+# ── _merge_history — bio.sleep_hours None branch ────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_fills_sleep_hours_when_bio_exists_but_sleep_is_none(
+    mock_db: MagicMock,
+) -> None:
+    """_merge_history fills sleep_hours from DB when payload.bio exists but sleep_hours is None."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_latest_bio.return_value = {
+        "sleep_hours": 7.5,
+        "nutrition_quality": 9,
+        "energy_level": 8,
+    }
+    payload = CheckInPayload(bio=BioInput(sleep_hours=None, nutrition_quality=6))
+    result = await _merge_history(payload, mock_db)
+
+    assert result.bio is not None
+    assert result.bio.sleep_hours == pytest.approx(7.5)  # filled from DB
+    assert result.bio.nutrition_quality == 6  # original preserved
+
+
+# ── triage helpers — calculate_roi ────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_calculate_roi_returns_none_when_all_statuses_are_none() -> None:
+    """calculate_roi returns None when all three status inputs are None."""
+    from kinetic.orchestrator.triage import calculate_roi
+
+    assert calculate_roi(None, None, None) is None

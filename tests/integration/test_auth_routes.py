@@ -158,3 +158,43 @@ def test_history_with_valid_token_succeeds(
     ):
         resp = client.get("/api/history", headers=demo_headers)
     assert resp.status_code == 200
+
+
+# ── Credentials store unavailable (FileNotFoundError) ─────────────────────────
+
+
+def test_login_returns_503_when_credentials_store_unavailable(client: TestClient) -> None:
+    """POST /api/auth/login returns 503 when credentials file cannot be loaded."""
+    with patch("kinetic.api.auth.load_credentials", side_effect=FileNotFoundError("missing")):
+        resp = client.post("/api/auth/login", json={"username": "demo", "password": "any"})
+    assert resp.status_code == 503
+    assert "unavailable" in resp.json()["detail"].lower()
+
+
+def test_me_returns_503_when_credentials_store_unavailable(
+    client: TestClient, demo_headers: dict[str, str]
+) -> None:
+    """GET /api/auth/me returns 503 when credentials file cannot be loaded."""
+    with patch("kinetic.api.auth.load_credentials", side_effect=FileNotFoundError("missing")):
+        resp = client.get("/api/auth/me", headers=demo_headers)
+    assert resp.status_code == 503
+    assert "unavailable" in resp.json()["detail"].lower()
+
+
+def test_me_returns_401_when_tenant_not_in_credentials(client: TestClient) -> None:
+    """GET /api/auth/me returns 401 when token user is absent from credentials store."""
+    from datetime import UTC, datetime, timedelta
+
+    import jwt as _jwt
+
+    ghost_token = _jwt.encode(
+        {
+            "sub": "ghost_user",
+            "tenant": "ghost",
+            "exp": datetime.now(tz=UTC) + timedelta(hours=1),
+        },
+        TEST_SECRET,
+        algorithm="HS256",
+    )
+    resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {ghost_token}"})
+    assert resp.status_code == 401
