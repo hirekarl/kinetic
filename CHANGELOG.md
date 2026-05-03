@@ -4,50 +4,32 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.9.0 (2026-05-03)
 
-### Added
-- `src/kinetic/logging_config.py` — `is_production()` + idempotent `setup_logging()`; structlog processor chain with `stdlib.LoggerFactory` bridge; dev: colorized `ConsoleRenderer`, prod (`RENDER=true` or `LOG_FORMAT=json`): `JSONRenderer`; `cache_logger_on_first_use=False` for pytest `capture_logs()` compatibility
-- `src/kinetic/middleware/logging.py` — `StructlogRequestMiddleware`: binds `request_id`, `path`, `method`, and (after auth) `tenant` to structlog context vars per request; emits `request.start`, `request.done` (with `status_code` + `duration_ms`), and `request.error` log events
-- Structured log events across all callsites: `auth.login.success/failure`, `auth.token.expired/invalid`, `agents.dispatch`, `agent.error`, `llm.parse/call/stream/metadata.start/done`, `digest.cache.hit`, `digest.generate.start/done/error`, `pattern.detect.start/done/skipped`, `checkin.start/done`, `task.completed`, `db.pool.created/closed`, `db.sqlite.fallback`
-- `structlog>=24.0` runtime dependency (installed as 25.5.0)
-- `tests/unit/test_logging_config.py` — 9 tests; `tests/unit/test_logging_middleware.py` — 8 tests
+### Feat
 
-### Added
-- `src/kinetic/orchestrator/triage.py` — pure aggregation/filter helpers extracted from `lead.py`: `calculate_roi`, `aggregate_status`, `assign_stable_ids`, `filter_paused_contacts`, `filter_paused_relational_status`
-- `src/kinetic/agents/liaison_context.py` — context formatter functions extracted from `operational_liaison.py`: `format_bio_status`, `format_logistics_status`, `format_relational_status`, `format_behavioral_summary`, `format_profiles`
-- `frontend/src/hooks/useChat.ts` — custom hook owning all chat/streaming state and handlers; extracted from `App.tsx`
-- `frontend/src/hooks/useDigest.ts` — custom hook owning digest state and refresh logic; extracted from `App.tsx`
+- **sprint14**: add structured logging and SEO/LLM discoverability
+- Render deploy hardening + deployment checklist
+- **seo**: add comprehensive metadata, PWA manifest, and brand assets to public/
+- **brand**: add brand asset generator + 6 high-res PNG exports
+- **frontend**: add marketing landing page, SVG logo, and react-router routing
+- **demo**: Sprint 13D demo artifact suite + frontend polish
+- **docs**: add robust cross-platform presentation script using rich
+- **docs**: switch to present TUI for cross-platform demo support
+- **docs**: add prezo TUI presentation deck for demo polish
 
-### Changed
-- `src/kinetic/orchestrator/lead.py` — added `_AgentRunResult` dataclass and `_run_agents()` async helper to deduplicate the agent-execution block shared between `orchestrate()` and `orchestrate_stream()`; added `_fire_pattern_detection()` helper; imports triage helpers from `triage.py`
-- `src/kinetic/agents/operational_liaison.py` — formatter functions moved to `liaison_context.py`; all models and the `OperationalLiaison` class unchanged
-- `frontend/src/App.tsx` — reduced from ~410 to ~220 lines; chat and digest state fully delegated to `useChat` and `useDigest` hooks
+### Fix
 
-### Added
-- `scripts/migrate.py` — standalone asyncpg pre-deploy DDL migration script; run as `preDeployCommand` on Render before the app starts; imports `_DDL` from `postgres_client` as single source of truth; idempotent, safe to re-run
-- `docs/DEPLOY.md` — end-to-end Render deployment checklist: credentials.toml prep, Blueprint deploy, Secret File upload, per-service env var tables, post-deploy verification, tenant lifecycle, SECRET_KEY rotation
+- **deploy**: remove invalid plan field from static site service
+- **deploy**: correct render.yaml Blueprint schema errors
+- **stream**: filter paused contacts before agents SSE event
+- **a11y**: increase "Return to base" link contrast to pass WCAG 2 AA
+- **docs**: resolve present TUI crash by pinning mistune to 2.x
+- **release**: use $current_version template syntax in bump_message for commitizen v4
 
-### Changed
-- `render.yaml` — `kinetic-api` upgraded to `plan: starter` (always-on, eliminates cold-start spin-down for demos); added `healthCheckPath: /health` so Render gates traffic on a live 200 response; added `preDeployCommand: uv run python scripts/migrate.py` to run DDL migrations before startup
-- Marketing landing page at `/` with hero, agent domain cards, and how-it-works sections
-- `KineticLogo` SVG mark (three-line K convergence) used in landing page and as favicon
-- URL-based routing via react-router-dom (`/` landing, `/login` auth, `/app` dashboard)
-- Brand asset generator (`npm run brand`) producing og-card, twitter-card, icon-512, icon-192, wordmark PNGs
-- Comprehensive SEO metadata: Open Graph, Twitter Card, JSON-LD structured data, PWA manifest
-- `← Return to base` back-link on login screen
-- `frontend/e2e/live-demo.spec.ts` — Playwright demo recording script: 12-section mocked flow covering all rubric requirements; smooth scroll, mouse cursor overlay, simulated Gemini latency delays, 1920×1080 headless video capture
-- `frontend/playwright-demo.config.ts` — dedicated Playwright config for demo recording (headless, 300s timeout, video: on, 1920×1080)
-- `docs/NARRATION.md` — video voiceover script (~4 min) for the Playwright video artifact; three-part structure with [HOLD] markers aligned to screen recording beats
+### Refactor
 
-### Changed
-- `docs/DEMO.md` — complete rewrite as live in-person presentation script; rubric-ordered (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines, typed inputs, pre-demo setup checklist, and troubleshooting table
-
-### Fixed
-- `WeeklyDigestCard.tsx` — removed erroneous `if (!digest && !isLoading) return null` guard that broke the intentional no-data empty state
-- `BehavioralProfilePanel.tsx` — removed useless `= []` default on required non-optional prop
-- `ROISummaryCard.tsx` — removed unreachable `if (!data) return null` guard on non-nullable prop
-- `RelationalStatusCard.tsx` — removed unnecessary `?? []` fallbacks on `string[]` fields that TypeScript already guarantees non-null
+- modularize lead.py, operational_liaison.py, and App.tsx
 
 ## v1.8.0 (2026-04-28)
 
