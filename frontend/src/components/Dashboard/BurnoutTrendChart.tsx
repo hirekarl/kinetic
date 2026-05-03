@@ -1,8 +1,12 @@
 import React from 'react';
 
+/** Props for the `BurnoutTrendChart` component. */
 interface BurnoutTrendChartProps {
+  /** Burnout scores (0–100), oldest first. */
   series: number[];
+  /** SVG canvas width in pixels. Defaults to `120`. */
   width?: number;
+  /** SVG canvas height in pixels. Defaults to `32`. */
   height?: number;
 }
 
@@ -21,11 +25,18 @@ function computeSlope(series: number[]): number {
 }
 
 function strokeColor(slope: number): string {
-  if (slope > 1.0) return '#ef4444'; // red — worsening
-  if (slope < -1.0) return '#10b981'; // emerald — improving
-  return '#f59e0b'; // amber — flat
+  if (slope > 1.0) return '#ef4444';
+  if (slope < -1.0) return '#10b981';
+  return '#f59e0b';
 }
 
+/**
+ * SVG polyline chart for the 14-day burnout score trend.
+ *
+ * Stroke colour is derived from a linear regression slope: red for worsening,
+ * emerald for improving, amber for flat. Returns `null` for fewer than 2 data
+ * points. Decorated with a `sr-only` label for screen-reader accessibility.
+ */
 export const BurnoutTrendChart: React.FC<BurnoutTrendChartProps> = ({
   series,
   width = 120,

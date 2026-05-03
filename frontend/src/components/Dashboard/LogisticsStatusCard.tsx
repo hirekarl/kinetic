@@ -3,11 +3,22 @@ import { LogisticsStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
 
+/** Props for the `LogisticsStatusCard` component. */
 interface LogisticsStatusCardProps {
+  /** Logistics agent output, or `null` when the agent has not run yet. */
   data: LogisticsStatus | null;
+  /** When `true`, renders a `CardSkeleton` placeholder. */
   isLoading?: boolean;
 }
 
+/**
+ * Dashboard card displaying logistics agent output: critical task count,
+ * estimated resolve time, per-task progress bars, active blockers, and
+ * outsourcing ROI suggestions.
+ *
+ * Renders a dimmed empty state when `data` is `null`, and a `CardSkeleton`
+ * when `isLoading` is `true`.
+ */
 export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, isLoading }) => {
   if (isLoading) return <CardSkeleton />;
 

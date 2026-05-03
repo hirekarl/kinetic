@@ -1,5 +1,17 @@
 import type { AgentFired, AgentLogEntry, SystemHealthPayload } from '../types';
 
+/**
+ * Derives a structured `AgentLogEntry` from a completed check-in result.
+ *
+ * Inspects each domain sub-payload (bio, logistics, relational) to build the
+ * `agents_fired` list, summarising key metrics per domain so the Agent Dispatch
+ * Log can render a compact per-agent breakdown without additional API calls.
+ *
+ * @param message - The original user message that triggered the check-in.
+ * @param payload - The `SystemHealthPayload` returned by the orchestrator.
+ * @param timestamp - ISO-8601 timestamp captured at dispatch time.
+ * @returns A fully populated `AgentLogEntry` with a stable UUID id.
+ */
 export function buildAgentLogEntry(
   message: string,
   payload: SystemHealthPayload,

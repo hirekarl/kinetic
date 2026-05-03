@@ -1,8 +1,11 @@
 import React from 'react';
 import { StatusLevel } from '../../types';
 
+/** Props for the `StatusBadge` component. */
 interface StatusBadgeProps {
+  /** Operational status level driving the indicator colour. */
   status: StatusLevel;
+  /** Optional override for the default label derived from `status`. */
   label?: string;
 }
 
@@ -24,6 +27,11 @@ const statusConfig = {
   },
 };
 
+/**
+ * Small coloured dot + label badge indicating an operational status level.
+ *
+ * Used in card headers and the top dashboard bar to give at-a-glance system health.
+ */
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label }) => {
   const config = statusConfig[status];
 

@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { BehavioralProfile } from '../../types';
 
+/** Props for the `BehavioralProfilePanel` component. */
 interface BehavioralProfilePanelProps {
+  /** Detected behavioral patterns accumulated from prior check-ins. */
   profiles: BehavioralProfile[];
+  /** When `true`, renders an animated skeleton placeholder. */
   isLoading?: boolean;
 }
 
+/**
+ * Collapsible panel displaying the user's detected behavioral patterns.
+ *
+ * Each profile entry shows the pattern key, insight prose, observation count,
+ * and the date it was last updated by the pattern detector service.
+ */
 export const BehavioralProfilePanel: React.FC<BehavioralProfilePanelProps> = ({
   profiles,
   isLoading,
@@ -28,7 +37,6 @@ export const BehavioralProfilePanel: React.FC<BehavioralProfilePanelProps> = ({
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 transition-all hover:border-zinc-700">
-      {/* Trigger */}
       <button
         onClick={() => {
           setOpen((prev) => !prev);
@@ -47,7 +55,6 @@ export const BehavioralProfilePanel: React.FC<BehavioralProfilePanelProps> = ({
             </span>
           )}
         </div>
-        {/* Chevron */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="14"
@@ -65,7 +72,6 @@ export const BehavioralProfilePanel: React.FC<BehavioralProfilePanelProps> = ({
         </svg>
       </button>
 
-      {/* Collapsible content */}
       {open && (
         <div>
           <div className="px-6 pb-6">

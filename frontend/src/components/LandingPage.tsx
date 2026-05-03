@@ -6,6 +6,10 @@ interface LogoProps {
   size?: number;
 }
 
+/**
+ * Inline SVG logo sub-component — three converging lines forming the letter K,
+ * with an emerald glow applied to the central node.
+ */
 function KineticLogo({ size = 32 }: LogoProps) {
   const id = useId();
   const filterId = `kinetic-glow-${id}`;
@@ -110,6 +114,12 @@ const HOW_IT_WORKS = [
   },
 ] as const;
 
+/**
+ * Marketing landing page rendered at `/` for unauthenticated visitors.
+ *
+ * Includes the sticky nav, hero section, the three agent domain cards, the
+ * "How It Works" steps, and a footer. All sections are static — no props needed.
+ */
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
@@ -120,7 +130,6 @@ export function LandingPage() {
           content="Personal infrastructure for high-performance engineers. AI triage across biology, logistics, and relationships — one prioritized action feed, seconds after check-in."
         />
       </Helmet>
-      {/* ── Nav ─────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-3">
@@ -138,7 +147,6 @@ export function LandingPage() {
         </div>
       </nav>
 
-      {/* ── Hero ────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
         <p className="mb-6 font-mono text-xs uppercase tracking-widest text-emerald-500">
           [SYSTEM v1.8.0]
@@ -168,7 +176,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Agent Domains ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <p className="mb-10 text-center font-mono text-xs uppercase tracking-widest text-zinc-500">
           — Agent Architecture —
@@ -194,7 +201,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── How It Works ────────────────────────────────────────────── */}
       <section className="border-t border-zinc-800 bg-zinc-900/30">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <p className="mb-12 text-center font-mono text-xs uppercase tracking-widest text-zinc-500">
@@ -215,7 +221,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────── */}
       <footer className="border-t border-zinc-800 bg-zinc-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
           <div className="flex items-center gap-3">

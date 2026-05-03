@@ -1,14 +1,20 @@
 import React from 'react';
 import { ROISummary } from '../../types';
 
+/** Props for the `ROISummaryCard` component. */
 interface ROISummaryCardProps {
+  /** Aggregated ROI metrics from the logistics agent. */
   data: ROISummary;
+  /** When `true`, renders an animated skeleton layout. */
   isLoading?: boolean;
 }
 
+/**
+ * Full-width ROI summary panel showing time recovered, system margin, and
+ * projected burnout risk delta if the current recommendations are acted on.
+ */
 export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading }) => {
   if (isLoading) {
-    // ... skeleton ...
     return (
       <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.01] p-8 animate-pulse">
         <div className="flex items-center gap-3 mb-6">
@@ -46,7 +52,6 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-        {/* Time Recovered */}
         <div className="space-y-1">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Time Recovered
@@ -60,7 +65,6 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
           </p>
         </div>
 
-        {/* System Margin */}
         <div className="space-y-1 border-l border-zinc-800/50 pl-12 md:border-l">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             System Margin
@@ -71,7 +75,6 @@ export const ROISummaryCard: React.FC<ROISummaryCardProps> = ({ data, isLoading 
           </p>
         </div>
 
-        {/* Burnout Risk Delta */}
         <div className="space-y-1 border-l border-zinc-800/50 pl-12">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Burnout Risk Delta

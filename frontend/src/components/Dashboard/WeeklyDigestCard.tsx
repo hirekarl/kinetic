@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import type { DigestResponse } from '../../types';
 
+/** Props for the `WeeklyDigestCard` component. */
 interface WeeklyDigestCardProps {
+  /** Digest data from the server, or `null` when not yet loaded. */
   digest: DigestResponse | null;
+  /** When `true`, renders a `role="status"` skeleton in place of the card. */
   isLoading?: boolean;
+  /** Optional callback to trigger a force-refresh of the digest. */
   onRefresh?: () => void | Promise<void>;
+  /** When `true`, the Refresh button shows a spinner. */
   isRefreshing?: boolean;
 }
 
@@ -19,6 +24,13 @@ function relativeTime(isoString: string): string {
 
 const NO_DATA_MESSAGE = 'No check-in data yet. Start briefing Kinetic to build your weekly digest.';
 
+/**
+ * Collapsible "Weekly Review" card displaying the AI-generated digest summary.
+ *
+ * Handles three content states: no data yet, a `[DIGEST ERROR]` prefix in the
+ * summary string (rendered as an error block), and the normal prose summary.
+ * A relative timestamp ("Generated X minutes ago") is shown below the summary.
+ */
 export const WeeklyDigestCard: React.FC<WeeklyDigestCardProps> = ({
   digest,
   isLoading,

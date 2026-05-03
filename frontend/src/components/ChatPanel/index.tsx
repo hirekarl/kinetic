@@ -1,14 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+/**
+ * The agent identifier returned in a `done` SSE event, used to label system
+ * messages in the chat panel with the correct agent name and accent colour.
+ */
 export type RespondingAgent =
   | 'liaison'
   | 'bio_archivist'
   | 'logistics_fixer'
   | 'relational_diplomat';
 
+/** A single message in the Operational Liaison conversation feed. */
 export interface Message {
   role: 'user' | 'system';
   content: string;
+  /** Which agent authored this system message; defaults to `'liaison'` when absent. */
   agent?: RespondingAgent;
 }
 
@@ -26,10 +32,18 @@ const AGENT_COLORS: Record<RespondingAgent, string> = {
   relational_diplomat: 'text-blue-400',
 };
 
+/** Props for the `ChatPanel` component. */
 interface ChatPanelProps {
+  /** Called when the user submits a new message. */
   onSendMessage: (message: string) => void;
+  /** When `true`, disables the input and shows an in-progress loading indicator. */
   isLoading: boolean;
+  /** Full conversation history to render in the feed. */
   messages: Message[];
+  /**
+   * Accumulated streaming text for the in-progress system response. A non-null
+   * value renders the live-updating bubble with a blinking cursor; `null` hides it.
+   */
   streamingContent?: string | null;
 }
 
@@ -39,6 +53,13 @@ const SUGGESTED_PROMPTS = [
   'Marcus vibe check: 4/10, saw him 11 days ago.',
 ];
 
+/**
+ * Left-panel natural-language interface for the Operational Liaison.
+ *
+ * Renders the conversation feed, suggested prompts when the history is empty,
+ * a streaming in-progress bubble while a check-in is in flight, and a textarea
+ * input that submits on Enter (without Shift).
+ */
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   onSendMessage,
   isLoading,
@@ -48,7 +69,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages update
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -71,7 +91,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   return (
     <div className="flex h-full flex-col border-b lg:border-b-0 lg:border-r border-zinc-800 bg-zinc-950">
-      {/* Dialogue Feed */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
         <header className="mb-8">
           <h1 className="mb-2 text-xl font-semibold text-zinc-100">Operational Liaison</h1>
@@ -162,7 +181,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         )}
       </div>
 
-      {/* Input Area */}
       <div className="p-6 border-t border-zinc-800 bg-zinc-950">
         <form
           onSubmit={(e) => {

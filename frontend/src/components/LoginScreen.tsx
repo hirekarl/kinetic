@@ -2,12 +2,23 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
+/** Props for the `LoginScreen` component. */
 interface Props {
+  /** Called when the user submits valid credentials. */
   onLogin: (username: string, password: string) => Promise<void>;
+  /** Server-returned error message displayed in an `role="alert"` paragraph, or `null`. */
   error: string | null;
+  /** When `true`, disables inputs and shows a loading label on the submit button. */
   isLoading: boolean;
 }
 
+/**
+ * Full-viewport login card rendered at `/login`.
+ *
+ * Auto-focuses the username field on mount and delegates credential submission
+ * to the `onLogin` prop. Displays a `role="alert"` error paragraph when the
+ * parent reports a failed login attempt.
+ */
 export const LoginScreen: React.FC<Props> = ({ onLogin, error, isLoading }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

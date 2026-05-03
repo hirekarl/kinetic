@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import type { AgentFired, AgentLogEntry } from '../../types';
 
+/** Props for the `AgentDispatchLog` component. */
 interface AgentDispatchLogProps {
+  /** Ordered list of agent log entries, newest first. */
   entries: AgentLogEntry[];
+  /** When `true`, renders a skeleton placeholder instead of the log. */
   isLoading?: boolean;
 }
 
@@ -16,6 +19,13 @@ function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) + '…' : text;
 }
 
+/**
+ * Collapsible panel listing every agent dispatch that occurred during the session.
+ *
+ * Each entry is individually expandable to reveal per-agent summaries and the
+ * responding agent badge. Entries are provided by `buildAgentLogEntry` and stored
+ * in the `useChat` hook's `agentLog` state.
+ */
 export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isLoading }) => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -48,7 +58,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 transition-all hover:border-zinc-700">
-      {/* Panel trigger */}
       <button
         onClick={() => {
           setPanelOpen((prev) => !prev);
@@ -84,7 +93,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
         </svg>
       </button>
 
-      {/* Collapsible content */}
       {panelOpen && (
         <div className="px-6 pb-6">
           {entries.length === 0 ? (
@@ -101,7 +109,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
 
                 return (
                   <li key={entry.id} className="rounded-xl border border-zinc-800 bg-zinc-950/50">
-                    {/* Entry trigger */}
                     <button
                       onClick={() => {
                         toggleEntry(entry.id);
@@ -112,7 +119,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
                       <span className="text-[10px] font-mono text-zinc-500 shrink-0">{time}</span>
                       <span className="text-xs text-zinc-300 min-w-0">{truncatedMsg}</span>
 
-                      {/* Agent chips */}
                       <span className="flex items-center gap-2 ml-auto">
                         {entry.agents_fired.map((agent) => (
                           <span key={agent.domain} className="flex items-center gap-1">
@@ -127,7 +133,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
                         ))}
                       </span>
 
-                      {/* Responding agent badge */}
                       {entry.responding_agent && (
                         <span className="text-[10px] font-mono text-sky-400/70 shrink-0">
                           → {entry.responding_agent}
@@ -135,7 +140,6 @@ export const AgentDispatchLog: React.FC<AgentDispatchLogProps> = ({ entries, isL
                       )}
                     </button>
 
-                    {/* Expanded summaries */}
                     {isExpanded && (
                       <ul className="px-4 pb-3 space-y-1 border-t border-zinc-800/50">
                         {entry.agents_fired.map((agent) => (

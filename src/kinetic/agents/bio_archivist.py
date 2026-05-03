@@ -14,19 +14,23 @@ _SLEEP_PENALTY_PER_HOUR = 25.0  # 4h deficit → score 100
 
 
 def _sleep_component(sleep_hours: float) -> float:
+    """Return a 0-100 burnout contribution from sleep deficit."""
     deficit = max(0.0, _BASELINE_SLEEP_HOURS - sleep_hours)
     return min(100.0, deficit * _SLEEP_PENALTY_PER_HOUR)
 
 
 def _nutrition_component(quality: int) -> float:
+    """Return a 0-100 burnout contribution from nutrition quality (1-10 scale)."""
     return (10 - quality) / 9.0 * 100.0
 
 
 def _energy_component(level: int) -> float:
+    """Return a 0-100 burnout contribution from energy level (1-10 scale)."""
     return (10 - level) / 9.0 * 100.0
 
 
 def _burnout_status(score: float) -> StatusLevel:
+    """Map a 0-100 burnout score to a green/yellow/red status level."""
     if score < 40:
         return "green"
     if score < 70:
@@ -58,16 +62,13 @@ def _compute_burnout(
 
     score = round(weighted_sum / total_weight, 2)
 
-    # Historical Accountability: Calculate true rolling debt if history exists
     if history:
-        # Sum deficits from past days + current
         recent_sleep = [h.get("sleep_hours", _BASELINE_SLEEP_HOURS) for h in history]
         if bio.sleep_hours is not None:
             recent_sleep.append(bio.sleep_hours)
 
         total_deficit = sum(max(0.0, _BASELINE_SLEEP_HOURS - s) for s in recent_sleep)
         debt = round(total_deficit, 2)
-        # Increase score if debt is high
         if debt > 10:
             score = min(100.0, score + (debt - 10) * 2)
     else:
@@ -79,6 +80,7 @@ def _compute_burnout(
 
 
 def _forecast(level: StatusLevel, score: float) -> str:
+    """Return a one-sentence burnout forecast message for the given status level and score."""
     if level == "green":
         return f"Low burnout risk (score {score:.0f}). Recovery margin healthy."
     if level == "yellow":
@@ -87,6 +89,17 @@ def _forecast(level: StatusLevel, score: float) -> str:
 
 
 def _recommendations(level: StatusLevel, bio: BioInput) -> list[str]:
+    """Build a prioritized list of recovery recommendations based on status and bio inputs.
+
+    Returns an empty list when the status is green and no sleep deficit is present.
+
+    Args:
+        level: Current burnout status level.
+        bio: The bio input fields from the current check-in.
+
+    Returns:
+        Ordered list of actionable recommendation strings.
+    """
     recs: list[str] = []
     if bio.sleep_hours is not None and bio.sleep_hours < 7.0:
         debt = round(_BASELINE_SLEEP_HOURS - bio.sleep_hours, 1)
@@ -114,6 +127,22 @@ class BioArchivist:
     async def process(
         self, payload: CheckInPayload, history: dict[str, Any] | None = None
     ) -> BioArchivistResult:
+        """Compute burnout score from sleep, nutrition, and energy inputs.
+
+        Combines the current check-in's bio fields with rolling history to
+        calculate a weighted burnout score and cumulative sleep debt, then
+        returns a BioStatus with forecast text and recovery recommendations.
+        When no bio data is present and no history exists, returns an idle
+        green status.
+
+        Args:
+            payload: Parsed check-in; payload.bio may be None.
+            history: Optional dict containing "bio" key with a list of recent
+                bio metric dicts for rolling debt calculation.
+
+        Returns:
+            BioArchivistResult with populated BioStatus and any triage items.
+        """
         bio = payload.bio
         bio_history = (history.get("bio") if history else None) or []
 
@@ -127,7 +156,6 @@ class BioArchivist:
                         forecast="No data received. System monitoring idle.",
                     ),
                 )
-            # Use history to fill in a "current" baseline if payload is empty
             bio = BioInput()
 
         score, debt = _compute_burnout(bio, bio_history)

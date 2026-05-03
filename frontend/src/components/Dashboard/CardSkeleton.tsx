@@ -1,5 +1,6 @@
 import React from 'react';
 
+/** Animated placeholder card rendered while a status card's data is loading. */
 export const CardSkeleton: React.FC = () => {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 animate-pulse">

@@ -134,6 +134,19 @@ class PostgresClient:
     async def insert_checkin(
         self, payload: CheckInPayload, message: str, liaison_feedback: str | None = None
     ) -> str:
+        """Persist a parsed check-in within a single transaction and return the new UUID.
+
+        All bio metrics, task upserts, and vibe checks are written atomically.
+        Task rows use an ON CONFLICT upsert keyed on (name, tenant).
+
+        Args:
+            payload: The fully-parsed CheckInPayload.
+            message: The raw user message text.
+            liaison_feedback: The Operational Liaison's response text, if available.
+
+        Returns:
+            The UUID string assigned to the newly created check-in row.
+        """
         checkin_id = str(uuid.uuid4())
         ts = datetime.now()
         async with self.pool.acquire() as conn, conn.transaction():
@@ -272,6 +285,11 @@ class PostgresClient:
         return checkin_id
 
     async def get_latest_bio(self) -> dict[str, Any] | None:
+        """Return the most recent bio metrics row for this tenant, or None.
+
+        Returns:
+            Dict with keys sleep_hours, nutrition_quality, energy_level, or None.
+        """
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 "SELECT sleep_hours, nutrition_quality, energy_level"
@@ -282,6 +300,12 @@ class PostgresClient:
             return dict(row) if row else None
 
     async def get_all_tasks(self) -> list[dict[str, Any]]:
+        """Return all tasks for this tenant with their latest days_overdue value.
+
+        Returns:
+            List of task dicts with keys: name, priority, subtasks,
+            completed_subtasks, status, days_overdue.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT name, priority, subtasks, completed_subtasks, status"
@@ -305,6 +329,11 @@ class PostgresClient:
             return results
 
     async def get_all_vibes(self) -> list[dict[str, Any]]:
+        """Return the most recent vibe check for each distinct person for this tenant.
+
+        Returns:
+            List of dicts with keys: person, score, days_since_contact.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT DISTINCT ON (person) person, score, days_since_contact"
@@ -315,6 +344,14 @@ class PostgresClient:
             return [dict(r) for r in rows]
 
     async def get_recent_bio(self, limit: int = 7) -> list[dict[str, Any]]:
+        """Return the most recent bio metric rows for this tenant, newest first.
+
+        Args:
+            limit: Maximum number of rows to return.
+
+        Returns:
+            List of dicts with keys: sleep_hours, nutrition_quality, energy_level.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT sleep_hours, nutrition_quality, energy_level"
@@ -328,6 +365,13 @@ class PostgresClient:
     async def upsert_contact_pause(
         self, person: str, paused_until: str, reason: str | None
     ) -> None:
+        """Insert or update a contact pause record keyed by (person, tenant).
+
+        Args:
+            person: The contact's name.
+            paused_until: ISO date string (YYYY-MM-DD) through which the pause is active.
+            reason: Optional free-text reason for the pause.
+        """
         async with self.pool.acquire() as conn:
             await conn.execute(
                 "INSERT INTO contact_pauses (tenant, person, paused_until, reason)"
@@ -342,6 +386,11 @@ class PostgresClient:
             )
 
     async def get_active_pauses(self) -> list[dict[str, Any]]:
+        """Return contact pauses whose paused_until date is today or later.
+
+        Returns:
+            List of dicts with keys: person, paused_until, reason.
+        """
         today = date.today().isoformat()
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
@@ -353,6 +402,14 @@ class PostgresClient:
             return [dict(r) for r in rows]
 
     async def get_history(self, limit: int = 20) -> list[dict[str, str]]:
+        """Return interleaved user and system messages for conversation hydration.
+
+        Args:
+            limit: Maximum number of check-in rows to include.
+
+        Returns:
+            Ordered list of {"role": "user"|"system", "content": str} dicts.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT message, liaison_feedback, timestamp FROM checkins"
@@ -368,6 +425,14 @@ class PostgresClient:
             return messages
 
     async def get_behavioral_summary(self, days: int = 14) -> BehavioralSummary:
+        """Compute a structured behavioral summary from the last N days of check-ins.
+
+        Args:
+            days: Look-back window in days.
+
+        Returns:
+            BehavioralSummary with bio trend, recurring tasks, and relational drifts.
+        """
         cutoff = datetime.now() - timedelta(days=days)
         async with self.pool.acquire() as conn:
             count_row = await conn.fetchrow(
@@ -516,6 +581,11 @@ class PostgresClient:
         ]
 
     async def get_behavioral_profiles(self) -> list[BehavioralProfile]:
+        """Return all accumulated behavioral profiles for this tenant, newest-updated first.
+
+        Returns:
+            List of BehavioralProfile objects.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT profile_key, insight, evidence, first_observed,"
@@ -537,6 +607,11 @@ class PostgresClient:
             ]
 
     async def upsert_behavioral_profile(self, profile: BehavioralProfile) -> None:
+        """Insert or update a behavioral profile.  The first_observed timestamp is never overwritten.
+
+        Args:
+            profile: The BehavioralProfile to persist.
+        """
         async with self.pool.acquire() as conn:
             await conn.execute(
                 "INSERT INTO behavioral_profiles"
@@ -556,6 +631,14 @@ class PostgresClient:
             )
 
     async def complete_task(self, task_name: str) -> None:
+        """Mark a task as completed for this tenant.
+
+        Args:
+            task_name: The name of the task to complete.
+
+        Raises:
+            KeyError: If no task with the given name exists for this tenant.
+        """
         async with self.pool.acquire() as conn, conn.transaction():
             row = await conn.fetchrow(
                 "SELECT name FROM tasks WHERE name = $1 AND tenant = $2",
@@ -571,6 +654,7 @@ class PostgresClient:
             )
 
     async def clear_database(self) -> None:
+        """Delete all data rows for the current tenant.  Irreversible."""
         async with self.pool.acquire() as conn, conn.transaction():
             await conn.execute("DELETE FROM checkin_tasks WHERE tenant = $1", self.tenant)
             await conn.execute("DELETE FROM vibe_checks WHERE tenant = $1", self.tenant)

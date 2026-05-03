@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+/** Props for the `OnboardingModal` component. */
 interface OnboardingModalProps {
+  /** Called when the user dismisses, skips, or completes all onboarding steps. */
   onClose: () => void;
 }
 
@@ -28,6 +30,14 @@ const STEPS = [
 
 const HEADING_ID = 'onboarding-title';
 
+/**
+ * Three-screen first-visit tutorial modal.
+ *
+ * Shown once per browser session; completion is persisted to `localStorage`
+ * under `kinetic_onboarded` so it does not reappear after the user dismisses it.
+ * Includes a focus trap (Tab/Shift-Tab cycle) and Escape-key dismiss for full
+ * keyboard accessibility.
+ */
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => {
   const [step, setStep] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);

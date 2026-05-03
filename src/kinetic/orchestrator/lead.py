@@ -60,6 +60,20 @@ _pg_pool: asyncpg.Pool | None = None
 
 
 def get_db(tenant: str = "default") -> DatabaseClient:
+    """Return the appropriate database client for a given tenant.
+
+    When a PostgreSQL pool is available (set by the lifespan handler), always
+    returns a PostgresClient bound to the pool and tenant.  Otherwise returns a
+    cached SqliteClient, creating and caching one on first access.  The "default"
+    tenant resolves its path from SQLITE_DB_PATH; other tenants use
+    ``kinetic_{tenant}.db``.
+
+    Args:
+        tenant: Tenant identifier string.
+
+    Returns:
+        A DatabaseClient instance scoped to the requested tenant.
+    """
     if _pg_pool is not None:
         return PostgresClient(_pg_pool, tenant)
     if tenant not in _db_clients:
@@ -72,7 +86,20 @@ def get_db(tenant: str = "default") -> DatabaseClient:
 
 
 async def _merge_history(payload: CheckInPayload, db: DatabaseClient) -> CheckInPayload:
-    """Populate missing fields in payload with the latest known data from DB."""
+    """Hydrate missing payload fields with the latest persisted data from the database.
+
+    For each domain (bio, logistics, relational), if the payload sub-model is absent,
+    constructs it from DB history.  If the sub-model is present but individual fields
+    are None, fills only those gaps.  Deduplicates tasks by name and vibes by person,
+    with the payload's current values taking precedence.
+
+    Args:
+        payload: The parsed check-in payload, potentially sparse.
+        db: Database client scoped to the current tenant.
+
+    Returns:
+        The same payload object, mutated in-place with history merged in.
+    """
     latest_bio = await db.get_latest_bio()
     if latest_bio:
         if payload.bio is None:
@@ -121,7 +148,22 @@ class _AgentRunResult:
 
 
 async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunResult:
-    """Fire all specialist agents in parallel and aggregate their results."""
+    """Fire all three domain agents concurrently and aggregate their results.
+
+    Dispatches BioArchivist, LogisticsFixer, and RelationalDiplomat in a single
+    asyncio.gather() call.  Agent exceptions are caught and replaced with degraded
+    yellow-status fallback results so a single agent failure does not abort the
+    response.  After agent execution, fetches behavioral context (summary and
+    profiles) and computes the aggregate status and ROI summary.
+
+    Args:
+        payload: The fully-hydrated check-in payload.
+        db: Database client scoped to the current tenant.
+
+    Returns:
+        _AgentRunResult containing all domain statuses, triage items, overall
+        status level, ROI summary, and behavioral context.
+    """
     rolling_metrics: dict[str, Any] = {"bio": await db.get_recent_bio(limit=7)}
 
     log.info("agents.dispatch")
@@ -212,7 +254,17 @@ def _fire_pattern_detection(
     behavioral_summary: BehavioralSummary | None,
     behavioral_profiles: list[BehavioralProfile],
 ) -> None:
-    """Schedule pattern detection as a non-blocking background task."""
+    """Schedule Gemini pattern synthesis as a non-blocking asyncio background task.
+
+    Skips silently when behavioral_summary is None (no data yet to analyse).
+    The created task is held in _background_tasks to prevent garbage collection
+    before it completes.
+
+    Args:
+        db: Database client used by detect_and_update_patterns to persist results.
+        behavioral_summary: Summary from get_behavioral_summary(), or None.
+        behavioral_profiles: Current list of accumulated profiles.
+    """
     api_key = os.environ.get("GEMINI_API_KEY")
     if behavioral_summary is not None:
         task = asyncio.create_task(
@@ -228,7 +280,21 @@ async def orchestrate(
     history: list[dict[str, str]] | None = None,
     db: DatabaseClient | None = None,
 ) -> SystemHealthPayload:
-    """Route parsed check-in payload to relevant agents and aggregate results."""
+    """Blocking orchestration path: run agents, call Liaison, persist, and return.
+
+    Merges history into the payload, dispatches all domain agents, calls the
+    OperationalLiaison for a prose response, applies contact pauses and task
+    completions, persists the check-in, and fires background pattern detection.
+
+    Args:
+        payload: The parsed check-in payload from the LLM parser.
+        message: The original user message text (used for persistence).
+        history: Prior conversation messages for Liaison context, or None.
+        db: Database client to use; defaults to get_db() for the "default" tenant.
+
+    Returns:
+        A fully-populated SystemHealthPayload ready to serialise to the client.
+    """
     if db is None:
         db = get_db()
 
@@ -392,7 +458,18 @@ async def orchestrate_stream(
 
 
 async def get_current_state(db: DatabaseClient | None = None) -> dict[str, Any]:
-    """Retrieve the current health dashboard and full conversation history."""
+    """Retrieve the latest system health snapshot and full conversation history.
+
+    Runs orchestrate() with an empty payload to compute the current dashboard
+    state from persisted history, then fetches the last 50 messages.
+
+    Args:
+        db: Database client to use; defaults to get_db() for the "default" tenant.
+
+    Returns:
+        Dict with keys "health" (SystemHealthPayload) and "messages" (list of
+        role/content dicts).
+    """
     if db is None:
         db = get_db()
 

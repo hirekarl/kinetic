@@ -55,6 +55,19 @@ class LogisticsFixer:
     async def process(
         self, payload: CheckInPayload, history: dict[str, Any] | None = None
     ) -> LogisticsFixerResult:
+        """Triage domestic tasks by urgency and surface outsourcing ROI recommendations.
+
+        Scores each incomplete task by days_overdue x priority weight, identifies
+        critical and at-risk items, and attaches outsourcing hints where available.
+        Returns an overall green/yellow/red status and a list of triage items.
+
+        Args:
+            payload: Parsed check-in; payload.logistics may be None.
+            history: Unused; present for Agent protocol conformance.
+
+        Returns:
+            LogisticsFixerResult with populated LogisticsStatus and any triage items.
+        """
         if payload.logistics is None:
             return LogisticsFixerResult(
                 success=True,
@@ -101,7 +114,6 @@ class LogisticsFixer:
             if suggestion:
                 outsourcing_suggestions.append(suggestion)
 
-            # Determine specific action: show the next incomplete subtask if available
             next_step = None
             if task.subtasks:
                 incomplete = [s for s in task.subtasks if s not in task.completed_subtasks]

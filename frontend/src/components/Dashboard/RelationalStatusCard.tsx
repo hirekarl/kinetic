@@ -3,12 +3,23 @@ import { ContactPause, RelationalStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
 
+/** Props for the `RelationalStatusCard` component. */
 interface RelationalStatusCardProps {
+  /** Relational agent output, or `null` when the agent has not run yet. */
   data: RelationalStatus | null;
+  /** When `true`, renders a `CardSkeleton` placeholder. */
   isLoading?: boolean;
+  /** Active contact pauses from `SystemHealthPayload`; displayed in the "On Break" section. */
   activePauses?: ContactPause[];
 }
 
+/**
+ * Dashboard card displaying relational agent output: connection margin score,
+ * degraded relationship links, interaction sprints, and active contact pauses.
+ *
+ * Renders a dimmed empty state when `data` is `null`, and a `CardSkeleton`
+ * when `isLoading` is `true`.
+ */
 export const RelationalStatusCard: React.FC<RelationalStatusCardProps> = ({
   data,
   isLoading,

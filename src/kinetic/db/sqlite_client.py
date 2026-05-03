@@ -271,6 +271,11 @@ class SqliteClient:
             return checkin_id
 
     async def get_latest_bio(self) -> dict[str, Any] | None:
+        """Return the most recent bio metrics row, or None if no data exists.
+
+        Returns:
+            Dict with keys sleep_hours, nutrition_quality, energy_level, or None.
+        """
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
             db.row_factory = aiosqlite.Row
@@ -281,6 +286,12 @@ class SqliteClient:
                 return dict(row) if row else None
 
     async def get_all_tasks(self) -> list[dict[str, Any]]:
+        """Return all tasks with their latest days_overdue value from check-in history.
+
+        Returns:
+            List of task dicts with keys: name, priority, subtasks,
+            completed_subtasks, status, days_overdue.
+        """
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
             db.row_factory = aiosqlite.Row
@@ -291,7 +302,6 @@ class SqliteClient:
                     d = dict(r)
                     d["subtasks"] = json.loads(d["subtasks"])
                     d["completed_subtasks"] = json.loads(d["completed_subtasks"])
-                    # Mock days_overdue for now or fetch from last checkin_tasks
                     async with db.execute(
                         "SELECT days_overdue FROM checkin_tasks WHERE task_name = ? ORDER BY rowid DESC LIMIT 1",
                         (d["name"],),
@@ -302,10 +312,14 @@ class SqliteClient:
                 return results
 
     async def get_all_vibes(self) -> list[dict[str, Any]]:
+        """Return the most recent vibe check for each distinct person.
+
+        Returns:
+            List of dicts with keys: person, score, days_since_contact.
+        """
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
             db.row_factory = aiosqlite.Row
-            # Get latest vibe for each person
             async with db.execute(
                 """
                 SELECT person, score, days_since_contact
@@ -317,6 +331,14 @@ class SqliteClient:
                 return [dict(r) for r in rows]
 
     async def get_recent_bio(self, limit: int = 7) -> list[dict[str, Any]]:
+        """Return the most recent bio metric rows, newest first.
+
+        Args:
+            limit: Maximum number of rows to return.
+
+        Returns:
+            List of dicts with keys: sleep_hours, nutrition_quality, energy_level.
+        """
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
             db.row_factory = aiosqlite.Row
@@ -381,7 +403,6 @@ class SqliteClient:
         async with aiosqlite.connect(self.db_path) as db:
             await self._init_db(db)
 
-            # Total distinct check-in days in window
             async with db.execute(
                 "SELECT COUNT(DISTINCT DATE(timestamp)) FROM checkins"
                 " WHERE timestamp >= datetime('now', ?)",
@@ -396,7 +417,6 @@ class SqliteClient:
                     generated_at=datetime.now(),
                 )
 
-            # Bio trend
             bio_trend: BioTrend | None = None
             async with db.execute(
                 "SELECT bm.sleep_hours, bm.nutrition_quality, bm.energy_level,"
@@ -439,7 +459,7 @@ class SqliteClient:
                     burnout_series=burnout_vals,
                 )
 
-            # Recurring overdue tasks (appeared overdue in ≥2 check-ins)
+            # ≥2 appearances required to qualify as a recurring overdue pattern
             recurring: list[RecurringTask] = []
             async with db.execute(
                 "SELECT ct.task_name, COUNT(*) as times_overdue,"
@@ -467,7 +487,6 @@ class SqliteClient:
                     )
                 )
 
-            # Relational drift (people whose days_since_contact is trending upward)
             drifts: list[RelationalDrift] = []
             async with db.execute(
                 "SELECT vc.person, vc.score, vc.days_since_contact"

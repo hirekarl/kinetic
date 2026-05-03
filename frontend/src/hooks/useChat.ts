@@ -5,6 +5,10 @@ import type { AgentLogEntry, StreamDonePayload, SystemHealthPayload } from '../t
 import type { Message, RespondingAgent } from '../components/ChatPanel';
 import { buildAgentLogEntry } from '../utils/agentLog';
 
+/**
+ * Return shape of the `useChat` hook, grouping all chat state and action callbacks
+ * so `App` can spread them to child components without prop-drilling raw state setters.
+ */
 interface UseChatReturn {
   health: SystemHealthPayload | null;
   messages: Message[];
@@ -22,6 +26,20 @@ interface UseChatReturn {
   clearSession: () => void;
 }
 
+/**
+ * Manages all chat interaction state for the Operational Liaison panel.
+ *
+ * On mount (or whenever `token` changes), hydrates the message list and the
+ * latest `SystemHealthPayload` from the server's history endpoint so the
+ * dashboard reflects the persisted state after a page refresh.
+ *
+ * Streaming check-ins are handled via `streamCheckin`: accumulated tokens drive
+ * `streamingContent` for the in-progress bubble, and the final `done` event
+ * commits the complete message to the `messages` list.
+ *
+ * @param token - JWT access token; when `null` the history fetch is skipped.
+ * @returns `UseChatReturn` — state values and action handlers for the chat UI.
+ */
 export function useChat(token: string | null): UseChatReturn {
   const [health, setHealth] = useState<SystemHealthPayload | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

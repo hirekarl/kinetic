@@ -1,12 +1,23 @@
 import React from 'react';
 
+/** Props for the `SleepSparkline` component. */
 interface SleepSparklineProps {
+  /** Per-day sleep hours, oldest first. */
   series: number[];
+  /** SVG canvas width in pixels. Defaults to `120`. */
   width?: number;
+  /** SVG canvas height in pixels. Defaults to `32`. */
   height?: number;
+  /** When `true`, uses amber stroke to signal a declining trend; otherwise emerald. */
   declining?: boolean;
 }
 
+/**
+ * Pure SVG polyline sparkline for the 7-day sleep trend.
+ *
+ * Returns `null` when fewer than 2 data points are provided — a single point
+ * cannot form a meaningful trend line.
+ */
 export const SleepSparkline: React.FC<SleepSparklineProps> = ({
   series,
   width = 120,

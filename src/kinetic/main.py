@@ -23,6 +23,16 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage application startup and shutdown.
+
+    On startup, emits warnings for missing required environment variables and,
+    when DATABASE_URL is set, creates an asyncpg connection pool and runs the
+    idempotent DDL migration.  Falls back to SQLite when DATABASE_URL is absent.
+    On shutdown, closes the pool if one was created.
+
+    Args:
+        app: The FastAPI application instance (unused directly; required by protocol).
+    """
     if not os.environ.get("GEMINI_API_KEY"):
         log.warning("GEMINI_API_KEY is not set — LLM features will return 503")
     if not os.environ.get("SECRET_KEY"):

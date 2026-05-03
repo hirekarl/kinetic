@@ -19,6 +19,14 @@ import { useAuth } from './hooks/useAuth';
 import { useChat } from './hooks/useChat';
 import { useDigest } from './hooks/useDigest';
 
+/**
+ * Root application component.
+ *
+ * Owns the react-router-dom route tree, delegates auth state to `useAuth`,
+ * chat/streaming state to `useChat`, and digest state to `useDigest`. Renders
+ * the `LandingPage` for unauthenticated visitors, `LoginScreen` at `/login`,
+ * and the full split-panel Mission Control dashboard at `/app`.
+ */
 function App() {
   const { user, token, isLoading: authLoading, login: authLogin, logout: authLogout } = useAuth();
   const navigate = useNavigate();
@@ -102,7 +110,6 @@ function App() {
         <meta name="description" content="Your live bio-operational triage dashboard." />
       </Helmet>
       {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
-      {/* Left Panel: Operational Liaison Feed */}
       <div className="w-full lg:w-[420px] lg:shrink-0 h-[45vh] lg:h-auto">
         <ChatPanel
           onSendMessage={handleSendMessage}
@@ -112,9 +119,7 @@ function App() {
         />
       </div>
 
-      {/* Right Panel: Mission Control Dashboard */}
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-900/30">
-        {/* Top Header */}
         <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-800 bg-zinc-950 px-4 md:px-8 py-3 md:py-4">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-bold tracking-tight text-white">Mission Control</h2>
@@ -161,7 +166,6 @@ function App() {
           </div>
         </header>
 
-        {/* Scrollable Content */}
         {/* tabIndex={0} is required to satisfy axe scrollable-region-focusable on content-only regions */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8" tabIndex={0}>
@@ -201,7 +205,6 @@ function App() {
 
           {health && (
             <div className="mx-auto max-w-5xl space-y-12">
-              {/* Status Grid */}
               <section>
                 <div className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-400">
                   Sector Status
@@ -221,7 +224,6 @@ function App() {
                 </div>
               </section>
 
-              {/* Triage Section */}
               <section>
                 <TriageList
                   items={health.triage_items}
@@ -230,14 +232,12 @@ function App() {
                 />
               </section>
 
-              {/* ROI Section */}
               {health.roi_summary && (
                 <section>
                   <ROISummaryCard data={health.roi_summary} isLoading={isLoading} />
                 </section>
               )}
 
-              {/* Behavioral Profile Section */}
               <section>
                 <BehavioralProfilePanel
                   profiles={health.behavioral_profiles}
@@ -245,7 +245,6 @@ function App() {
                 />
               </section>
 
-              {/* Weekly Digest Section */}
               <section>
                 <WeeklyDigestCard
                   digest={digestData}
@@ -255,7 +254,6 @@ function App() {
                 />
               </section>
 
-              {/* Agent Dispatch Log */}
               <section>
                 <AgentDispatchLog entries={agentLog} isLoading={isLoading} />
               </section>

@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { TriageItem } from '../../types';
 
+/** Props for the `TriageList` component. */
 interface TriageListProps {
+  /** Prioritized triage items to render, sorted by `priority` ascending. */
   items: TriageItem[];
+  /** When `true`, renders skeleton rows instead of the list. */
   isLoading?: boolean;
+  /** Called when the user marks a logistics task complete. */
   onCompleteTask?: (taskName: string) => Promise<void>;
 }
 
+/**
+ * Renders the prioritized cross-domain triage list with optimistic task completion.
+ *
+ * Logistics items with a `source_id` include a checkmark button that optimistically
+ * removes the item from the list before the server confirms, rolling back on failure.
+ */
 export const TriageList: React.FC<TriageListProps> = ({ items, isLoading, onCompleteTask }) => {
   const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<Set<string>>(new Set());
 

@@ -10,6 +10,15 @@ from kinetic.models.outputs import (
 
 
 def format_bio_status(bio: BioStatus) -> str:
+    """Return a formatted BIO ARCHIVIST section string for the LLM prompt.
+
+    Args:
+        bio: The current BioStatus produced by BioArchivist.
+
+    Returns:
+        Multi-line string summarising burnout score, sleep debt, forecast,
+        and recommendations.
+    """
     lines = ["\n\nBIO ARCHIVIST — Current Status:"]
     lines.append(
         f"Burnout: {bio.burnout_score:.0f}/100 | Sleep Debt: {bio.sleep_debt_hours:.1f}h | Status: {bio.status.upper()}"
@@ -22,6 +31,15 @@ def format_bio_status(bio: BioStatus) -> str:
 
 
 def format_logistics_status(logistics: LogisticsStatus) -> str:
+    """Return a formatted LOGISTICS FIXER section string for the LLM prompt.
+
+    Args:
+        logistics: The current LogisticsStatus produced by LogisticsFixer.
+
+    Returns:
+        Multi-line string listing queue clearance time, critical tasks,
+        per-task subtask steps, and outsourcing candidates.
+    """
     lines = ["\n\nLOGISTICS FIXER — Current Status:"]
     lines.append(
         f"Status: {logistics.status.upper()} | Queue clearance: {logistics.time_to_resolve_minutes}min"
@@ -38,6 +56,15 @@ def format_logistics_status(logistics: LogisticsStatus) -> str:
 
 
 def format_relational_status(relational: RelationalStatus) -> str:
+    """Return a formatted RELATIONAL DIPLOMAT section string for the LLM prompt.
+
+    Args:
+        relational: The current RelationalStatus produced by RelationalDiplomat.
+
+    Returns:
+        Multi-line string showing connection margin score, at-risk relationships,
+        and recommended interaction sprints.
+    """
     lines = ["\n\nRELATIONAL DIPLOMAT — Current Status:"]
     lines.append(
         f"Status: {relational.status.upper()} | Connection Margin: {relational.connection_margin_score:.0f}/100"
@@ -50,6 +77,15 @@ def format_relational_status(relational: RelationalStatus) -> str:
 
 
 def format_behavioral_summary(summary: BehavioralSummary) -> str:
+    """Return a formatted BEHAVIORAL CONTEXT section string for the LLM prompt.
+
+    Args:
+        summary: The BehavioralSummary aggregated from recent check-in history.
+
+    Returns:
+        Multi-line string covering sleep trend, nutrition/energy averages, worst
+        sleep day, recurring overdue tasks, and drifting relational contacts.
+    """
     lines = ["\n\nBEHAVIORAL CONTEXT (14-day trend):"]
     if summary.bio_trend:
         bt = summary.bio_trend
@@ -76,6 +112,14 @@ def format_behavioral_summary(summary: BehavioralSummary) -> str:
 
 
 def format_profiles(profiles: list[BehavioralProfile]) -> str:
+    """Return a formatted ESTABLISHED BEHAVIORAL PATTERNS section string for the LLM prompt.
+
+    Args:
+        profiles: List of BehavioralProfile objects from pattern detection.
+
+    Returns:
+        Multi-line string listing each profile key, insight text, and observation count.
+    """
     lines = ["\n\nESTABLISHED BEHAVIORAL PATTERNS:"]
     for p in profiles:
         lines.append(f"- {p.profile_key}: {p.insight} (observed {p.observation_count}x)")

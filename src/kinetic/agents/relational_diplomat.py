@@ -60,6 +60,21 @@ class RelationalDiplomat:
     async def process(
         self, payload: CheckInPayload, history: dict[str, Any] | None = None
     ) -> RelationalDiplomatResult:
+        """Evaluate connection margin and recommend interaction sprints.
+
+        Applies a time-decay factor to each vibe-check score based on days since
+        last contact, computes an aggregate connection margin, and flags at-risk
+        relationships.  Historical vibes are merged in by person, with current
+        check-in values taking precedence.
+
+        Args:
+            payload: Parsed check-in; payload.relational may be None.
+            history: Optional dict containing "relational" key with a list of
+                prior VibeCheck-compatible dicts for context enrichment.
+
+        Returns:
+            RelationalDiplomatResult with populated RelationalStatus and triage items.
+        """
         if payload.relational is None:
             return RelationalDiplomatResult(
                 success=True,
@@ -72,15 +87,11 @@ class RelationalDiplomat:
             )
 
         checks = payload.relational.vibe_checks
-        # Merge with historical vibes if they exist
         if history and "relational" in history:
             hist_vibes = history["relational"]
-            # Deduplicate by person, current check wins
             known_people = {c.person for c in checks}
             for hb in hist_vibes:
                 if hb["person"] not in known_people:
-                    # Adjust days_since_contact based on when historical check was made
-                    # For now, we assume simple passing of VibeCheck-like dicts
                     checks.append(VibeCheck(**hb))
 
         margin = _connection_margin(checks)

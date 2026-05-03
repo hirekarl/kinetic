@@ -5,12 +5,23 @@ import { CardSkeleton } from './CardSkeleton';
 import { BurnoutTrendChart } from './BurnoutTrendChart';
 import { SleepSparkline } from './SleepSparkline';
 
+/** Props for the `BioStatusCard` component. */
 interface BioStatusCardProps {
+  /** Bio agent output, or `null` when the agent has not run yet. */
   data: BioStatus | null;
+  /** When `true`, renders a `CardSkeleton` placeholder. */
   isLoading?: boolean;
+  /** Passed from `SystemHealthPayload` to drive the sleep sparkline and burnout chart. */
   behavioralSummary?: BehavioralSummary | null;
 }
 
+/**
+ * Dashboard card displaying bio-metric agent output: burnout score, sleep debt,
+ * 7-day sleep sparkline, 14-day burnout trend chart, forecast, and recommendations.
+ *
+ * Renders a dimmed empty state when `data` is `null` (agent did not run),
+ * and a `CardSkeleton` when `isLoading` is `true`.
+ */
 export const BioStatusCard: React.FC<BioStatusCardProps> = ({
   data,
   isLoading,
