@@ -613,10 +613,10 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 
 ---
 
-## Sprint 14 — Structured Logging 🔄
+## Sprint 14 — Structured Logging + SEO/LLM Discoverability ✅
 **Target version:** `v1.9.0`
 
-Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON output on Render; colorized human-readable output locally. Per-request context (tenant + request_id) bound automatically via middleware and auth dependency.
+Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON output on Render; colorized human-readable output locally. Per-request context (tenant + request_id) bound automatically via middleware and auth dependency. Add web discoverability files and per-route meta tags.
 
 ### Backend ✅
 - [x] `src/kinetic/logging_config.py` — `is_production()` + idempotent `setup_logging()`; structlog + stdlib bridge; `ConsoleRenderer` (dev) / `JSONRenderer` (prod); `cache_logger_on_first_use=False` for test compatibility
@@ -632,11 +632,25 @@ Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON
 - [x] `/qa-reviewer` APPROVED (356 passed, 100% coverage, mypy ✓, ruff ✓)
 - [x] `/security-reviewer` APPROVED (no new vulnerabilities; no sensitive data in log callsites)
 
+### SEO / LLM Discoverability ✅
+- [x] `frontend/public/llms.txt` — spec-compliant LLM discovery file (llmstxt.org): H1 + blockquote + App/Source/Optional sections
+- [x] `frontend/public/robots.txt` — allows all crawlers; disallows `/app`; references sitemap
+- [x] `frontend/public/sitemap.xml` — sitemaps.org/0.9: `/` (1.0) + `/login` (0.5)
+- [x] `frontend/public/.well-known/security.txt` — RFC 9116: Contact + Expires + Preferred-Languages
+- [x] `frontend/index.html` — canonical URL bug fixed (missing `-c2bd`); JSON-LD `@type` → `WebApplication`; `browserRequirements` + `featureList` added; `<link rel="sitemap">` in `<head>`
+- [x] `react-helmet-async` installed; `<HelmetProvider>` wrapping app tree in `main.tsx`
+- [x] Per-route `<Helmet>` added: LandingPage ("Kinetic — Bio-Operational Triage Engine"), LoginScreen ("Sign In — Kinetic"), dashboard ("Mission Control — Kinetic")
+- [x] Test helpers updated with `HelmetProvider` wrappers; title assertion tests added (285 total, 100% coverage)
+- [x] `Kinetic-PRD.md` moved from repo root to `docs/`
+
 ### Quality Gates
 - [x] All prior gates passing (356 passed, 29 skipped, 0 failed)
 - [x] `uv run mypy src/kinetic --strict` → 0 errors
 - [x] `uv run ruff check src/ tests/` → 0 warnings
-- [ ] `v1.9.0` release ceremony complete
+- [x] `npm run test:coverage` → 285 passed, 100% coverage
+- [x] `npm run typecheck` → 0 errors
+- [x] `npm run lint` → 0 errors
+- [x] `v1.9.0` release ceremony complete
 
 ---
 
@@ -659,4 +673,4 @@ Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ✅ Released |
-| `v1.9.0` | Sprint 14 — Structured Logging | Phase 4+ | 🔄 In progress |
+| `v1.9.0` | Sprint 14 — Structured Logging + SEO/LLM Discoverability | Phase 4+ | ✅ Released |

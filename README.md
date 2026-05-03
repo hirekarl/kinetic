@@ -8,7 +8,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/version-v1.8.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.9.0-blue)](CHANGELOG.md)
 
 **Live demo:** [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com)
 
@@ -122,6 +122,7 @@ flowchart TD
 
 **Frontend**
 - React 18 · TypeScript strict · [Vite](https://vitejs.dev/) · [react-router-dom](https://reactrouter.com/) (URL-based routing)
+- [react-helmet-async](https://github.com/staylor/react-helmet-async) — per-route `<title>` and `<meta>` management
 - [Vitest](https://vitest.dev/) · [Playwright](https://playwright.dev/) · [@axe-core/playwright](https://github.com/dequelabs/axe-core-npm)
 - ESLint flat config (TypeScript-ESLint + jsx-a11y strict) · Prettier
 
@@ -218,7 +219,7 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 11 | Burnout trend chart — 14-day SVG polyline in Bio card | `v1.6.0` | ✅ Released |
 | Sprint 12 | Weekly digest — Gemini prose summary card with 6h cache + refresh | `v1.7.0` | ✅ Released |
 | Sprint 13 | Demo polish — mobile layout, Simulate Week, landing page, brand assets, SEO metadata, PWA manifest, live deploy | `v1.8.0` | ✅ Released |
-| Sprint 14 | Structured logging — structlog pipeline, request middleware, callsite instrumentation | `v1.9.0` | 🔄 In progress |
+| Sprint 14 | Structured logging — structlog pipeline, request middleware, callsite instrumentation; SEO/LLM discoverability — llms.txt, sitemap, robots.txt, security.txt, per-route meta tags | `v1.9.0` | ✅ Released |
 
 **Demo deadline:** 2026-05-06 · **MVP deadline:** 2026-05-06
 

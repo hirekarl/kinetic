@@ -103,11 +103,12 @@ tests/
 
 frontend/src/
   types/index.ts           TypeScript interfaces mirroring Python output models; includes AuthUser, ContactPauseDirective, StreamDonePayload, DigestResponse
-  App.tsx                  react-router-dom Routes root; routes: `/` → LandingPage (unauthenticated), `/login` → LoginScreen, `/app` → Dashboard shell; auth + routing + layout + simulation coordination only; chat/streaming state delegated to useChat hook; digest state delegated to useDigest hook; useNavigate for post-login/logout redirects; onboarding gate via localStorage; "Simulate Week" button (demo tenant only); mobile-responsive layout
-  main.tsx                 entry point; wraps <App /> in <BrowserRouter>
-  components/LandingPage.tsx  marketing landing page: nav with logo + CTA, hero section, three domain cards (bio/logistics/relational), how-it-works steps, footer; KineticLogo inline SVG sub-component (three-line K convergence mark)
-  components/LandingPage.test.tsx  7 Vitest tests: hero text, CTA button, domain card names, nav links, footer, eyebrow label, how-it-works steps
-  components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support; "← Return to base" back-link to landing page
+  App.tsx                  react-router-dom Routes root; routes: `/` → LandingPage (unauthenticated), `/login` → LoginScreen, `/app` → Dashboard shell; auth + routing + layout + simulation coordination only; chat/streaming state delegated to useChat hook; digest state delegated to useDigest hook; useNavigate for post-login/logout redirects; onboarding gate via localStorage; "Simulate Week" button (demo tenant only); mobile-responsive layout; Helmet: "Mission Control — Kinetic" title on dashboard
+  main.tsx                 entry point; wraps <App /> in <HelmetProvider> + <BrowserRouter>
+  components/LandingPage.tsx  marketing landing page: nav with logo + CTA, hero section, three domain cards (bio/logistics/relational), how-it-works steps, footer; KineticLogo inline SVG sub-component (three-line K convergence mark); Helmet: "Kinetic — Bio-Operational Triage Engine" title + meta description
+  components/LandingPage.test.tsx  8 Vitest tests: hero text, CTA button, domain card names, nav links, footer, eyebrow label, how-it-works steps, document title; HelmetProvider wrapper
+  components/LoginScreen.tsx  full-viewport login card; labeled inputs; role="alert" error display; auto-focus on mount; loading state support; "← Return to base" back-link to landing page; Helmet: "Sign In — Kinetic" title
+  components/LoginScreen.test.tsx  10 Vitest tests: heading, labeled inputs, submit loading/enabled states, error alert, form submission, input types, back-link, document title; HelmetProvider wrapper
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
   components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, weekly digest card, agent dispatch log
@@ -136,6 +137,11 @@ frontend/src/
     icon-512.png           PWA icon 512×512
     icon-192.png           PWA icon 192×192
     site.webmanifest       PWA manifest: name, icons, theme color, display mode
+    llms.txt               LLM discovery file (llmstxt.org spec): H1 + blockquote + App/Source/Optional sections with live demo, API reference, and GitHub links
+    robots.txt             Allows all crawlers; disallows /app (auth-gated); references sitemap
+    sitemap.xml            sitemaps.org/0.9: / (priority 1.0) + /login (priority 0.5); /app omitted
+    .well-known/
+      security.txt         RFC 9116 security contact: hirekarl@proton.me; Expires 2027-05-03
 
 assets/brand/              generated brand PNGs (project root, tracked in git): og-card, twitter-card, icon-512, icon-192, wordmark, landing-1920x1080, video-thumbnail
 
@@ -143,6 +149,11 @@ docs/
   DEMO.md                  Live in-person presentation script: 5-section verbal guide (Problem → Root Cause → Solution → Live Demo → What's Next) with exact spoken lines and typed inputs for all 3 check-in turns
   NARRATION.md             Video voiceover script: 3-part (~4 min) narration track for the Playwright video artifact; Part 1 over stock footage, Part 2 over screen recording with [HOLD] markers, Part 3 outro
   DEPLOY.md                End-to-end Render deployment checklist: credentials.toml prep + bcrypt hash generation, Blueprint deploy steps, Secret File upload, per-service env var tables, post-deploy verification, tenant add/rotate/remove lifecycle, SECRET_KEY rotation
+  PRESENTATION.md          Slide-by-slide presentation script for demo day (Pursuit AI-Native L1 Capstone)
+  YOUTUBE.md               YouTube video title, description, tags, and chapter timestamps for the demo recording
+  kinetic-design-system.md Design token reference: color palette, typography, spacing, component patterns
+  slides.md                Presentation slide deck content in Markdown (rendered by scripts/present.py)
+  Kinetic-PRD.md           Product Requirements Document: goals, user persona, feature list, success metrics, out-of-scope items
 
 scripts/
   release.sh               SemVer release ceremony: validates conventional commits, previews bump, runs cz bump --changelog, creates release commit + tag
@@ -175,7 +186,7 @@ scripts/
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ✅ |
-| Sprint 14 | `v1.9.0` | Structured Logging | 🔄 |
+| Sprint 14 | `v1.9.0` | Structured Logging + SEO/LLM Discoverability | ✅ |
 
 ---
 
