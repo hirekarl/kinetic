@@ -613,6 +613,33 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 
 ---
 
+## Sprint 14 — Structured Logging 🔄
+**Target version:** `v1.9.0`
+
+Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON output on Render; colorized human-readable output locally. Per-request context (tenant + request_id) bound automatically via middleware and auth dependency.
+
+### Backend ✅
+- [x] `src/kinetic/logging_config.py` — `is_production()` + idempotent `setup_logging()`; structlog + stdlib bridge; `ConsoleRenderer` (dev) / `JSONRenderer` (prod); `cache_logger_on_first_use=False` for test compatibility
+- [x] `src/kinetic/middleware/logging.py` — `StructlogRequestMiddleware`: per-request `clear_contextvars()` + `bind_contextvars(request_id, path, method)`; logs `request.start`, `request.done`, `request.error`
+- [x] Auth callsites: `auth.login.success`, `auth.login.failure`, `auth.token.expired`, `auth.token.invalid`; `bind_contextvars(tenant=...)` in `get_current_user`
+- [x] Orchestrator callsites: `agents.dispatch`, `agent.error` (with `agent=` field)
+- [x] LLM callsites: `llm.parse.start/done`, `llm.call.start/done/error`, `llm.stream.start/done`, `llm.metadata.start/done`
+- [x] Service callsites: `digest.cache.hit`, `digest.generate.start/done/error`, `pattern.detect.start/done/skipped/malformed_entry`
+- [x] Startup callsites: `db.pool.created`, `db.sqlite.fallback`, `db.pool.closed`
+- [x] `structlog>=24.0` added to `pyproject.toml` (installed as 25.5.0)
+- [x] `tests/unit/test_logging_config.py` — 9 tests
+- [x] `tests/unit/test_logging_middleware.py` — 8 tests
+- [x] `/qa-reviewer` APPROVED (356 passed, 100% coverage, mypy ✓, ruff ✓)
+- [x] `/security-reviewer` APPROVED (no new vulnerabilities; no sensitive data in log callsites)
+
+### Quality Gates
+- [x] All prior gates passing (356 passed, 29 skipped, 0 failed)
+- [x] `uv run mypy src/kinetic --strict` → 0 errors
+- [x] `uv run ruff check src/ tests/` → 0 warnings
+- [ ] `v1.9.0` release ceremony complete
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -632,3 +659,4 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ✅ Released |
+| `v1.9.0` | Sprint 14 — Structured Logging | Phase 4+ | 🔄 In progress |

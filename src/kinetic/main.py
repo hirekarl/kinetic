@@ -1,29 +1,32 @@
 from __future__ import annotations
 
-import logging
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import structlog
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from kinetic.api.auth import router as auth_router
 from kinetic.api.routes import router
+from kinetic.logging_config import setup_logging
+from kinetic.middleware.logging import StructlogRequestMiddleware
 from kinetic.orchestrator import lead
 
 load_dotenv()
+setup_logging()
 
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if not os.environ.get("GEMINI_API_KEY"):
-        logger.warning("GEMINI_API_KEY is not set — LLM features will return 503")
+        log.warning("GEMINI_API_KEY is not set — LLM features will return 503")
     if not os.environ.get("SECRET_KEY"):
-        logger.warning("SECRET_KEY not set — JWT signing will fail at runtime")
+        log.warning("SECRET_KEY not set — JWT signing will fail at runtime")
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
         import asyncpg
@@ -32,13 +35,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         lead._pg_pool = await asyncpg.create_pool(db_url, min_size=2, max_size=10)
         await PostgresClient(lead._pg_pool, "default")._migrate()
-        logger.info("PostgreSQL pool created and schema migrated")
+        log.info("db.pool.created", backend="postgresql")
     else:
-        logger.info("DATABASE_URL not set — using SQLite")
+        log.info("db.sqlite.fallback")
     yield
     if lead._pg_pool is not None:
         await lead._pg_pool.close()
         lead._pg_pool = None
+        log.info("db.pool.closed")
 
 
 app = FastAPI(
@@ -52,6 +56,7 @@ _origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 if _frontend_url := os.environ.get("FRONTEND_URL"):
     _origins.append(_frontend_url.rstrip("/"))
 
+app.add_middleware(StructlogRequestMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,

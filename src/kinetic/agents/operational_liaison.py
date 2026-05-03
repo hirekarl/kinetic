@@ -5,6 +5,7 @@ from collections.abc import AsyncGenerator
 from typing import Any, Literal
 
 import instructor
+import structlog
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
@@ -25,6 +26,8 @@ from kinetic.models.outputs import (
     StatusLevel,
     TriageItem,
 )
+
+log = structlog.get_logger()
 
 _HISTORY_WINDOW = 10  # max prior messages forwarded to the LLM
 _METADATA_KEYWORDS: frozenset[str] = frozenset(
@@ -113,15 +116,19 @@ class OperationalLiaison:
             logistics_status=logistics_status,
             relational_status=relational_status,
         )
+        log.info("llm.call.start", model="gemini-2.5-flash")
         try:
-            return LiaisonResponse.model_validate(
+            result = LiaisonResponse.model_validate(
                 self.client.chat.completions.create(
                     model="gemini-2.5-flash",
                     messages=messages,
                     response_model=LiaisonResponse,
                 ).model_dump()
             )
+            log.info("llm.call.done", model="gemini-2.5-flash")
+            return result
         except Exception as e:
+            log.error("llm.call.error", model="gemini-2.5-flash", exc=str(e))
             return LiaisonResponse(text=f"[SYSTEM ERROR] Liaison processing failure: {e}")
 
     def _build_prompt_parts(
@@ -249,6 +256,7 @@ class OperationalLiaison:
             system_instruction=system_prompt,
             response_mime_type="text/plain",
         )
+        log.info("llm.stream.start", model="gemini-2.5-flash")
         stream = await self._raw_client.aio.models.generate_content_stream(
             model="gemini-2.5-flash",
             contents=genai_contents,
@@ -257,6 +265,7 @@ class OperationalLiaison:
         async for chunk in stream:
             if chunk.text:
                 yield chunk.text
+        log.info("llm.stream.done", model="gemini-2.5-flash")
 
     async def extract_metadata(self, streamed_text: str, message: str) -> LiaisonMetadata:
         """Extract responding_agent / contact_pauses / task_completions from streamed text.
@@ -266,8 +275,9 @@ class OperationalLiaison:
         """
         if not any(kw in message.lower() for kw in _METADATA_KEYWORDS):
             return LiaisonMetadata()
+        log.info("llm.metadata.start", model="gemini-2.5-flash")
         try:
-            return LiaisonMetadata.model_validate(
+            result = LiaisonMetadata.model_validate(
                 self.client.chat.completions.create(
                     model="gemini-2.5-flash",
                     messages=[
@@ -283,5 +293,7 @@ class OperationalLiaison:
                     response_model=LiaisonMetadata,
                 ).model_dump()
             )
+            log.info("llm.metadata.done", model="gemini-2.5-flash")
+            return result
         except Exception:
             return LiaisonMetadata()

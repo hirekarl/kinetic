@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import { SystemHealthPayload } from './types';
@@ -95,9 +96,11 @@ const defaultAuthState = {
 
 const renderApp = (initialEntries = ['/app']) =>
   render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <App />
-    </MemoryRouter>
+    <HelmetProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <App />
+      </MemoryRouter>
+    </HelmetProvider>
   );
 
 describe('App — split-panel shell', () => {
@@ -146,6 +149,13 @@ describe('App — split-panel shell', () => {
     renderApp();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /system idle/i })).toBeInTheDocument();
+    });
+  });
+
+  it('sets the document title to "Mission Control — Kinetic" on the dashboard', async () => {
+    renderApp();
+    await waitFor(() => {
+      expect(document.title).toBe('Mission Control — Kinetic');
     });
   });
 

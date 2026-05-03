@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage';
 import { ChatPanel } from './components/ChatPanel';
@@ -96,6 +97,10 @@ function App() {
 
   const dashboardElement = user ? (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      <Helmet>
+        <title>Mission Control — Kinetic</title>
+        <meta name="description" content="Your live bio-operational triage dashboard." />
+      </Helmet>
       {showOnboarding && <OnboardingModal onClose={handleDismissOnboarding} />}
       {/* Left Panel: Operational Liaison Feed */}
       <div className="w-full lg:w-[420px] lg:shrink-0 h-[45vh] lg:h-auto">

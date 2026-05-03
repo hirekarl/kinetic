@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any
 
+import structlog
 from google import genai
 
 from kinetic.db.base import DatabaseClient
 from kinetic.models.outputs import BehavioralProfile, BehavioralSummary
 
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
 _GUARD_HOURS = 20
 _MIN_DAYS = 3
@@ -29,17 +29,19 @@ async def detect_and_update_patterns(
     Runs as an asyncio.create_task() — never raises.
     """
     if behavioral_summary.days_analyzed < _MIN_DAYS:
-        logger.info(
-            "Pattern detection skipped: insufficient history (%d days)",
-            behavioral_summary.days_analyzed,
+        log.info(
+            "pattern.detect.skipped",
+            reason="insufficient_history",
+            days_analyzed=behavioral_summary.days_analyzed,
         )
         return
 
     cutoff = behavioral_summary.generated_at - timedelta(hours=_GUARD_HOURS)
     if any(p.last_updated > cutoff for p in current_profiles):
-        logger.info("Pattern detection skipped: profiles updated recently")
+        log.info("pattern.detect.skipped", reason="profiles_updated_recently")
         return
 
+    log.info("pattern.detect.start")
     try:
         key = api_key or os.environ.get("GEMINI_API_KEY")
         client = genai.Client(api_key=key)
@@ -56,7 +58,7 @@ async def detect_and_update_patterns(
         now = datetime.now()
         for entry in patterns:
             if not _is_valid_entry(entry):
-                logger.warning("Skipping malformed pattern entry: %s", entry)
+                log.warning("pattern.detect.malformed_entry", entry=str(entry))
                 continue
             profile = BehavioralProfile(
                 profile_key=entry["profile_key"],
@@ -68,8 +70,10 @@ async def detect_and_update_patterns(
             )
             await db.upsert_behavioral_profile(profile)
 
+        log.info("pattern.detect.done", count=len(patterns))
+
     except Exception:
-        logger.exception("Pattern detection failed — background task suppressing error")
+        log.exception("Pattern detection failed — background task suppressing error")
 
 
 def _build_prompt(

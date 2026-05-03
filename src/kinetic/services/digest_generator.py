@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import logging
 import os
 from datetime import datetime, timedelta
 
+import structlog
 from google import genai
 
 from kinetic.db.base import DatabaseClient
 from kinetic.models.outputs import BehavioralProfile, BehavioralSummary, DigestResponse
 
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
 _CACHE_TTL_HOURS = 6
 _digest_cache: dict[str, DigestResponse] = {}
@@ -33,6 +33,7 @@ async def generate_digest(
     if not force and tenant in _digest_cache:
         cached = _digest_cache[tenant]
         if datetime.now() - cached.generated_at < timedelta(hours=_CACHE_TTL_HOURS):
+            log.info("digest.cache.hit", tenant=tenant)
             return cached
 
     summary = await db.get_behavioral_summary(days=14)
@@ -44,6 +45,7 @@ async def generate_digest(
         _digest_cache[tenant] = result
         return result
 
+    log.info("digest.generate.start", tenant=tenant)
     try:
         resolved_key = api_key or os.environ.get("GEMINI_API_KEY", "")
         client = genai.Client(api_key=resolved_key)
@@ -53,8 +55,9 @@ async def generate_digest(
             contents=prompt,
         )
         text = (response.text or "").strip() or _NO_DATA_SUMMARY
+        log.info("digest.generate.done", tenant=tenant)
     except Exception as e:
-        logger.exception("Digest generation failed for tenant %s", tenant)
+        log.exception("digest.generate.error", tenant=tenant)
         text = f"[DIGEST ERROR] {e}"
 
     result = DigestResponse(summary=text, generated_at=datetime.now())

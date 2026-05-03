@@ -8,9 +8,12 @@ from typing import Any
 
 import bcrypt
 import jwt
+import structlog
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+
+log = structlog.get_logger()
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -65,12 +68,14 @@ def decode_access_token(token: str) -> dict[str, Any]:
         result: dict[str, Any] = jwt.decode(token, secret, algorithms=[_JWT_ALGORITHM])
         return result
     except jwt.ExpiredSignatureError as exc:
+        log.warning("auth.token.expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
     except jwt.PyJWTError as exc:
+        log.warning("auth.token.invalid")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -97,7 +102,9 @@ async def get_current_user(
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return CurrentUser(username=username, tenant=tenant)
+    user = CurrentUser(username=username, tenant=tenant)
+    structlog.contextvars.bind_contextvars(tenant=user.tenant)
+    return user
 
 
 async def get_current_tenant(

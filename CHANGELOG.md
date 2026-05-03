@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 ## [Unreleased]
 
 ### Added
+- `src/kinetic/logging_config.py` — `is_production()` + idempotent `setup_logging()`; structlog processor chain with `stdlib.LoggerFactory` bridge; dev: colorized `ConsoleRenderer`, prod (`RENDER=true` or `LOG_FORMAT=json`): `JSONRenderer`; `cache_logger_on_first_use=False` for pytest `capture_logs()` compatibility
+- `src/kinetic/middleware/logging.py` — `StructlogRequestMiddleware`: binds `request_id`, `path`, `method`, and (after auth) `tenant` to structlog context vars per request; emits `request.start`, `request.done` (with `status_code` + `duration_ms`), and `request.error` log events
+- Structured log events across all callsites: `auth.login.success/failure`, `auth.token.expired/invalid`, `agents.dispatch`, `agent.error`, `llm.parse/call/stream/metadata.start/done`, `digest.cache.hit`, `digest.generate.start/done/error`, `pattern.detect.start/done/skipped`, `checkin.start/done`, `task.completed`, `db.pool.created/closed`, `db.sqlite.fallback`
+- `structlog>=24.0` runtime dependency (installed as 25.5.0)
+- `tests/unit/test_logging_config.py` — 9 tests; `tests/unit/test_logging_middleware.py` — 8 tests
+
+### Added
 - `src/kinetic/orchestrator/triage.py` — pure aggregation/filter helpers extracted from `lead.py`: `calculate_roi`, `aggregate_status`, `assign_stable_ids`, `filter_paused_contacts`, `filter_paused_relational_status`
 - `src/kinetic/agents/liaison_context.py` — context formatter functions extracted from `operational_liaison.py`: `format_bio_status`, `format_logistics_status`, `format_relational_status`, `format_behavioral_summary`, `format_profiles`
 - `frontend/src/hooks/useChat.ts` — custom hook owning all chat/streaming state and handlers; extracted from `App.tsx`

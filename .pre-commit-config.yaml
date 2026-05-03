@@ -19,6 +19,7 @@ repos:
           - fastapi>=0.115
           - PyJWT>=2.8
           - bcrypt>=4.0
+          - structlog>=24.0
 
   # ── Frontend: Prettier (TS/TSX/JSON/CSS/MD) ───────────────────────────────
   # Uses the project's own prettier install so the version stays in lockstep

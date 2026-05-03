@@ -45,8 +45,12 @@ React Dashboard (frontend/src/)
 ```
 src/kinetic/
   __init__.py              package version (__version__)
-  main.py                  FastAPI app, CORS config, router mounts (api + auth); lifespan: warnings for GEMINI_API_KEY + SECRET_KEY, asyncpg pool create/close when DATABASE_URL set
-  auth.py                  TenantConfig + CurrentUser models; load_credentials(), verify_password(), create_access_token(), decode_access_token(); get_current_user() + get_current_tenant() FastAPI dependencies
+  main.py                  FastAPI app, CORS config, router mounts (api + auth); calls setup_logging() at import; adds StructlogRequestMiddleware before CORSMiddleware; lifespan: structured startup logs, asyncpg pool create/close when DATABASE_URL set
+  logging_config.py        is_production() (RENDER=true or LOG_FORMAT=json); idempotent setup_logging() — structlog processor chain with stdlib.LoggerFactory bridge; dev: ConsoleRenderer, prod: JSONRenderer; cache_logger_on_first_use=False for test capture compatibility
+  auth.py                  TenantConfig + CurrentUser models; load_credentials(), verify_password(), create_access_token(), decode_access_token(); get_current_user() binds tenant via structlog bind_contextvars; get_current_tenant() FastAPI dependencies
+  middleware/
+    __init__.py            package init
+    logging.py             StructlogRequestMiddleware(BaseHTTPMiddleware): clears and binds request_id/path/method per request; logs request.start, request.done (status_code + duration_ms), request.error (on infrastructure exceptions only)
   models/
     inputs.py              CheckInPayload + sub-models (canonical input contracts)
     outputs.py             SystemHealthPayload + sub-models (canonical output contracts)
@@ -88,6 +92,8 @@ tests/
   unit/test_digest_generator.py 10 tests for generate_digest(): happy path, cache hit/miss/TTL, force=True bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery
   unit/test_digest_route.py 5 tests for GET /api/digest: 200 shape, force=False default, force=True forwarded, 401 without JWT, 503 without API key
   unit/test_streaming.py   17 tests for LiaisonMetadata defaults, stream_text() chunking, extract_metadata() keyword guard + Instructor path + failure fallback, orchestrate_stream() event order + persistence + agent failure recovery + side effects
+  unit/test_logging_config.py  9 tests for is_production() (no env, RENDER=true, LOG_FORMAT=json) and setup_logging() (handler installation, idempotency, renderer selection branches)
+  unit/test_logging_middleware.py  8 tests for request.start/done/error lifecycle events, context binding (request_id/path/method), exception path via direct dispatch() call
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
   integration/test_postgres_client.py  29 PostgresClient integration tests; all methods + tenant isolation; skipped without DATABASE_URL
@@ -169,6 +175,7 @@ scripts/
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ✅ |
+| Sprint 14 | `v1.9.0` | Structured Logging | 🔄 |
 
 ---
 
@@ -228,6 +235,7 @@ CREDENTIALS_PATH=./credentials.toml      # optional; defaults to ./credentials.t
 DATABASE_URL=postgresql://user:pass@host/db  # optional; if set, app uses PostgreSQL (Render injects this automatically); omit for SQLite local dev
 SQLITE_DB_PATH=./kinetic.db              # optional; SQLite path for the "default" tenant; named tenants use kinetic_{tenant}.db
 FRONTEND_URL=https://your-frontend.onrender.com  # optional; added to CORS allow_origins at startup (Render production only)
+LOG_FORMAT=json                                  # optional; forces JSON log output locally (default is colorized ConsoleRenderer); Render sets this automatically via RENDER=true
 ```
 
 The app reads this via `python-dotenv`. The `.gitignore` already excludes `.env`. Copy `credentials.toml.example` to `credentials.toml` and fill in real bcrypt hashes (never commit it).

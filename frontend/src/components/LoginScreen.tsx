@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
 interface Props {
@@ -23,6 +24,10 @@ export const LoginScreen: React.FC<Props> = ({ onLogin, error, isLoading }) => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <Helmet>
+        <title>Sign In — Kinetic</title>
+        <meta name="description" content="Sign in to your Kinetic account." />
+      </Helmet>
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-white">Kinetic</h1>

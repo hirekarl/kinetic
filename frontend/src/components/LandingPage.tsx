@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
 interface LogoProps {
@@ -112,6 +113,13 @@ const HOW_IT_WORKS = [
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
+      <Helmet>
+        <title>Kinetic — Bio-Operational Triage Engine</title>
+        <meta
+          name="description"
+          content="Personal infrastructure for high-performance engineers. AI triage across biology, logistics, and relationships — one prioritized action feed, seconds after check-in."
+        />
+      </Helmet>
       {/* ── Nav ─────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

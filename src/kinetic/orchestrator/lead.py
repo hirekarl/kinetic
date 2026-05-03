@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
@@ -10,6 +9,7 @@ from datetime import date, timedelta
 from typing import Any
 
 import asyncpg
+import structlog
 
 from kinetic.agents.bio_archivist import BioArchivist, BioArchivistResult
 from kinetic.agents.logistics_fixer import LogisticsFixer, LogisticsFixerResult
@@ -47,7 +47,7 @@ from kinetic.orchestrator.triage import (
 )
 from kinetic.services.pattern_detector import detect_and_update_patterns
 
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
 # Holds references to fire-and-forget background tasks to prevent GC before completion
 _background_tasks: set[asyncio.Task[None]] = set()
@@ -124,6 +124,7 @@ async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunR
     """Fire all specialist agents in parallel and aggregate their results."""
     rolling_metrics: dict[str, Any] = {"bio": await db.get_recent_bio(limit=7)}
 
+    log.info("agents.dispatch")
     results = await asyncio.gather(
         BioArchivist().process(payload, rolling_metrics),
         LogisticsFixer().process(payload, rolling_metrics),
@@ -136,7 +137,7 @@ async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunR
     relational_result = results[2] if isinstance(results[2], RelationalDiplomatResult) else None
 
     if isinstance(results[0], Exception):
-        logger.error(f"BioArchivist failed: {results[0]}")
+        log.error("agent.error", agent="bio_archivist", exc=str(results[0]))
         bio_result = BioArchivistResult(
             success=False,
             error_message="BioArchivist unavailable.",
@@ -148,7 +149,7 @@ async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunR
             ),
         )
     if isinstance(results[1], Exception):
-        logger.error(f"LogisticsFixer failed: {results[1]}")
+        log.error("agent.error", agent="logistics_fixer", exc=str(results[1]))
         logistics_result = LogisticsFixerResult(
             success=False,
             error_message="LogisticsFixer unavailable.",
@@ -158,7 +159,7 @@ async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunR
             ),
         )
     if isinstance(results[2], Exception):
-        logger.error(f"RelationalDiplomat failed: {results[2]}")
+        log.error("agent.error", agent="relational_diplomat", exc=str(results[2]))
         relational_result = RelationalDiplomatResult(
             success=False,
             error_message="RelationalDiplomat unavailable.",
@@ -192,7 +193,7 @@ async def _run_agents(payload: CheckInPayload, db: DatabaseClient) -> _AgentRunR
         behavioral_summary = await db.get_behavioral_summary()
         behavioral_profiles = await db.get_behavioral_profiles()
     except Exception:
-        logger.exception("Failed to fetch behavioral context — proceeding without it")
+        log.exception("Failed to fetch behavioral context — proceeding without it")
 
     return _AgentRunResult(
         bio_status=bio_status,
@@ -255,13 +256,13 @@ async def orchestrate(
         raw_pauses = await db.get_active_pauses()
         active_pauses = [ContactPause(**r) for r in raw_pauses]
     except Exception:
-        logger.exception("Failed to load active contact pauses — proceeding without filtering")
+        log.exception("Failed to load active contact pauses — proceeding without filtering")
 
     for task_name in liaison_response.task_completions:
         try:
             await db.complete_task(task_name)
         except KeyError:
-            logger.warning(f"complete_task: task not found in DB: {task_name!r}")
+            log.warning("complete_task.not_found", task_name=task_name)
 
     triage_items = filter_paused_contacts(run.triage_items, active_pauses)
     relational_status = filter_paused_relational_status(run.relational_status, active_pauses)
@@ -311,7 +312,7 @@ async def orchestrate_stream(
         raw_pauses = await db.get_active_pauses()
         active_pauses = [ContactPause(**r) for r in raw_pauses]
     except Exception:
-        logger.exception("Failed to load active pauses in stream")
+        log.exception("Failed to load active pauses in stream")
 
     filtered_triage = filter_paused_contacts(run.triage_items, active_pauses)
     filtered_relational = filter_paused_relational_status(run.relational_status, active_pauses)
@@ -359,13 +360,13 @@ async def orchestrate_stream(
         raw_pauses = await db.get_active_pauses()
         active_pauses = [ContactPause(**r) for r in raw_pauses]
     except Exception:
-        logger.exception("Failed to reload active pauses after upsert in stream")
+        log.exception("Failed to reload active pauses after upsert in stream")
 
     for task_name in metadata.task_completions:
         try:
             await db.complete_task(task_name)
         except KeyError:
-            logger.warning(f"complete_task: task not found in stream: {task_name!r}")
+            log.warning("complete_task.not_found", task_name=task_name)
 
     if message:
         await db.insert_checkin(payload, message, accumulated_text)

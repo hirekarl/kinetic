@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -12,6 +13,8 @@ from kinetic.auth import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+log = structlog.get_logger()
 
 
 class LoginRequest(BaseModel):
@@ -38,6 +41,7 @@ async def login(body: LoginRequest) -> TokenResponse:
 
     tenant_cfg = creds.get(body.username)
     if tenant_cfg is None or not verify_password(body.password, tenant_cfg.password_hash):
+        log.warning("auth.login.failure", username=body.username, reason="invalid_credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -45,6 +49,7 @@ async def login(body: LoginRequest) -> TokenResponse:
         )
 
     token = create_access_token(body.username, body.username)
+    log.info("auth.login.success", username=body.username, tenant=body.username)
     return TokenResponse(access_token=token, tenant=body.username)
 
 

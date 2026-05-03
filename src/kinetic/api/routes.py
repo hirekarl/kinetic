@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
@@ -15,6 +16,8 @@ from kinetic.services.digest_generator import generate_digest
 from kinetic.services.simulate import simulate_week
 
 router = APIRouter(prefix="/api")
+
+log = structlog.get_logger()
 
 
 class CheckInRequest(BaseModel):
@@ -77,6 +80,7 @@ async def complete_task(
         raise HTTPException(
             status_code=409, detail=f"Task '{task_name}' is already completed"
         ) from e
+    log.info("task.completed", task_name=task_name)
     return {"status": "completed", "task_name": task_name}
 
 
@@ -89,6 +93,7 @@ async def checkin_stream(
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
 
+    log.info("checkin.start", message_len=len(body.message), streaming=True)
     try:
         payload = await parse_checkin(body.message, body.history)
     except OSError as e:
@@ -96,6 +101,7 @@ async def checkin_stream(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
 
+    log.info("checkin.done", streaming=True)
     db = get_db(tenant)
     return EventSourceResponse(orchestrate_stream(payload, body.message, body.history, db=db))
 
@@ -109,6 +115,7 @@ async def checkin(
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
 
+    log.info("checkin.start", message_len=len(body.message), streaming=False)
     try:
         payload = await parse_checkin(body.message, body.history)
     except OSError as e:
@@ -116,5 +123,6 @@ async def checkin(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {e}") from e
 
+    log.info("checkin.done", streaming=False)
     db = get_db(tenant)
     return await orchestrate(payload, body.message, body.history, db=db)

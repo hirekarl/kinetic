@@ -1,13 +1,16 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import { LandingPage } from './LandingPage';
 
 const renderLanding = () =>
   render(
-    <MemoryRouter>
-      <LandingPage />
-    </MemoryRouter>
+    <HelmetProvider>
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>
+    </HelmetProvider>
   );
 
 describe('LandingPage', () => {
@@ -56,5 +59,12 @@ describe('LandingPage', () => {
     expect(screen.getByText(/one message/i)).toBeInTheDocument();
     expect(screen.getByText(/ai triage/i)).toBeInTheDocument();
     expect(screen.getByText(/prioritized action/i)).toBeInTheDocument();
+  });
+
+  it('sets the document title to "Kinetic — Bio-Operational Triage Engine"', async () => {
+    renderLanding();
+    await waitFor(() => {
+      expect(document.title).toBe('Kinetic — Bio-Operational Triage Engine');
+    });
   });
 });

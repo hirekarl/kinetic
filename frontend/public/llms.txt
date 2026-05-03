@@ -1,0 +1,22 @@
+# Kinetic
+
+> Bio-operational triage engine for high-performance engineers. Send a natural-language check-in; three specialist AI agents (bio, logistics, relational) analyze it in parallel and surface a prioritized action feed in seconds.
+
+Kinetic is a full-stack web application built with FastAPI (Python 3.12), React 18 / TypeScript, and Gemini 2.5 Flash + Instructor for structured LLM output. It uses JWT-based multi-tenant auth, PostgreSQL on Render, and Server-Sent Events for token-by-token response streaming.
+
+Built by Karl Johnson for the Pursuit AI-Native L1 Capstone.
+
+## App
+
+- [Live demo](https://kinetic-frontend-c2bd.onrender.com): Log in as `demo` / `demo` to explore a pre-seeded week of check-in data across all three domains
+- [API reference](https://kinetic-api-drk6.onrender.com/docs): FastAPI OpenAPI documentation for all endpoints (auth, check-in, streaming, history, digest, task completion)
+
+## Source
+
+- [GitHub repository](https://github.com/hirekarl/kinetic): Full source code, README, and CHANGELOG
+- [README](https://raw.githubusercontent.com/hirekarl/kinetic/main/README.md): Stack overview, architecture diagram, local setup instructions, and deployment guide
+
+## Optional
+
+- [CHANGELOG](https://raw.githubusercontent.com/hirekarl/kinetic/main/CHANGELOG.md): Sprint-by-sprint feature history (v0.1.0 → current)
+- [Demo script](https://raw.githubusercontent.com/hirekarl/kinetic/main/docs/DEMO.md): Live in-person presentation script with exact verbal lines and typed check-in inputs for all three turns

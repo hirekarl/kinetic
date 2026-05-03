@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
+import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { LoginScreen } from './LoginScreen';
 
@@ -9,9 +10,11 @@ describe('LoginScreen', () => {
 
   const renderScreen = (overrides?: { error?: string | null; isLoading?: boolean }) =>
     render(
-      <MemoryRouter>
-        <LoginScreen onLogin={mockOnLogin} error={null} isLoading={false} {...overrides} />
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter>
+          <LoginScreen onLogin={mockOnLogin} error={null} isLoading={false} {...overrides} />
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
   it('renders the Kinetic heading and subtitle', () => {
@@ -74,5 +77,12 @@ describe('LoginScreen', () => {
     const link = screen.getByRole('link', { name: /return to base/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('sets the document title to "Sign In — Kinetic"', async () => {
+    renderScreen();
+    await waitFor(() => {
+      expect(document.title).toBe('Sign In — Kinetic');
+    });
   });
 });

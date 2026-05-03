@@ -117,6 +117,7 @@ flowchart TD
 - Python 3.12, [uv](https://docs.astral.sh/uv/) for environment + dependency management
 - [FastAPI](https://fastapi.tiangolo.com/) · [Pydantic v2](https://docs.pydantic.dev/) · [Instructor](https://python.useinstructor.com/) + [Gemini 2.5 Flash](https://ai.google.dev/)
 - [asyncpg](https://magicstack.github.io/asyncpg/) + PostgreSQL (Render) · aiosqlite (local dev fallback)
+- [structlog](https://www.structlog.org/) — structured logging (JSON in production, colorized dev output)
 - mypy strict · ruff · pytest + pytest-cov
 
 **Frontend**
@@ -216,7 +217,8 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 10 | Streaming responses — SSE token streaming, in-progress chat bubble | `v1.5.0` | ✅ Released |
 | Sprint 11 | Burnout trend chart — 14-day SVG polyline in Bio card | `v1.6.0` | ✅ Released |
 | Sprint 12 | Weekly digest — Gemini prose summary card with 6h cache + refresh | `v1.7.0` | ✅ Released |
-| Sprint 13 | Demo polish — mobile layout, Simulate Week, landing page, brand assets, SEO metadata, PWA manifest, live deploy | `v1.8.0` | 🔄 In progress |
+| Sprint 13 | Demo polish — mobile layout, Simulate Week, landing page, brand assets, SEO metadata, PWA manifest, live deploy | `v1.8.0` | ✅ Released |
+| Sprint 14 | Structured logging — structlog pipeline, request middleware, callsite instrumentation | `v1.9.0` | 🔄 In progress |
 
 **Demo deadline:** 2026-05-06 · **MVP deadline:** 2026-05-06
 
