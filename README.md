@@ -10,6 +10,7 @@
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/)
 [![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Version](https://img.shields.io/badge/version-v1.9.0-blue)](CHANGELOG.md)
+[![WCAG 2.1 AA](https://img.shields.io/badge/WCAG_2.1-AA-green?logo=w3c&logoColor=white)](frontend/src/e2e/a11y-audit.spec.ts)
 
 **Live demo:** [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com)
 
