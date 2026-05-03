@@ -1,5 +1,7 @@
 # Kinetic — Presentation Reference
 
+**Presenter:** Karl Johnson
+
 Talking points for the Pursuit AI-Native L1 capstone review. Use alongside `DEMO.md`.
 
 ---

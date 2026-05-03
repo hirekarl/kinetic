@@ -16,6 +16,8 @@ Narration is written to be read aloud at a natural pace (~130 wpm). Sections mar
 
 ---
 
+Hi, I'm Karl Johnson, and this is Kinetic.
+
 Jordan is a senior engineer running at full load. By every external measure — output,
 velocity, shipping — Jordan is performing.
 
@@ -78,8 +80,8 @@ Wrong credentials — clear error state, clear message. No raw exception. A path
 
 *[Video: three-screen onboarding modal.]*
 
-First-time users see a brief onboarding — three screens, keyboard-navigable, WCAG 2.1
-AA tested.
+First-time users see a brief onboarding — designed to be accessible, keyboard-navigable,
+and compliant with WCAG 2.1 standards from day one.
 
 `[HOLD — let the three clicks play through]`
 
@@ -128,10 +130,10 @@ Server-Sent Events.
 
 The dashboard reflects what Jordan already felt but couldn't quantify.
 
-Bio-Metric Archivist: burnout score 82. The scale runs 0 to 100 — above 75 is a
-CRITICAL flag. That number is computed from a seven-day sleep trend using weighted
-decay: recent nights count more heavily than last week's. Jordan hasn't been imagining
-the fatigue. The decline is real, measured, and now visible.
+Bio-Metric Archivist: Jordan hasn't been imagining the fatigue. The system computes a
+burnout score from a seven-day sleep trend using weighted decay—where recent nights
+count more heavily than last week's. The resulting score is 82. On a scale of 0 to 100,
+anything above 75 is a CRITICAL flag. The decline is real, measured, and now visible.
 
 `[HOLD — as camera scrolls to logistics]`
 
@@ -234,10 +236,11 @@ same triage, same interactions — wherever Jordan is when the morning hits.
 
 The most valuable next feature is proactive push.
 
-Right now, Jordan briefs Kinetic. The next step reverses that. Every morning, before
-the thirty-minute triage fog sets in — before Jordan has to ask — Kinetic runs a
-background pass from the previous night's data. Sleep trend, task state, relational
-drift. One notification. Three priorities, already ranked.
+Right now, Jordan briefs Kinetic. The next step is to reverse that interaction:
+instead of waiting for a check-in, Kinetic will brief Jordan. Every morning, before
+the thirty-minute triage fog sets in, Kinetic runs a background pass from the
+previous night's data. Sleep trend, task state, relational drift. One notification.
+Three priorities, already ranked.
 
 Jordan opens the day knowing exactly where his attention belongs.
 

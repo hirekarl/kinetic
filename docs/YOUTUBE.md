@@ -1,5 +1,9 @@
 # YouTube Video Metadata
 
+## Link
+
+https://youtu.be/P03BV-CmaG8
+
 ## Title
 
 Kinetic — Personal Infrastructure for Engineers (AI-Powered Triage Demo)

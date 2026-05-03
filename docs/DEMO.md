@@ -46,6 +46,8 @@ Open `http://localhost:5173` in Chrome.
 
 > **Say:**
 >
+> "Hi, I'm Karl Johnson, and this is Kinetic."
+>
 > "Jordan is a senior engineer running at capacity — shipping features, managing stakeholders, staying current. By conventional metrics, Jordan is performing well. But there's a hidden cost."
 >
 > "Sleep is the first thing to slip. Then domestic tasks pile up — quietly, until something breaks. Then relationships drift — not through neglect, but through deferred priority. By the time Jordan notices any of this, the debt is already compounding."
@@ -94,7 +96,7 @@ Open `http://localhost:5173` in Chrome.
 
 *The onboarding modal appears.*
 
-> **Say:** "First-time experience. Three screens. Keyboard-navigable — axe-core tested for WCAG 2.1 AA compliance."
+> **Say:** "First-time experience. Designed to be accessible and keyboard-navigable — compliant with WCAG 2.1 standards from day one."
 
 **Action:** Read the first screen briefly, then click **Next**.
 
@@ -152,7 +154,7 @@ I'm completely overwhelmed. Four hours sleep, laundry six days overdue, haven't 
 
 *The dashboard updates. Point to the bio card.*
 
-> **Say:** "CRITICAL. Burnout score 82. The Bio-Metric Archivist computed this from four hours of sleep against Jordan's 7-day trend — not just today's number. Sleep sparkline on the right shows the decline curve. Burnout trend chart below it shows the trajectory."
+> **Say:** "CRITICAL. Jordan hasn't been imagining the fatigue. The Bio-Metric Archivist computed a burnout score of 82 from a seven-day weighted sleep trend. On a scale of 0 to 100, anything above 75 is a critical flag. Sleep sparkline on the right shows the decline curve. Burnout trend chart below it shows the trajectory."
 
 *Scroll right panel slightly to show logistics card.*
 
@@ -266,7 +268,7 @@ Can you give me a read on my sleep trajectory?
 
 > **Say:**
 >
-> "The most valuable next feature is proactive push. Right now, Kinetic requires Jordan to brief it. The next step reverses that flow."
+> "The most valuable next feature is proactive push. Right now, Kinetic requires Jordan to brief it. The next step is to reverse that interaction: instead of waiting for a check-in, the system will brief Jordan."
 >
 > "Every morning at 6am, Kinetic runs a background check-in from the previous night's data — sleep from wearable API, task state from the DB, relational drift from contact frequency. It synthesizes a triage list and pushes a single notification: *here are your top three actions for today, in priority order.*"
 >
