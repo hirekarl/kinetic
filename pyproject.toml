@@ -171,4 +171,4 @@ update_changelog_on_bump = true
 changelog_file = "CHANGELOG.md"
 changelog_incremental = true
 bump_message = "chore(release): v$current_version → v$new_version [skip ci]"
-schema_pattern = "(?s)(assets|build|bump|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\(\\S+\\))?!?: ([^\\n\\r]+)((\\n\\n.*)|(\\s*))?$"
+allowed_prefixes = ["assets", "Merge", "Revert", "Pull request", "fixup!", "squash!", "amend!"]
