@@ -3,6 +3,7 @@
 **Bio-Operational Triage Engine** — personal infrastructure management for high-performance engineers.
 
 [![CI](https://github.com/hirekarl/kinetic/actions/workflows/ci.yml/badge.svg)](https://github.com/hirekarl/kinetic/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/hirekarl/kinetic/graph/badge.svg)](https://codecov.io/gh/hirekarl/kinetic)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![uv](https://img.shields.io/badge/uv-managed-blueviolet?logo=astral&logoColor=white)](https://docs.astral.sh/uv/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://docs.astral.sh/ruff/)

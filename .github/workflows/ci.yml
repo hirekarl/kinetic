@@ -44,12 +44,12 @@ jobs:
       # but the threshold gate is enforced by /qa-reviewer at handoff time.
       - run: uv run pytest -m "not integration" --cov-report=xml
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: coverage-xml
-          path: coverage.xml
-          retention-days: 7
+          files: coverage.xml
+          flags: backend
+          fail_ci_if_error: false
 
   # ── Frontend: type check + lint + unit tests + build ───────────────────────
   frontend:
@@ -73,12 +73,12 @@ jobs:
       - run: npm run test:coverage
       - run: npm run build
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: frontend-coverage
-          path: frontend/coverage/
-          retention-days: 7
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
 
   # ── Frontend: e2e + accessibility audit ────────────────────────────────────
   e2e:
