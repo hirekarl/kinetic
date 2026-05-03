@@ -11,7 +11,7 @@ import os
 
 import asyncpg
 
-from kinetic.db.postgres_client import _DDL
+from kinetic.db.postgres_client import _DDL  # type: ignore[import-untyped]
 
 
 async def main() -> None:

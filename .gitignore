@@ -480,6 +480,7 @@ kinetic.db*
 # Playwright
 frontend/playwright-report/
 frontend/test-results/
+.playwright-mcp/
 
 # Kinetic — tenant credentials (never commit)
 credentials.toml

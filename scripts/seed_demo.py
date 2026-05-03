@@ -307,8 +307,8 @@ async def _seed_postgres(database_url: str) -> None:
                 profile["profile_key"],
                 profile["insight"],
                 json.dumps(profile["evidence"]),
-                datetime.fromisoformat(profile["first_observed"]),
-                datetime.fromisoformat(profile["last_updated"]),
+                datetime.fromisoformat(str(profile["first_observed"])),
+                datetime.fromisoformat(str(profile["last_updated"])),
                 profile["observation_count"],
             )
 
