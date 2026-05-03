@@ -168,7 +168,7 @@ scripts/
 | Sprint 10 | `v1.5.0` | Streaming Responses | ✅ |
 | Sprint 11 | `v1.6.0` | Burnout Trend Chart | ✅ |
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
-| Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | 🔄 |
+| Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ✅ |
 
 ---
 

@@ -555,7 +555,7 @@ A single Gemini call that ingests 14 days of bio/logistics/relational data and r
 
 ---
 
-## Sprint 13 — Demo Polish + Shareable Deploy 🔄
+## Sprint 13 — Demo Polish + Shareable Deploy ✅
 **Target version:** `v1.8.0`
 
 Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulate Week feature, README, demo script structure, live Render deploy, and presentation documentation to close all rubric gaps.
@@ -586,11 +586,11 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 - [x] `render.yaml` — `healthCheckPath: /health`, `preDeployCommand: uv run python scripts/migrate.py`, `plan: starter` (always-on)
 - [x] `scripts/migrate.py` — standalone asyncpg pre-deploy DDL migration script
 - [x] `docs/DEPLOY.md` — end-to-end deployment checklist with env vars, credentials setup, tenant lifecycle
-- [ ] Configure Render dashboard: `GEMINI_API_KEY`, `FRONTEND_URL`, `VITE_API_BASE_URL`, `credentials.toml` Secret File
-- [ ] Extend `scripts/seed_demo.py` to target PostgreSQL backend via `DATABASE_URL` (currently SQLite-only)
-- [ ] Seed `demo` tenant on live PostgreSQL
-- [ ] Verify end-to-end on live Render URL
-- [ ] Update demo script with live URL
+- [x] Configure Render dashboard: `GEMINI_API_KEY`, `FRONTEND_URL`, `VITE_API_BASE_URL`, `credentials.toml` Secret File
+- [x] Extend `scripts/seed_demo.py` to target PostgreSQL backend via `DATABASE_URL` (SQLite local + asyncpg Render modes)
+- [x] Seed `demo` tenant on live PostgreSQL
+- [x] Verify end-to-end on live Render URL: [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com)
+- [x] Update demo script with live URL
 
 ### F — Presentation Documentation
 - [x] Sharpen named user one-liner (from "high-performance engineers" to a specific named persona with situation + frustration)
@@ -606,10 +606,10 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 - [x] 7 Vitest tests for `LandingPage` component (hero, CTA, domain names, nav links, footer, eyebrow, how-it-works steps)
 
 ### Quality Gates
-- [ ] Mobile layout verified at 375px viewport (no overflow, all interactions reachable)
-- [ ] All prior gates passing (247 backend tests, 220 frontend tests)
-- [ ] Render deploy verified end-to-end with seeded demo tenant
-- [ ] `v1.8.0` release ceremony complete
+- [x] Mobile layout verified at 375px viewport (no overflow, all interactions reachable)
+- [x] All prior gates passing (247 backend tests, 220 frontend tests)
+- [x] Render deploy verified end-to-end with seeded demo tenant
+- [x] `v1.8.0` release ceremony complete
 
 ---
 
@@ -631,4 +631,4 @@ Six task groups targeting Demo Day (May 6, 2026): mobile responsiveness, Simulat
 | `v1.5.0` | Sprint 10 — Streaming Responses | Phase 4+ | ✅ Released |
 | `v1.6.0` | Sprint 11 — Burnout Trend Chart | Phase 4+ | ✅ Released |
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
-| `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | 🔄 In progress |
+| `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ✅ Released |

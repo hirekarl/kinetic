@@ -8,6 +8,12 @@
 
 ## Pre-Demo Setup (do this before anyone is watching)
 
+**Option A — Live deploy (recommended):** open [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com) in Chrome.
+
+> Note: Render free-tier services spin down after inactivity. If the page loads but check-ins time out, wait 30 seconds for the API to warm up, then retry.
+
+**Option B — Local fallback** (if Render is unavailable):
+
 ```bash
 # Terminal 1 — backend
 uv run uvicorn kinetic.main:app --reload --port 8000
@@ -16,7 +22,9 @@ uv run uvicorn kinetic.main:app --reload --port 8000
 cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173` in Chrome. Then:
+Open `http://localhost:5173` in Chrome.
+
+**Then (either option):**
 
 1. Log in as `demo` / `demo`
 2. Click **Simulate Week** — wait for the dashboard to populate (~3s)
@@ -26,10 +34,11 @@ Open `http://localhost:5173` in Chrome. Then:
 
 **Confirm before starting:**
 - [ ] Login screen is showing (not the dashboard)
-- [ ] Backend terminal shows no errors
 - [ ] You have your three check-in messages ready (below)
 
-**If Simulate Week fails:** `uv run python scripts/seed_demo.py` seeds the DB directly.
+**If Simulate Week fails (live deploy):** the demo tenant PostgreSQL data may need re-seeding — run `DATABASE_URL=<render-db-url> uv run python scripts/seed_demo.py` from a terminal with the Render internal DB URL.
+
+**If Simulate Week fails (local):** `uv run python scripts/seed_demo.py` seeds the SQLite DB directly.
 
 ---
 
@@ -269,17 +278,24 @@ Can you give me a read on my sleep trajectory?
 
 | Problem | Fix |
 |---|---|
-| "Analysis unavailable" error banner on real check-in | `GEMINI_API_KEY` not set — check `.env`, restart backend |
+| Page loads but check-ins time out | Render API cold start — wait 30s, retry |
+| "Analysis unavailable" error banner | `GEMINI_API_KEY` not configured on Render (or missing from `.env` locally) |
 | Onboarding modal doesn't appear | DevTools → Local Storage → delete `kinetic_onboarded` → reload |
-| Dashboard blank after check-in | Backend not running on `:8000` — restart terminal |
-| Behavioral Profile shows "Building your profile" | Click Simulate Week again, or `uv run python scripts/seed_demo.py` |
+| Dashboard blank after check-in | Local only: backend not running on `:8000` — restart terminal |
+| Behavioral Profile shows "Building your profile" | Click Simulate Week again |
 | Simulate Week button not visible | Logged in as non-demo tenant — sign out, sign in as `demo` |
 | Response takes > 30 seconds | Gemini rate limit — wait 60 seconds, retry |
 
 ## After the Demo
 
-Click **Reset System** (top-right header) to wipe the database before the next run — or:
+Click **Reset System** (top-right header) to wipe the database before the next run — or via curl:
 
 ```bash
-curl -X POST http://localhost:8000/api/debug/reset -H "Authorization: Bearer <token>"
+# Live deploy
+curl -X POST https://kinetic-api-drk6.onrender.com/api/debug/reset \
+  -H "Authorization: Bearer <token>"
+
+# Local
+curl -X POST http://localhost:8000/api/debug/reset \
+  -H "Authorization: Bearer <token>"
 ```
