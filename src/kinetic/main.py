@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from kinetic import __version__
 from kinetic.api.auth import router as auth_router
 from kinetic.api.routes import router
 from kinetic.logging_config import setup_logging
@@ -58,7 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Kinetic",
     description="Bio-Operational Triage Engine",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
