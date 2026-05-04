@@ -4,6 +4,12 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## v1.9.1 (2026-05-04)
+
+### Fix
+
+- **streaming**: clear loading state when SSE stream closes without done event
+
 ## v1.9.0 (2026-05-03)
 
 ### Feat
