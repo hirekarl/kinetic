@@ -51,7 +51,7 @@ describe('LandingPage', () => {
 
   it('renders the system version eyebrow', () => {
     renderLanding();
-    expect(screen.getByText(/\[SYSTEM v1\.8\.0\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/\[SYSTEM v\d+\.\d+\.\d+\]/i)).toBeInTheDocument();
   });
 
   it('renders all three how-it-works step titles', () => {

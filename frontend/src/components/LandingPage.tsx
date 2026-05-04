@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { version } from '../../package.json';
 
 interface LogoProps {
   size?: number;
@@ -149,7 +150,7 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
         <p className="mb-6 font-mono text-xs uppercase tracking-widest text-emerald-500">
-          [SYSTEM v1.8.0]
+          {`[SYSTEM v${version}]`}
         </p>
         <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl">
           Your infrastructure

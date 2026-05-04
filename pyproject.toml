@@ -165,6 +165,7 @@ version_provider = "commitizen"
 version_files = [
     "pyproject.toml:^version",
     "src/kinetic/__init__.py:__version__",
+    "frontend/package.json:\"version\"",
 ]
 tag_format = "v$version"
 update_changelog_on_bump = true

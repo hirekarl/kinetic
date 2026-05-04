@@ -94,6 +94,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => 
   const isLast = step === STEPS.length - 1;
   const stepLabel = `Step ${String(step + 1)} of ${String(STEPS.length)}`;
 
+  /* c8 ignore next */
+  if (!current) return null;
+
   return (
     // Outer container: centers the dialog and provides the visual backdrop.
     // The actual backdrop click target is a sibling <button> behind the dialog
