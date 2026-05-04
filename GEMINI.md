@@ -298,6 +298,8 @@ pre-commit run --all-files
 # Release ceremony (use Git Bash or WSL on Windows)
 # ./scripts/release.sh
 # Or manually: uv run cz bump --changelog; git push; git push --tags
+# cz bump auto-updates: pyproject.toml, src/kinetic/__init__.py, frontend/package.json
+# LandingPage.tsx imports version from package.json at build time — no manual edits needed
 ```
 
 ---

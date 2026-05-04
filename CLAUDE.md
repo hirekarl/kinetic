@@ -282,7 +282,7 @@ The ceremony script:
 1. Validates all commits since the last tag follow the spec
 2. Shows a dry-run preview of the version bump and new CHANGELOG entries
 3. Prompts for confirmation
-4. Runs `cz bump --changelog` (bumps version in `pyproject.toml` + `__init__.py`, updates `CHANGELOG.md`, creates release commit + tag)
+4. Runs `cz bump --changelog` (bumps version in `pyproject.toml`, `src/kinetic/__init__.py`, and `frontend/package.json` — all three are listed in `version_files` in `pyproject.toml`; updates `CHANGELOG.md`; creates release commit + tag). `frontend/src/components/LandingPage.tsx` imports version from `package.json` at build time, so the landing page stays in sync automatically with no manual edits.
 5. Prompts to push commit and tag
 
 ---
