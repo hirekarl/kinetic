@@ -75,44 +75,62 @@ export function useChat(token: string | null): UseChatReturn {
     accumulatedRef.current = '';
 
     const timestamp = new Date().toISOString();
+    let streamCompleted = false;
 
-    void streamCheckin(
-      content,
-      messages,
-      token ?? undefined,
-      (result) => {
-        setHealth(result);
-        setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
-      },
-      (text) => {
-        accumulatedRef.current += text;
-        setStreamingContent(accumulatedRef.current);
-      },
-      (done: StreamDonePayload) => {
-        setIsLoading(false);
-        setStreamingContent(null);
-        setLastMessage(null);
-        if (accumulatedRef.current) {
+    void Promise.resolve(
+      streamCheckin(
+        content,
+        messages,
+        token ?? undefined,
+        (result) => {
+          setHealth(result);
+          setAgentLog((prev) => [buildAgentLogEntry(content, result, timestamp), ...prev]);
+        },
+        (text) => {
+          accumulatedRef.current += text;
+          setStreamingContent(accumulatedRef.current);
+        },
+        (done: StreamDonePayload) => {
+          streamCompleted = true;
+          setIsLoading(false);
+          setStreamingContent(null);
+          setLastMessage(null);
+          if (accumulatedRef.current) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: 'system',
+                content: accumulatedRef.current,
+                agent: (done.responding_agent as RespondingAgent | null) ?? 'liaison',
+              },
+            ]);
+          }
+        },
+        (detail: string) => {
+          streamCompleted = true;
+          setIsLoading(false);
+          setStreamingContent(null);
+          setError(detail);
           setMessages((prev) => [
             ...prev,
-            {
-              role: 'system',
-              content: accumulatedRef.current,
-              agent: (done.responding_agent as RespondingAgent | null) ?? 'liaison',
-            },
+            { role: 'system', content: `Check-in could not be processed. ${detail}` },
           ]);
         }
-      },
-      (detail: string) => {
+      )
+    ).finally(() => {
+      if (!streamCompleted) {
         setIsLoading(false);
         setStreamingContent(null);
-        setError(detail);
-        setMessages((prev) => [
-          ...prev,
-          { role: 'system', content: `Check-in could not be processed. ${detail}` },
-        ]);
+        const accumulated = accumulatedRef.current;
+        if (accumulated) {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'system', content: accumulated, agent: 'liaison' as RespondingAgent },
+          ]);
+          accumulatedRef.current = '';
+        }
       }
-    );
+    });
   };
 
   const handleRetry = () => {

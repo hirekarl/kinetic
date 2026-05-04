@@ -121,6 +121,28 @@ describe('useChat', () => {
     consoleSpy.mockRestore();
   });
 
+  it('isLoading clears when stream resolves without done event', async () => {
+    mockFetchHistory.mockResolvedValue({ health: null as never, messages: [] });
+    mockStreamCheckin.mockImplementation(
+      (_c: unknown, _m: unknown, _t: unknown, _oA: unknown, onToken: (t: string) => void) => {
+        onToken('partial response');
+        return Promise.resolve();
+      }
+    );
+
+    const useChat = await getHook();
+    const { result } = renderHook(() => useChat('valid-token'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.handleSendMessage('hello');
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const systemMsgs = result.current.messages.filter((m) => m.role === 'system');
+    expect(systemMsgs[systemMsgs.length - 1]?.content).toBe('partial response');
+  });
+
   it('handleSendMessage passes undefined token when hook token is null', async () => {
     mockStreamCheckin.mockImplementation(() => Promise.resolve());
     mockFetchHistory.mockResolvedValue({ health: null as never, messages: [] });
