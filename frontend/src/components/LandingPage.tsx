@@ -169,12 +169,7 @@ export function LandingPage() {
             Access Mission Control →
           </Link>
         </div>
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-500">
-            3 triage items · 2 domains active
-          </span>
-        </div>
+
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-20">
