@@ -221,8 +221,9 @@ npm run e2e                      # Playwright e2e + axe audits (needs dev server
 npm run build                    # production build
 npm run brand                    # generate brand asset PNGs → assets/brand/ + frontend/public/
 
-# ── Pre-commit ────────────────────────────────────────────────────────────
+# ── Pre-commit + post-pull hooks ─────────────────────────────────────────
 pre-commit install               # install hooks (run once after cloning)
+git config core.hooksPath .githooks  # enable auto-sync hooks (run once after cloning)
 pre-commit run --all-files       # run all hooks manually
 
 # ── Dependency management (uv) ────────────────────────────────────────────

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Fires after `git pull --rebase` brings in new commits.
+# Delegates to post-merge so the same lockfile checks apply.
+
+case "$1" in
+  rebase) exec "$(dirname "$0")/post-merge" ;;
+esac

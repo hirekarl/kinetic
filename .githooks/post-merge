@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Runs after `git pull` (merge strategy).
+# Mirrored by post-rewrite for rebase pulls.
+# Only reinstalls when the relevant lockfile actually changed.
+#
+# Security notes:
+#   - uv sync --frozen: refuses to proceed if uv.lock is out of sync; never
+#     silently resolves to a different set of packages than what was committed
+#   - npm ci: verifies package-lock.json integrity hashes; fails loudly on
+#     any mismatch; never upgrades packages beyond what the lockfile specifies
+
+set -uo pipefail
+
+changed=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null || true)
+
+[ -z "$changed" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+if echo "$changed" | grep -qE "(^|/)uv\.lock$|(^|/)pyproject\.toml$"; then
+  echo "⟳  Python deps changed — running uv sync --frozen"
+  uv sync --frozen || echo "⚠  uv sync failed — run manually"
+fi
+
+if echo "$changed" | grep -qE "(^|/)package-lock\.json$|(^|/)package\.json$"; then
+  echo "⟳  Node deps changed — running npm ci"
+  (cd "$root/frontend" && npm ci) || echo "⚠  npm ci failed — run manually"
+fi

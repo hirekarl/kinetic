@@ -262,9 +262,10 @@ npm run lint
 npm run e2e
 npm run brand                  # generate brand asset PNGs → assets/brand/ + frontend/public/
 
-# Pre-commit
-pre-commit install
-pre-commit run --all-files
+# Pre-commit + post-pull hooks
+pre-commit install               # install hooks (run once after cloning)
+git config core.hooksPath .githooks  # enable auto-sync hooks (run once after cloning)
+pre-commit run --all-files       # run all hooks manually
 
 # Release ceremony
 ./scripts/release.sh
@@ -291,9 +292,10 @@ npm run lint
 npm run e2e
 npm run brand                  # generate brand asset PNGs → assets/brand/ + frontend/public/
 
-# Pre-commit
-pre-commit install
-pre-commit run --all-files
+# Pre-commit + post-pull hooks
+pre-commit install               # install hooks (run once after cloning)
+git config core.hooksPath .githooks  # enable auto-sync hooks (run once after cloning)
+pre-commit run --all-files       # run all hooks manually
 
 # Release ceremony (use Git Bash or WSL on Windows)
 # ./scripts/release.sh

@@ -1,0 +1,24 @@
+# Normalize all text files to LF in the repository.
+# On checkout, Windows gets LF too (no CRLF conversion).
+* text=auto eol=lf
+
+# Explicitly binary — never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.mp4 binary
+*.webm binary
+*.mov binary
+*.srt binary
