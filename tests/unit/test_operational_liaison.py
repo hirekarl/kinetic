@@ -440,8 +440,8 @@ async def test_process_history_capped_at_window() -> None:
 
 
 @pytest.mark.unit
-async def test_process_history_maps_system_role_to_assistant() -> None:
-    """'system' role in history maps to 'assistant' for the OpenAI-compatible messages API."""
+async def test_process_history_maps_system_role_to_model() -> None:
+    """Non-user history roles are passed to Gemini as 'model' (Gemini rejects 'assistant')."""
     history = [{"role": "system", "content": "Prior liaison response."}]
     with _patch_liaison() as mock_client:
         await _liaison().process(
@@ -455,7 +455,7 @@ async def test_process_history_maps_system_role_to_assistant() -> None:
     messages = call_args.kwargs["messages"]
     history_turns = [m for m in messages if "Prior liaison response" in m.get("content", "")]
     assert history_turns
-    assert history_turns[0]["role"] == "assistant"
+    assert history_turns[0]["role"] == "model"
 
 
 # ── Constructor guard ─────────────────────────────────────────────────────────

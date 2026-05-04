@@ -29,6 +29,7 @@ from kinetic.models.outputs import (
 
 log = structlog.get_logger()
 
+_MODEL = "gemini-2.5-flash"
 _HISTORY_WINDOW = 10  # max prior messages forwarded to the LLM
 _METADATA_KEYWORDS: frozenset[str] = frozenset(
     {"pause", "break", "no contact", "done with", "completed", "finished"}
@@ -88,7 +89,7 @@ class OperationalLiaison:
             raise OSError("GEMINI_API_KEY is not set for OperationalLiaison")
         self._raw_client = genai.Client(api_key=api_key)
         self.client = instructor.from_genai(
-            client=genai.Client(api_key=api_key),
+            client=self._raw_client,
             mode=instructor.Mode.GENAI_STRUCTURED_OUTPUTS,
         )
 
@@ -116,19 +117,24 @@ class OperationalLiaison:
             logistics_status=logistics_status,
             relational_status=relational_status,
         )
-        log.info("llm.call.start", model="gemini-2.5-flash")
+        # Gemini requires "model" role; Instructor does not translate "assistant" automatically
+        gemini_messages = [
+            {**msg, "role": "model" if msg["role"] == "assistant" else msg["role"]}
+            for msg in messages
+        ]
+        log.info("llm.call.start", model=_MODEL)
         try:
             result = LiaisonResponse.model_validate(
                 self.client.chat.completions.create(
-                    model="gemini-2.5-flash",
-                    messages=messages,
+                    model=_MODEL,
+                    messages=gemini_messages,
                     response_model=LiaisonResponse,
                 ).model_dump()
             )
-            log.info("llm.call.done", model="gemini-2.5-flash")
+            log.info("llm.call.done", model=_MODEL)
             return result
         except Exception as e:
-            log.error("llm.call.error", model="gemini-2.5-flash", exc=str(e))
+            log.error("llm.call.error", model=_MODEL, exc=str(e))
             return LiaisonResponse(text=f"[SYSTEM ERROR] Liaison processing failure: {e}")
 
     def _build_prompt_parts(
@@ -245,27 +251,26 @@ class OperationalLiaison:
             relational_status=relational_status,
         )
         # Convert OpenAI-style messages to genai content format (skip system → system_instruction)
-        genai_contents: list[dict[str, Any]] = []
+        genai_contents: list[types.Content] = []
         for msg in openai_messages:
             if msg["role"] == "system":
                 continue
             role = "user" if msg["role"] == "user" else "model"
-            genai_contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+            genai_contents.append(
+                types.Content(role=role, parts=[types.Part(text=msg["content"])])
+            )
 
-        config = types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            response_mime_type="text/plain",
-        )
-        log.info("llm.stream.start", model="gemini-2.5-flash")
+        config = types.GenerateContentConfig(system_instruction=system_prompt)
+        log.info("llm.stream.start", model=_MODEL)
         stream = await self._raw_client.aio.models.generate_content_stream(
-            model="gemini-2.5-flash",
+            model=_MODEL,
             contents=genai_contents,
             config=config,
         )
         async for chunk in stream:
             if chunk.text:
                 yield chunk.text
-        log.info("llm.stream.done", model="gemini-2.5-flash")
+        log.info("llm.stream.done", model=_MODEL)
 
     async def extract_metadata(self, streamed_text: str, message: str) -> LiaisonMetadata:
         """Extract responding_agent / contact_pauses / task_completions from streamed text.
@@ -275,11 +280,11 @@ class OperationalLiaison:
         """
         if not any(kw in message.lower() for kw in _METADATA_KEYWORDS):
             return LiaisonMetadata()
-        log.info("llm.metadata.start", model="gemini-2.5-flash")
+        log.info("llm.metadata.start", model=_MODEL)
         try:
             result = LiaisonMetadata.model_validate(
                 self.client.chat.completions.create(
-                    model="gemini-2.5-flash",
+                    model=_MODEL,
                     messages=[
                         {
                             "role": "user",
@@ -293,7 +298,7 @@ class OperationalLiaison:
                     response_model=LiaisonMetadata,
                 ).model_dump()
             )
-            log.info("llm.metadata.done", model="gemini-2.5-flash")
+            log.info("llm.metadata.done", model=_MODEL)
             return result
         except Exception:
             return LiaisonMetadata()
