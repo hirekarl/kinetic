@@ -132,13 +132,13 @@ describe('useChat', () => {
 
     const useChat = await getHook();
     const { result } = renderHook(() => useChat('valid-token'));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => { expect(result.current.isLoading).toBe(false); });
 
     act(() => {
       result.current.handleSendMessage('hello');
     });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => { expect(result.current.isLoading).toBe(false); });
     const systemMsgs = result.current.messages.filter((m) => m.role === 'system');
     expect(systemMsgs[systemMsgs.length - 1]?.content).toBe('partial response');
   });

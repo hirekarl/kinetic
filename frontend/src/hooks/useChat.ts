@@ -125,7 +125,7 @@ export function useChat(token: string | null): UseChatReturn {
         if (accumulated) {
           setMessages((prev) => [
             ...prev,
-            { role: 'system', content: accumulated, agent: 'liaison' as RespondingAgent },
+            { role: 'system', content: accumulated, agent: 'liaison' satisfies RespondingAgent },
           ]);
           accumulatedRef.current = '';
         }

@@ -149,7 +149,7 @@ describe('OnboardingModal', () => {
     const dialog = screen.getByRole('dialog');
     within(dialog)
       .getAllByRole('button')
-      .forEach((b) => b.remove());
+      .forEach((b) => { b.remove(); });
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(onClose).not.toHaveBeenCalled();
   });
