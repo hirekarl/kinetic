@@ -106,7 +106,7 @@ src/kinetic/
     bio_archivist.py       sleep/nutrition tracking + burnout forecast
     logistics_fixer.py     task triage + outsourcing ROI
     relational_diplomat.py connection margin + interaction sprints
-    operational_liaison.py Instructor-based structured router; LiaisonResponse + LiaisonMetadata + ContactPauseDirective models; _build_prompt_parts() shared helper; stream_text() async generator (raw token streaming via google-genai); extract_metadata() lightweight post-stream Instructor call; _METADATA_KEYWORDS keyword guard; imports context formatters from liaison_context.py
+    operational_liaison.py Instructor-based structured router; LiaisonResponse + LiaisonMetadata + ContactPauseDirective models; _build_prompt_parts() shared helper; stream_text() async generator (raw token streaming via google-genai, uses types.Content/types.Part); extract_metadata() lightweight post-stream Instructor call; _METADATA_KEYWORDS keyword guard; process() converts OpenAI 'assistant' roles to Gemini-native 'model' before dispatch; single genai.Client shared between raw and Instructor clients; imports context formatters from liaison_context.py
     liaison_context.py     context formatter functions for _build_prompt_parts(): format_bio_status, format_logistics_status, format_relational_status, format_behavioral_summary, format_profiles
   orchestrator/
     lead.py                get_db(tenant) dual-mode DB factory; _merge_history() payload hydration; _AgentRunResult dataclass + _run_agents() async helper (fires all 3 agents in parallel, aggregates results, fetches behavioral context — shared by orchestrate() and orchestrate_stream()); _fire_pattern_detection() background task helper; orchestrate() blocking path; orchestrate_stream() SSE generator yielding agents/token/done events; get_current_state(); imports triage helpers from triage.py
@@ -123,8 +123,8 @@ src/kinetic/
     postgres_client.py     asyncpg PostgreSQL client: same 15-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series(), insert_checkin_at()
   services/
     __init__.py            package init
-    pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task
-    digest_generator.py    generate_digest(): 6h in-memory cache per tenant; empty-history guard; Gemini prose summary; exception-safe (returns [DIGEST ERROR] string on failure)
+    pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task; uses await client.aio.models.generate_content() (async-safe, non-blocking)
+    digest_generator.py    generate_digest(): 6h in-memory cache per tenant; empty-history guard; Gemini prose summary via await client.aio.models.generate_content() (async-safe); exception-safe (returns [DIGEST ERROR] string on failure)
     simulate.py            simulate_week(): inserts 5 pre-scripted check-in snapshots with timestamps spread across 7 historical days for demo population
 
 tests/

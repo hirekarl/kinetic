@@ -4,6 +4,15 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [Unreleased]
+
+### Fixed
+- **liaison**: `process()` now converts OpenAI `assistant` role to Gemini-native `model` before dispatch — previously caused `Unsupported role: assistant` errors when conversation history was present
+- **pattern_detector**: switched from synchronous `client.models.generate_content()` to `await client.aio.models.generate_content()` — sync call was blocking the asyncio event loop
+- **digest_generator**: same async fix as pattern_detector
+- **operational_liaison**: single `genai.Client` instance shared between raw and Instructor clients (was creating two); `stream_text()` now uses typed `types.Content`/`types.Part` objects instead of raw dicts; redundant `response_mime_type="text/plain"` removed from `GenerateContentConfig`
+- **landing**: removed hardcoded "3 triage items · 2 domains active" status badge — static copy implied live per-tenant data in a multi-tenant application
+
 ## v1.9.1 (2026-05-04)
 
 ### Fix
