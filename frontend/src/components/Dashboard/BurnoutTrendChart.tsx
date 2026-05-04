@@ -12,7 +12,6 @@ interface BurnoutTrendChartProps {
 
 function computeSlope(series: number[]): number {
   const n = series.length;
-  if (n < 2) return 0;
   const meanX = (n - 1) / 2;
   const meanY = series.reduce((sum, y) => sum + y, 0) / n;
   let num = 0;
@@ -21,7 +20,7 @@ function computeSlope(series: number[]): number {
     num += (i - meanX) * ((series[i] ?? 0) - meanY);
     den += (i - meanX) ** 2;
   }
-  return den === 0 ? 0 : num / den;
+  return num / den;
 }
 
 function strokeColor(slope: number): string {

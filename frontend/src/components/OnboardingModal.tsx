@@ -65,9 +65,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => 
         )
       );
       if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
       if (e.shiftKey) {
         if (document.activeElement === first) {
           e.preventDefault();
@@ -94,8 +93,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
   const stepLabel = `Step ${String(step + 1)} of ${String(STEPS.length)}`;
-
-  if (!current) return null;
 
   return (
     // Outer container: centers the dialog and provides the visual backdrop.

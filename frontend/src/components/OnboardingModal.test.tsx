@@ -144,6 +144,16 @@ describe('OnboardingModal', () => {
     expect(document.activeElement).toBe(buttons[buttons.length - 1]);
   });
 
+  it('Tab handler is a no-op when the dialog has no focusable children', () => {
+    render(<OnboardingModal onClose={onClose} />);
+    const dialog = screen.getByRole('dialog');
+    within(dialog)
+      .getAllByRole('button')
+      .forEach((b) => b.remove());
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('step 2 shows all three agent names', () => {
     render(<OnboardingModal onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
