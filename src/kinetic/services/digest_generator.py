@@ -11,6 +11,7 @@ from kinetic.models.outputs import BehavioralProfile, BehavioralSummary, DigestR
 
 log = structlog.get_logger()
 
+_MODEL = "gemini-2.5-flash"
 _CACHE_TTL_HOURS = 6
 _digest_cache: dict[str, DigestResponse] = {}
 
@@ -50,8 +51,8 @@ async def generate_digest(
         resolved_key = api_key or os.environ.get("GEMINI_API_KEY", "")
         client = genai.Client(api_key=resolved_key)
         prompt = _build_digest_prompt(summary, profiles, history)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
+        response = await client.aio.models.generate_content(
+            model=_MODEL,
             contents=prompt,
         )
         text = (response.text or "").strip() or _NO_DATA_SUMMARY

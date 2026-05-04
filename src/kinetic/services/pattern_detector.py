@@ -13,6 +13,7 @@ from kinetic.models.outputs import BehavioralProfile, BehavioralSummary
 
 log = structlog.get_logger()
 
+_MODEL = "gemini-2.5-flash"
 _GUARD_HOURS = 20
 _MIN_DAYS = 3
 _MAX_PATTERNS = 5
@@ -47,8 +48,8 @@ async def detect_and_update_patterns(
         client = genai.Client(api_key=key)
 
         prompt = _build_prompt(behavioral_summary, current_profiles)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
+        response = await client.aio.models.generate_content(
+            model=_MODEL,
             contents=prompt,
         )
 

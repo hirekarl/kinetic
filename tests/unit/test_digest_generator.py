@@ -49,7 +49,7 @@ def _mock_genai(text: str = "Your 14-day digest summary.") -> MagicMock:
     mock_response = MagicMock()
     mock_response.text = text
     mock_cls = MagicMock()
-    mock_cls.return_value.models.generate_content.return_value = mock_response
+    mock_cls.return_value.aio.models.generate_content = AsyncMock(return_value=mock_response)
     return mock_cls
 
 
@@ -68,7 +68,7 @@ async def test_generate_digest_calls_gemini_and_returns_response() -> None:
     assert isinstance(result, DigestResponse)
     assert result.summary == "Your 14-day digest."
     assert isinstance(result.generated_at, datetime)
-    mock_cls.return_value.models.generate_content.assert_called_once()
+    mock_cls.return_value.aio.models.generate_content.assert_called_once()
 
 
 @pytest.mark.unit
@@ -102,7 +102,7 @@ async def test_generate_digest_cache_hit_skips_gemini() -> None:
         result = await dg.generate_digest(db, "test-key", "tenant-c")
 
     assert result.summary == "cached"
-    mock_cls.return_value.models.generate_content.assert_not_called()
+    mock_cls.return_value.aio.models.generate_content.assert_not_called()
 
 
 @pytest.mark.unit
@@ -118,7 +118,7 @@ async def test_generate_digest_cache_miss_after_ttl_calls_gemini() -> None:
         result = await dg.generate_digest(db, "test-key", "tenant-d")
 
     assert result.summary == "fresh digest"
-    mock_cls.return_value.models.generate_content.assert_called_once()
+    mock_cls.return_value.aio.models.generate_content.assert_called_once()
 
 
 @pytest.mark.unit
@@ -135,7 +135,7 @@ async def test_generate_digest_force_true_bypasses_fresh_cache() -> None:
         result = await dg.generate_digest(db, "test-key", "tenant-e", force=True)
 
     assert result.summary == "forced fresh"
-    mock_cls.return_value.models.generate_content.assert_called_once()
+    mock_cls.return_value.aio.models.generate_content.assert_called_once()
 
 
 @pytest.mark.unit
@@ -167,7 +167,7 @@ async def test_generate_digest_empty_data_returns_canned_response() -> None:
         result = await dg.generate_digest(db, "test-key", "tenant-g")
 
     assert "No check-in data" in result.summary
-    mock_cls.return_value.models.generate_content.assert_not_called()
+    mock_cls.return_value.aio.models.generate_content.assert_not_called()
 
 
 @pytest.mark.unit
@@ -180,7 +180,7 @@ async def test_generate_digest_has_history_but_no_bio_still_calls_gemini() -> No
         result = await dg.generate_digest(db, "test-key", "tenant-h")
 
     assert result.summary == "digest from history only"
-    mock_cls.return_value.models.generate_content.assert_called_once()
+    mock_cls.return_value.aio.models.generate_content.assert_called_once()
 
 
 # ── error recovery ────────────────────────────────────────────────────────────
@@ -191,7 +191,9 @@ async def test_generate_digest_gemini_exception_returns_error_string() -> None:
     """A Gemini exception is caught; result summary begins with [DIGEST ERROR]."""
     db = _make_db()
     mock_cls = MagicMock()
-    mock_cls.return_value.models.generate_content.side_effect = RuntimeError("timeout")
+    mock_cls.return_value.aio.models.generate_content = AsyncMock(
+        side_effect=RuntimeError("timeout")
+    )
 
     with patch("kinetic.services.digest_generator.genai.Client", mock_cls):
         result = await dg.generate_digest(db, "test-key", "tenant-i")
@@ -206,7 +208,9 @@ async def test_generate_digest_gemini_exception_does_not_raise() -> None:
     """A Gemini exception never propagates — generate_digest always returns DigestResponse."""
     db = _make_db()
     mock_cls = MagicMock()
-    mock_cls.return_value.models.generate_content.side_effect = OSError("network")
+    mock_cls.return_value.aio.models.generate_content = AsyncMock(
+        side_effect=OSError("network")
+    )
 
     with patch("kinetic.services.digest_generator.genai.Client", mock_cls):
         result = await dg.generate_digest(db, "test-key", "tenant-j")

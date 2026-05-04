@@ -109,12 +109,12 @@ async def test_guard_passes_when_profiles_are_old() -> None:
     """Gemini IS called when days_analyzed >= 3 and all profiles are > 20h old."""
     db = _mock_db()
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response([])
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response([]))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(days=5), [_old_profile()], api_key="test-key")
 
-    mock_instance.models.generate_content.assert_called_once()
+    mock_instance.aio.models.generate_content.assert_called_once()
 
 
 # ── Happy path tests ──────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ async def test_one_valid_pattern_upserted() -> None:
         "evidence": {"avg_sleep": 6.2},
     }
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response([pattern])
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response([pattern]))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
@@ -150,7 +150,7 @@ async def test_two_valid_patterns_upserted() -> None:
         {"profile_key": "work_boundary", "insight": "Late nights.", "evidence": {"count": 4}},
     ]
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response(patterns)
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response(patterns))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
@@ -169,7 +169,7 @@ async def test_existing_profile_key_still_upserted() -> None:
         "evidence": {"avg_sleep": 6.0},
     }
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response([pattern])
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response([pattern]))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(), [existing], api_key="test-key")
@@ -185,7 +185,7 @@ async def test_gemini_exception_does_not_propagate() -> None:
     """If Gemini raises, the function catches and returns — never re-raises."""
     db = _mock_db()
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.side_effect = RuntimeError("API down")
+    mock_instance.aio.models.generate_content = AsyncMock(side_effect=RuntimeError("API down"))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         # Must not raise
@@ -201,7 +201,7 @@ async def test_malformed_json_does_not_propagate() -> None:
     mock_instance = MagicMock()
     bad_response = MagicMock()
     bad_response.text = "This is not JSON at all { broken"
-    mock_instance.models.generate_content.return_value = bad_response
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=bad_response)
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
@@ -218,7 +218,7 @@ async def test_wrong_shape_skips_bad_entries_upserts_good() -> None:
         {"profile_key": "valid_pattern", "insight": "Good one.", "evidence": {}},
     ]
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response(patterns)
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response(patterns))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         await detect_and_update_patterns(db, _summary(), [], api_key="test-key")
@@ -238,7 +238,7 @@ async def test_upsert_exception_does_not_propagate() -> None:
         "evidence": {},
     }
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response([pattern])
+    mock_instance.aio.models.generate_content = AsyncMock(return_value=_gemini_response([pattern]))
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):
         # Must not raise
@@ -312,8 +312,10 @@ async def test_non_dict_entry_in_response_is_skipped() -> None:
     """A non-dict entry in Gemini's JSON array is skipped via _is_valid_entry."""
     db = _mock_db()
     mock_instance = MagicMock()
-    mock_instance.models.generate_content.return_value = _gemini_response(
-        ["not_a_dict", {"profile_key": "valid", "insight": "Good.", "evidence": {}}]
+    mock_instance.aio.models.generate_content = AsyncMock(
+        return_value=_gemini_response(
+            ["not_a_dict", {"profile_key": "valid", "insight": "Good.", "evidence": {}}]
+        )
     )
 
     with patch("kinetic.services.pattern_detector.genai.Client", return_value=mock_instance):

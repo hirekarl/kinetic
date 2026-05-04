@@ -11,6 +11,8 @@ from kinetic.models.inputs import CheckInPayload
 
 log = structlog.get_logger()
 
+_MODEL = "gemini-2.5-flash"
+
 
 async def parse_checkin(
     message: str, history: list[dict[str, str]] | None = None
@@ -46,14 +48,14 @@ async def parse_checkin(
         messages.extend(history)
     messages.append({"role": "user", "content": message})
 
-    log.info("llm.parse.start", model="gemini-2.5-flash")
+    log.info("llm.parse.start", model=_MODEL)
     result = cast(
         CheckInPayload,
         client.chat.completions.create(
-            model="gemini-2.5-flash",
+            model=_MODEL,
             messages=messages,
             response_model=CheckInPayload,
         ),
     )
-    log.info("llm.parse.done", model="gemini-2.5-flash")
+    log.info("llm.parse.done", model=_MODEL)
     return result
