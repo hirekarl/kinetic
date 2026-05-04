@@ -101,6 +101,31 @@ export async function completeTask(taskName: string, token?: string): Promise<vo
 }
 
 /**
+ * Marks a single subtask as completed within the named parent task.
+ *
+ * @param taskName - The parent task name.
+ * @param subtaskName - The subtask step to mark complete.
+ * @param token - Optional JWT for authenticated requests.
+ */
+export async function completeSubtask(
+  taskName: string,
+  subtaskName: string,
+  token?: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/tasks/${encodeURIComponent(taskName)}/subtasks`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+      body: JSON.stringify({ subtask: subtaskName }),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to complete subtask '${subtaskName}': ${response.statusText}`);
+  }
+}
+
+/**
  * Retrieves the most recent check-in snapshot and reconstructed message history.
  *
  * @param token - Optional JWT for authenticated requests.

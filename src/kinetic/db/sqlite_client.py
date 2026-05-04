@@ -179,10 +179,14 @@ class SqliteClient:
                         VALUES (?, ?, ?, ?, ?)
                         ON CONFLICT(name) DO UPDATE SET
                             priority=excluded.priority,
-                            subtasks=excluded.subtasks,
-                            completed_subtasks=excluded.completed_subtasks,
+                            subtasks=CASE WHEN excluded.subtasks != '[]'
+                                         THEN excluded.subtasks ELSE tasks.subtasks END,
+                            completed_subtasks=CASE WHEN excluded.completed_subtasks != '[]'
+                                                    THEN excluded.completed_subtasks
+                                                    ELSE tasks.completed_subtasks END,
                             status=excluded.status
                         """,
+                        # '[]' is the canonical json.dumps([]) output — this comparison is stable.
                         (
                             task.name,
                             task.priority,
@@ -243,10 +247,14 @@ class SqliteClient:
                         VALUES (?, ?, ?, ?, ?)
                         ON CONFLICT(name) DO UPDATE SET
                             priority=excluded.priority,
-                            subtasks=excluded.subtasks,
-                            completed_subtasks=excluded.completed_subtasks,
+                            subtasks=CASE WHEN excluded.subtasks != '[]'
+                                         THEN excluded.subtasks ELSE tasks.subtasks END,
+                            completed_subtasks=CASE WHEN excluded.completed_subtasks != '[]'
+                                                    THEN excluded.completed_subtasks
+                                                    ELSE tasks.completed_subtasks END,
                             status=excluded.status
                         """,
+                        # '[]' is the canonical json.dumps([]) output — this comparison is stable.
                         (
                             task.name,
                             task.priority,
@@ -604,6 +612,33 @@ class SqliteClient:
             if row is None:
                 raise KeyError(task_name)
             await db.execute("UPDATE tasks SET status = 'completed' WHERE name = ?", (task_name,))
+            await db.commit()
+
+    async def complete_subtask(self, task_name: str, subtask_name: str) -> None:
+        """Append subtask_name to completed_subtasks. Raises KeyError / ValueError as appropriate."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._init_db(db)
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT subtasks, completed_subtasks, status FROM tasks WHERE name = ?",
+                (task_name,),
+            ) as cur:
+                row = await cur.fetchone()
+            if row is None:
+                raise KeyError(task_name)
+            subtasks: list[str] = json.loads(row["subtasks"])
+            completed: list[str] = json.loads(row["completed_subtasks"])
+            if subtask_name not in subtasks:
+                raise ValueError(subtask_name)
+            if subtask_name not in completed:
+                completed.append(subtask_name)
+            new_status = (
+                "completed" if subtasks and set(subtasks) <= set(completed) else row["status"]
+            )
+            await db.execute(
+                "UPDATE tasks SET completed_subtasks=?, status=? WHERE name=?",
+                (json.dumps(completed), new_status, task_name),
+            )
             await db.commit()
 
     async def clear_database(self) -> None:

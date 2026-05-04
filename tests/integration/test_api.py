@@ -125,6 +125,70 @@ def test_complete_task_returns_409_for_already_completed() -> None:
     assert response.status_code == 409
 
 
+# ── PATCH /api/tasks/{task_name}/subtasks ─────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_patch_subtask_returns_200_on_success() -> None:
+    """PATCH /api/tasks/{task_name}/subtasks returns 200 with subtask_completed status."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_subtask = AsyncMock(return_value=None)
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/laundry/subtasks", json={"subtask": "sort"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "subtask_completed"
+    assert body["task_name"] == "laundry"
+    assert body["subtask"] == "sort"
+
+
+@pytest.mark.unit
+def test_patch_subtask_returns_404_for_unknown_task() -> None:
+    """PATCH /api/tasks/{task_name}/subtasks returns 404 when task is not found."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_subtask = AsyncMock(side_effect=KeyError("ghost"))
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/ghost/subtasks", json={"subtask": "step1"})
+
+    assert response.status_code == 404
+
+
+@pytest.mark.unit
+def test_patch_subtask_returns_422_for_unknown_subtask() -> None:
+    """PATCH /api/tasks/{task_name}/subtasks returns 422 when subtask not in task."""
+    with patch("kinetic.api.routes.get_db") as mock_get_db:
+        mock_db = MagicMock()
+        mock_db.complete_subtask = AsyncMock(side_effect=ValueError("iron"))
+        mock_get_db.return_value = mock_db
+
+        response = client.patch("/api/tasks/laundry/subtasks", json={"subtask": "iron"})
+
+    assert response.status_code == 422
+
+
+@pytest.mark.unit
+def test_patch_subtask_requires_auth() -> None:
+    """PATCH /api/tasks/{task_name}/subtasks returns 401 without JWT (auth bypass removed)."""
+    app.dependency_overrides.pop(get_current_tenant, None)
+    try:
+        response = client.patch("/api/tasks/laundry/subtasks", json={"subtask": "sort"})
+        assert response.status_code == 401
+    finally:
+        app.dependency_overrides[get_current_tenant] = lambda: "test"
+
+
+@pytest.mark.unit
+def test_patch_subtask_requires_subtask_body() -> None:
+    """PATCH /api/tasks/{task_name}/subtasks returns 422 when body is missing subtask field."""
+    response = client.patch("/api/tasks/laundry/subtasks", json={})
+    assert response.status_code == 422
+
+
 # ── POST /api/debug/reset ─────────────────────────────────────────────────────
 
 

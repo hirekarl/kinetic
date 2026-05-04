@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { streamCheckin, fetchHistory, completeTask } from '../api/client';
+import { streamCheckin, fetchHistory, completeTask, completeSubtask } from '../api/client';
 import type { AgentLogEntry, StreamDonePayload, SystemHealthPayload } from '../types';
 import type { Message, RespondingAgent } from '../components/ChatPanel';
 import { buildAgentLogEntry } from '../utils/agentLog';
@@ -20,6 +20,7 @@ interface UseChatReturn {
   handleSendMessage: (content: string) => void;
   handleRetry: () => void;
   handleCompleteTask: (taskName: string) => Promise<void>;
+  handleCompleteSubtask: (taskName: string, subtaskName: string) => Promise<void>;
   handleReset: () => Promise<void>;
   setHealth: Dispatch<SetStateAction<SystemHealthPayload | null>>;
   setMessages: Dispatch<SetStateAction<Message[]>>;
@@ -105,6 +106,15 @@ export function useChat(token: string | null): UseChatReturn {
               },
             ]);
           }
+          if (done.task_completions.length > 0 && token) {
+            fetchHistory(token)
+              .then((data) => {
+                setHealth(data.health);
+              })
+              .catch((err: unknown) => {
+                console.error('Failed to refresh health after task completion', err);
+              });
+          }
         },
         (detail: string) => {
           streamCompleted = true;
@@ -152,6 +162,18 @@ export function useChat(token: string | null): UseChatReturn {
     }
   };
 
+  const handleCompleteSubtask = async (taskName: string, subtaskName: string): Promise<void> => {
+    try {
+      await completeSubtask(taskName, subtaskName, token ?? undefined);
+      if (token) {
+        const data = await fetchHistory(token);
+        setHealth(data.health);
+      }
+    } catch (err) {
+      console.error('Failed to complete subtask', err);
+    }
+  };
+
   const handleReset = async (): Promise<void> => {
     if (!confirm('Are you sure you want to wipe all system data? This cannot be undone.')) return;
     try {
@@ -192,6 +214,7 @@ export function useChat(token: string | null): UseChatReturn {
     handleSendMessage,
     handleRetry,
     handleCompleteTask,
+    handleCompleteSubtask,
     handleReset,
     setHealth,
     setMessages,

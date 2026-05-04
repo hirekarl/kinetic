@@ -84,6 +84,31 @@ async def complete_task(
     return {"status": "completed", "task_name": task_name}
 
 
+class CompleteSubtaskRequest(BaseModel):
+    subtask: str
+
+
+@router.patch("/tasks/{task_name}/subtasks")
+async def complete_subtask_route(
+    task_name: str,
+    body: CompleteSubtaskRequest,
+    tenant: str = Depends(get_current_tenant),
+) -> dict[str, str]:
+    """Mark an individual subtask as completed for the authenticated tenant."""
+    db = get_db(tenant)
+    try:
+        await db.complete_subtask(task_name, body.subtask)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=f"Task '{task_name}' not found") from e
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Subtask '{body.subtask}' not found in task '{task_name}'",
+        ) from e
+    log.info("subtask.completed", task_name=task_name, subtask=body.subtask)
+    return {"status": "subtask_completed", "task_name": task_name, "subtask": body.subtask}
+
+
 @router.post("/checkin/stream")
 async def checkin_stream(
     body: CheckInRequest,

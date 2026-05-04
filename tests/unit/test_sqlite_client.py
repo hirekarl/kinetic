@@ -352,6 +352,229 @@ async def test_complete_task_idempotent_for_already_completed(
     assert laundry["status"] == "completed"
 
 
+# ── complete_subtask ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_appends_to_completed_subtasks(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_subtask() adds a subtask name to completed_subtasks."""
+    client = _make_client(tmp_path)
+    task = LogisticsTask(
+        name="laundry",
+        subtasks=["sort", "wash", "dry"],
+        completed_subtasks=[],
+        days_overdue=1,
+    )
+    await client.insert_checkin(CheckInPayload(logistics=LogisticsInput(tasks=[task])), "msg")
+    await client.complete_subtask("laundry", "sort")
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert "sort" in laundry["completed_subtasks"]
+    assert laundry["status"] == "pending"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_is_idempotent(tmp_path: pytest.TempPathFactory) -> None:
+    """complete_subtask() called twice with the same subtask does not duplicate it."""
+    client = _make_client(tmp_path)
+    task = LogisticsTask(
+        name="laundry", subtasks=["sort", "wash"], completed_subtasks=[], days_overdue=1
+    )
+    await client.insert_checkin(CheckInPayload(logistics=LogisticsInput(tasks=[task])), "msg")
+    await client.complete_subtask("laundry", "sort")
+    await client.complete_subtask("laundry", "sort")
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["completed_subtasks"].count("sort") == 1
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_auto_completes_parent_when_all_subtasks_done(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_subtask() sets status='completed' when all subtasks are done."""
+    client = _make_client(tmp_path)
+    task = LogisticsTask(
+        name="laundry", subtasks=["sort", "wash"], completed_subtasks=[], days_overdue=1
+    )
+    await client.insert_checkin(CheckInPayload(logistics=LogisticsInput(tasks=[task])), "msg")
+    await client.complete_subtask("laundry", "sort")
+    await client.complete_subtask("laundry", "wash")
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["status"] == "completed"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_does_not_auto_complete_when_subtasks_empty(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_subtask() does not auto-complete parent when subtasks list is empty."""
+    client = _make_client(tmp_path)
+    # Task with completed_subtasks already set but empty subtasks list
+    task = LogisticsTask(
+        name="report",
+        subtasks=[],
+        completed_subtasks=[],
+        days_overdue=1,
+        status="pending",
+    )
+    await client.insert_checkin(CheckInPayload(logistics=LogisticsInput(tasks=[task])), "msg")
+    # Manually put a subtask name into completed_subtasks to simulate edge case
+    async with aiosqlite.connect(client.db_path) as db:
+        await db.execute(
+            "UPDATE tasks SET completed_subtasks=? WHERE name=?",
+            (json.dumps(["draft"]), "report"),
+        )
+        await db.commit()
+    # Should raise ValueError since "draft" is not in subtasks (which is [])
+    with pytest.raises(ValueError, match="draft"):
+        await client.complete_subtask("report", "draft")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_raises_key_error_for_unknown_task(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_subtask() raises KeyError when task name not in DB."""
+    client = _make_client(tmp_path)
+    async with aiosqlite.connect(client.db_path) as db:
+        await client._init_db(db)
+    with pytest.raises(KeyError, match="ghost"):
+        await client.complete_subtask("ghost", "step1")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_raises_value_error_for_subtask_not_in_task(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """complete_subtask() raises ValueError when subtask name not in task.subtasks."""
+    client = _make_client(tmp_path)
+    task = LogisticsTask(
+        name="laundry", subtasks=["sort", "wash"], completed_subtasks=[], days_overdue=1
+    )
+    await client.insert_checkin(CheckInPayload(logistics=LogisticsInput(tasks=[task])), "msg")
+    with pytest.raises(ValueError, match="iron"):
+        await client.complete_subtask("laundry", "iron")
+
+
+# ── UPSERT preservation (subtasks / completed_subtasks) ─────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_upsert_preserves_subtasks_when_incoming_is_empty(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """insert_checkin does not wipe existing subtasks when new payload has subtasks=[]."""
+    client = _make_client(tmp_path)
+    ts = datetime.now()
+    original = LogisticsTask(
+        name="laundry",
+        subtasks=["sort", "wash", "dry"],
+        completed_subtasks=[],
+        days_overdue=1,
+        priority="medium",
+    )
+    await _seed_checkin(client, CheckInPayload(logistics=LogisticsInput(tasks=[original])), ts)
+
+    # Second check-in: same task name, but LLM returned subtasks=[]
+    sparse = LogisticsTask(name="laundry", subtasks=[], completed_subtasks=[], days_overdue=2)
+    await client.insert_checkin(
+        CheckInPayload(logistics=LogisticsInput(tasks=[sparse])), "laundry again"
+    )
+
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["subtasks"] == ["sort", "wash", "dry"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_upsert_updates_subtasks_when_incoming_is_nonempty(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """insert_checkin overwrites subtasks when the new payload has a non-empty list."""
+    client = _make_client(tmp_path)
+    ts = datetime.now()
+    original = LogisticsTask(name="laundry", subtasks=["old1", "old2"], days_overdue=1)
+    await _seed_checkin(client, CheckInPayload(logistics=LogisticsInput(tasks=[original])), ts)
+
+    updated = LogisticsTask(name="laundry", subtasks=["new1", "new2", "new3"], days_overdue=2)
+    await client.insert_checkin(
+        CheckInPayload(logistics=LogisticsInput(tasks=[updated])), "updated laundry"
+    )
+
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["subtasks"] == ["new1", "new2", "new3"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_upsert_preserves_completed_subtasks_when_incoming_is_empty(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """insert_checkin does not wipe completed_subtasks when new payload has completed_subtasks=[]."""
+    client = _make_client(tmp_path)
+    ts = datetime.now()
+    original = LogisticsTask(
+        name="laundry",
+        subtasks=["sort", "wash", "dry"],
+        completed_subtasks=["sort", "wash"],
+        days_overdue=1,
+    )
+    await _seed_checkin(client, CheckInPayload(logistics=LogisticsInput(tasks=[original])), ts)
+
+    sparse = LogisticsTask(name="laundry", subtasks=[], completed_subtasks=[], days_overdue=2)
+    await client.insert_checkin(
+        CheckInPayload(logistics=LogisticsInput(tasks=[sparse])), "laundry sparse"
+    )
+
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["completed_subtasks"] == ["sort", "wash"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_upsert_updates_completed_subtasks_when_incoming_is_nonempty(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """insert_checkin overwrites completed_subtasks when the new payload has a non-empty list."""
+    client = _make_client(tmp_path)
+    ts = datetime.now()
+    original = LogisticsTask(
+        name="laundry",
+        subtasks=["sort", "wash", "dry"],
+        completed_subtasks=["sort"],
+        days_overdue=1,
+    )
+    await _seed_checkin(client, CheckInPayload(logistics=LogisticsInput(tasks=[original])), ts)
+
+    updated = LogisticsTask(
+        name="laundry",
+        subtasks=["sort", "wash", "dry"],
+        completed_subtasks=["sort", "wash"],
+        days_overdue=2,
+    )
+    await client.insert_checkin(
+        CheckInPayload(logistics=LogisticsInput(tasks=[updated])), "updated progress"
+    )
+
+    tasks = await client.get_all_tasks()
+    laundry = next(t for t in tasks if t["name"] == "laundry")
+    assert laundry["completed_subtasks"] == ["sort", "wash"]
+
+
 # ── insert_checkin (relational branch) ──────────────────────────────────────
 
 

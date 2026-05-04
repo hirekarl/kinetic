@@ -6,6 +6,7 @@ import type { StreamDonePayload } from '../types';
 vi.mock('../api/client', () => ({
   fetchHistory: vi.fn(),
   completeTask: vi.fn(),
+  completeSubtask: vi.fn(),
   streamCheckin: vi.fn(),
   fetchCheckin: vi.fn(),
   login: vi.fn(),
@@ -132,13 +133,17 @@ describe('useChat', () => {
 
     const useChat = await getHook();
     const { result } = renderHook(() => useChat('valid-token'));
-    await waitFor(() => { expect(result.current.isLoading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
 
     act(() => {
       result.current.handleSendMessage('hello');
     });
 
-    await waitFor(() => { expect(result.current.isLoading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
     const systemMsgs = result.current.messages.filter((m) => m.role === 'system');
     expect(systemMsgs[systemMsgs.length - 1]?.content).toBe('partial response');
   });
@@ -255,5 +260,138 @@ describe('useChat', () => {
     expect(result.current.health).toBeNull();
     expect(result.current.messages).toHaveLength(0);
     expect(result.current.error).toBeNull();
+  });
+
+  it('done event with task_completions triggers fetchHistory refresh', async () => {
+    const updatedHealth = { overall_status: 'green', triage_items: [] } as never;
+    mockFetchHistory
+      .mockResolvedValueOnce({ health: null as never, messages: [] }) // mount hydration
+      .mockResolvedValueOnce({ health: updatedHealth, messages: [] }); // post-done refresh
+
+    const doneDatum: StreamDonePayload = {
+      responding_agent: 'logistics_fixer',
+      contact_pauses: [],
+      task_completions: ['laundry'],
+      active_pauses: [],
+      behavioral_profiles: [],
+      behavioral_summary: null,
+    };
+    mockStreamCheckin.mockImplementation(
+      (
+        _c: unknown,
+        _m: unknown,
+        _t: unknown,
+        _oA: unknown,
+        onToken: (t: string) => void,
+        onDone: (d: StreamDonePayload) => void
+      ) => {
+        onToken('Laundry is done!');
+        onDone(doneDatum);
+        return Promise.resolve();
+      }
+    );
+
+    const useChat = await getHook();
+    const { result } = renderHook(() => useChat('valid-token'));
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleSendMessage('laundry is done');
+    });
+
+    await waitFor(() => {
+      expect(result.current.health).toEqual(updatedHealth);
+    });
+    expect(mockFetchHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('handleCompleteSubtask calls completeSubtask API and refreshes health', async () => {
+    const updatedHealth = { overall_status: 'green' } as never;
+    mockFetchHistory
+      .mockResolvedValueOnce({ health: null as never, messages: [] })
+      .mockResolvedValueOnce({ health: updatedHealth, messages: [] });
+    vi.mocked(client.completeSubtask).mockResolvedValue(undefined);
+
+    const useChat = await getHook();
+    const { result } = renderHook(() => useChat('valid-token'));
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(() => result.current.handleCompleteSubtask('laundry', 'sort'));
+
+    expect(vi.mocked(client.completeSubtask)).toHaveBeenCalledWith(
+      'laundry',
+      'sort',
+      'valid-token'
+    );
+    expect(result.current.health).toEqual(updatedHealth);
+  });
+
+  it('handleCompleteSubtask logs error on failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    mockFetchHistory.mockResolvedValue({ health: null as never, messages: [] });
+    vi.mocked(client.completeSubtask).mockRejectedValue(new Error('api error'));
+
+    const useChat = await getHook();
+    const { result } = renderHook(() => useChat('valid-token'));
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(() => result.current.handleCompleteSubtask('laundry', 'sort'));
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/complete subtask/i),
+      expect.any(Error)
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('done event without task_completions does not trigger extra fetchHistory', async () => {
+    mockFetchHistory.mockResolvedValue({ health: null as never, messages: [] });
+
+    const doneDatum: StreamDonePayload = {
+      responding_agent: null as never,
+      contact_pauses: [],
+      task_completions: [],
+      active_pauses: [],
+      behavioral_profiles: [],
+      behavioral_summary: null,
+    };
+    mockStreamCheckin.mockImplementation(
+      (
+        _c: unknown,
+        _m: unknown,
+        _t: unknown,
+        _oA: unknown,
+        onToken: (t: string) => void,
+        onDone: (d: StreamDonePayload) => void
+      ) => {
+        onToken('All good!');
+        onDone(doneDatum);
+        return Promise.resolve();
+      }
+    );
+
+    const useChat = await getHook();
+    const { result } = renderHook(() => useChat('valid-token'));
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleSendMessage('checking in');
+    });
+
+    await waitFor(() => {
+      const systemMsgs = result.current.messages.filter((m) => m.role === 'system');
+      expect(systemMsgs.length).toBeGreaterThan(0);
+    });
+
+    // Only the mount hydration call — no second call for empty task_completions
+    expect(mockFetchHistory).toHaveBeenCalledTimes(1);
   });
 });

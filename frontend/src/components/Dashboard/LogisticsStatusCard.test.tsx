@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { LogisticsStatusCard } from './LogisticsStatusCard';
 import { LogisticsStatus } from '../../types';
 
@@ -125,5 +125,113 @@ describe('LogisticsStatusCard', () => {
     render(<LogisticsStatusCard data={dataWithNoSubtasks} />);
     const progressbar = screen.getByRole('progressbar', { name: /grocery run progress/i });
     expect(progressbar).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  it('does not render N/0 steps when subtasks empty but completed_subtasks nonempty', () => {
+    const corruptData: LogisticsStatus = {
+      ...mockData,
+      tasks_with_steps: [
+        {
+          name: 'laundry',
+          status: 'pending',
+          days_overdue: 1,
+          priority: 'medium',
+          subtasks: [],
+          completed_subtasks: ['sort', 'wash', 'dry'],
+          notes: null,
+        },
+      ],
+    };
+    render(<LogisticsStatusCard data={corruptData} />);
+    expect(screen.queryByText(/3\/0 steps/i)).toBeNull();
+    expect(screen.queryByText(/\/0 steps/i)).toBeNull();
+  });
+
+  it('renders correct fraction when both subtask lists are nonempty', () => {
+    render(<LogisticsStatusCard data={mockData} />);
+    expect(screen.getByText('1/3 steps')).toBeInTheDocument();
+  });
+
+  it('renders nothing for steps count when both subtask lists are empty', () => {
+    const noSubtaskData: LogisticsStatus = {
+      ...mockData,
+      tasks_with_steps: [
+        {
+          name: 'quarterly report',
+          status: 'pending',
+          days_overdue: 2,
+          priority: 'high',
+          subtasks: [],
+          completed_subtasks: [],
+          notes: null,
+        },
+      ],
+    };
+    render(<LogisticsStatusCard data={noSubtaskData} />);
+    expect(screen.queryByText(/steps/i)).toBeNull();
+  });
+
+  it('renders no checkbox buttons when onCompleteSubtask is not provided', () => {
+    render(<LogisticsStatusCard data={mockData} />);
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+  });
+
+  it('renders a checkbox button per subtask when onCompleteSubtask is provided', () => {
+    const handler = vi.fn();
+    render(<LogisticsStatusCard data={mockData} onCompleteSubtask={handler} />);
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(3); // mockData has 3 subtasks
+  });
+
+  it('completed subtask checkbox has aria-checked true', () => {
+    const handler = vi.fn();
+    render(<LogisticsStatusCard data={mockData} onCompleteSubtask={handler} />);
+    const checkedBoxes = screen
+      .getAllByRole('checkbox')
+      .filter((el) => el.getAttribute('aria-checked') === 'true');
+    expect(checkedBoxes).toHaveLength(1); // mockData has 1 completed subtask
+  });
+
+  it('clicking an uncompleted subtask calls onCompleteSubtask', () => {
+    const handler = vi.fn().mockResolvedValue(undefined);
+    render(<LogisticsStatusCard data={mockData} onCompleteSubtask={handler} />);
+    const unchecked = screen
+      .getAllByRole('checkbox')
+      .find((el) => el.getAttribute('aria-checked') === 'false');
+    expect(unchecked).toBeDefined();
+    fireEvent.click(unchecked!);
+    expect(handler).toHaveBeenCalledWith('laundry', expect.any(String));
+  });
+
+  it('clicking a completed subtask does not call onCompleteSubtask', () => {
+    const handler = vi.fn();
+    render(<LogisticsStatusCard data={mockData} onCompleteSubtask={handler} />);
+    const checked = screen
+      .getAllByRole('checkbox')
+      .find((el) => el.getAttribute('aria-checked') === 'true');
+    expect(checked).toBeDefined();
+    fireEvent.click(checked!);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('optimistic check appears immediately on click before API resolves', () => {
+    let resolveClick!: () => void;
+    const handler = vi.fn().mockReturnValue(
+      new Promise<void>((res) => {
+        resolveClick = res;
+      })
+    );
+    render(<LogisticsStatusCard data={mockData} onCompleteSubtask={handler} />);
+
+    const unchecked = screen
+      .getAllByRole('checkbox')
+      .find((el) => el.getAttribute('aria-checked') === 'false');
+    expect(unchecked).toBeDefined();
+
+    fireEvent.click(unchecked!);
+    // Optimistic state: the clicked box should now show aria-checked="true"
+    expect(unchecked!.getAttribute('aria-checked')).toBe('true');
+
+    resolveClick();
   });
 });

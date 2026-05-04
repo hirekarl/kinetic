@@ -43,6 +43,7 @@ function App() {
     handleSendMessage,
     handleRetry,
     handleCompleteTask,
+    handleCompleteSubtask,
     handleReset,
     setHealth,
     setMessages,
@@ -215,7 +216,11 @@ function App() {
                     isLoading={isLoading}
                     behavioralSummary={health.behavioral_summary ?? null}
                   />
-                  <LogisticsStatusCard data={health.logistics} isLoading={isLoading} />
+                  <LogisticsStatusCard
+                    data={health.logistics}
+                    isLoading={isLoading}
+                    onCompleteSubtask={handleCompleteSubtask}
+                  />
                   <RelationalStatusCard
                     data={health.relational}
                     isLoading={isLoading}

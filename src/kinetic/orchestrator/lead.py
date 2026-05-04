@@ -114,10 +114,18 @@ async def _merge_history(payload: CheckInPayload, db: DatabaseClient) -> CheckIn
 
     hist_tasks = await db.get_all_tasks()
     if hist_tasks:
+        hist_by_name = {t["name"]: t for t in hist_tasks}
         if payload.logistics is None:
             payload.logistics = LogisticsInput(tasks=[LogisticsTask(**t) for t in hist_tasks])
         else:
             current_names = {t.name for t in payload.logistics.tasks}
+            for task in payload.logistics.tasks:
+                if task.name in hist_by_name:
+                    ht = hist_by_name[task.name]
+                    if not task.subtasks:
+                        task.subtasks = ht["subtasks"]
+                    if not task.completed_subtasks:
+                        task.completed_subtasks = ht["completed_subtasks"]
             for ht in hist_tasks:
                 if ht["name"] not in current_names:
                     payload.logistics.tasks.append(LogisticsTask(**ht))

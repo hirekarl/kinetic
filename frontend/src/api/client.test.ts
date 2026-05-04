@@ -3,6 +3,7 @@ import {
   fetchCheckin,
   fetchHistory,
   completeTask,
+  completeSubtask,
   login,
   fetchMe,
   logout,
@@ -147,6 +148,38 @@ describe('API client', () => {
     it('throws on non-ok response', async () => {
       mockFetch.mockResolvedValue({ ok: false, statusText: 'Not Found' });
       await expect(completeTask('unknown')).rejects.toThrow("Failed to complete task 'unknown'");
+    });
+  });
+
+  describe('completeSubtask', () => {
+    it('sends PATCH to /api/tasks/:name/subtasks with subtask body', async () => {
+      mockFetch.mockResolvedValue({ ok: true });
+      await completeSubtask('laundry', 'sort');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/tasks/laundry/subtasks'),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ subtask: 'sort' }),
+        })
+      );
+    });
+
+    it('includes Authorization header when token is provided', async () => {
+      mockFetch.mockResolvedValue({ ok: true });
+      await completeSubtask('laundry', 'sort', 'my-token');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer my-token' }),
+        })
+      );
+    });
+
+    it('throws on non-ok response', async () => {
+      mockFetch.mockResolvedValue({ ok: false, statusText: 'Unprocessable Entity' });
+      await expect(completeSubtask('laundry', 'iron')).rejects.toThrow(
+        "Failed to complete subtask 'iron'"
+      );
     });
   });
 

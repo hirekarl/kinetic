@@ -596,6 +596,161 @@ async def test_merge_history_adds_historical_vibes_not_in_payload(mock_db: Magic
     assert "Priya" in people
 
 
+# ── _merge_history: field-level subtask merge ────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_fills_empty_subtasks_from_db_for_existing_task(
+    mock_db: MagicMock,
+) -> None:
+    """When payload has a task with subtasks=[], _merge_history fills in DB subtasks."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "laundry",
+            "priority": "high",
+            "subtasks": ["sort", "wash", "dry"],
+            "completed_subtasks": [],
+            "status": "pending",
+            "days_overdue": 2,
+        }
+    ]
+    mock_db.get_all_vibes.return_value = []
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(
+                    name="laundry",
+                    subtasks=[],
+                    completed_subtasks=[],
+                    days_overdue=2,
+                    status="completed",
+                )
+            ]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    laundry = next(t for t in result.logistics.tasks if t.name == "laundry")
+    assert laundry.subtasks == ["sort", "wash", "dry"]
+    assert laundry.status == "completed"  # payload status preserved
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_fills_empty_completed_subtasks_from_db(
+    mock_db: MagicMock,
+) -> None:
+    """When payload task has completed_subtasks=[], _merge_history fills from DB."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "laundry",
+            "priority": "medium",
+            "subtasks": ["sort", "wash", "dry"],
+            "completed_subtasks": ["sort", "wash"],
+            "status": "pending",
+            "days_overdue": 1,
+        }
+    ]
+    mock_db.get_all_vibes.return_value = []
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(
+                    name="laundry",
+                    subtasks=[],
+                    completed_subtasks=[],
+                    days_overdue=1,
+                )
+            ]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    laundry = next(t for t in result.logistics.tasks if t.name == "laundry")
+    assert laundry.completed_subtasks == ["sort", "wash"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_does_not_overwrite_nonempty_subtasks_from_payload(
+    mock_db: MagicMock,
+) -> None:
+    """When payload task already has subtasks, _merge_history leaves them alone."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "laundry",
+            "priority": "medium",
+            "subtasks": ["old1", "old2"],
+            "completed_subtasks": [],
+            "status": "pending",
+            "days_overdue": 1,
+        }
+    ]
+    mock_db.get_all_vibes.return_value = []
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(
+                    name="laundry",
+                    subtasks=["new1", "new2", "new3"],
+                    completed_subtasks=[],
+                    days_overdue=1,
+                )
+            ]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    laundry = next(t for t in result.logistics.tasks if t.name == "laundry")
+    assert laundry.subtasks == ["new1", "new2", "new3"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_merge_history_preserves_completed_status_when_payload_marks_completed(
+    mock_db: MagicMock,
+) -> None:
+    """status=completed from LLM payload is preserved even when subtasks are filled from DB."""
+    from kinetic.orchestrator.lead import _merge_history
+
+    mock_db.get_all_tasks.return_value = [
+        {
+            "name": "laundry",
+            "priority": "high",
+            "subtasks": ["sort", "wash", "dry", "fold", "put away"],
+            "completed_subtasks": ["sort", "wash"],
+            "status": "pending",
+            "days_overdue": 0,
+        }
+    ]
+    mock_db.get_all_vibes.return_value = []
+    payload = CheckInPayload(
+        logistics=LogisticsInput(
+            tasks=[
+                LogisticsTask(
+                    name="laundry",
+                    subtasks=[],
+                    completed_subtasks=[],
+                    status="completed",
+                    days_overdue=0,
+                )
+            ]
+        )
+    )
+    result = await _merge_history(payload, mock_db)
+
+    laundry = next(t for t in result.logistics.tasks if t.name == "laundry")
+    assert laundry.status == "completed"
+    assert laundry.subtasks == ["sort", "wash", "dry", "fold", "put away"]
+
+
 # ── Agent failure handlers: LogisticsFixer, RelationalDiplomat ────────────────
 
 

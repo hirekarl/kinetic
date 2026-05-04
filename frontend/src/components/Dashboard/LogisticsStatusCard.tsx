@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LogisticsStatus } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { CardSkeleton } from './CardSkeleton';
@@ -9,6 +9,8 @@ interface LogisticsStatusCardProps {
   data: LogisticsStatus | null;
   /** When `true`, renders a `CardSkeleton` placeholder. */
   isLoading?: boolean;
+  /** When provided, renders interactive checkboxes on each subtask step. */
+  onCompleteSubtask?: (taskName: string, subtaskName: string) => Promise<void>;
 }
 
 /**
@@ -19,7 +21,13 @@ interface LogisticsStatusCardProps {
  * Renders a dimmed empty state when `data` is `null`, and a `CardSkeleton`
  * when `isLoading` is `true`.
  */
-export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, isLoading }) => {
+export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({
+  data,
+  isLoading,
+  onCompleteSubtask,
+}) => {
+  const [optimisticCompleted, setOptimisticCompleted] = useState<Record<string, Set<string>>>({});
+
   if (isLoading) return <CardSkeleton />;
 
   if (!data) {
@@ -72,8 +80,11 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
               <div className="flex justify-between text-xs font-medium">
                 <span className="text-zinc-200">{task.name}</span>
                 <span className="text-zinc-400">
-                  {task.completed_subtasks.length.toString()}/{task.subtasks.length.toString()}{' '}
-                  steps
+                  {task.subtasks.length > 0
+                    ? `${task.completed_subtasks.length.toString()}/${task.subtasks.length.toString()} steps`
+                    : task.completed_subtasks.length > 0
+                      ? `${task.completed_subtasks.length.toString()} step${task.completed_subtasks.length === 1 ? '' : 's'} done`
+                      : null}
                 </span>
               </div>
               <div
@@ -99,22 +110,42 @@ export const LogisticsStatusCard: React.FC<LogisticsStatusCardProps> = ({ data, 
               </div>
               {task.subtasks.length > 0 && (
                 <ul className="mt-2 space-y-1 pl-1">
-                  {task.subtasks.map((step) => (
-                    <li key={step} className="flex items-center gap-2 text-[10px] text-zinc-500">
-                      <div
-                        className={`h-1 w-1 rounded-full ${
-                          task.completed_subtasks.includes(step) ? 'bg-status-green' : 'bg-zinc-700'
-                        }`}
-                      />
-                      <span
-                        className={
-                          task.completed_subtasks.includes(step) ? 'line-through opacity-50' : ''
-                        }
-                      >
-                        {step}
-                      </span>
-                    </li>
-                  ))}
+                  {task.subtasks.map((step) => {
+                    const done =
+                      task.completed_subtasks.includes(step) ||
+                      (optimisticCompleted[task.name]?.has(step) ?? false);
+                    return onCompleteSubtask ? (
+                      <li key={step} className="flex items-center gap-2 text-[10px] text-zinc-500">
+                        <button
+                          role="checkbox"
+                          aria-checked={done}
+                          aria-label={`Mark "${step}" complete`}
+                          onClick={() => {
+                            if (done) return;
+                            setOptimisticCompleted((prev) => {
+                              const s = new Set(prev[task.name] ?? []);
+                              s.add(step);
+                              return { ...prev, [task.name]: s };
+                            });
+                            void onCompleteSubtask(task.name, step);
+                          }}
+                          className={`h-3 w-3 flex-shrink-0 rounded border ${
+                            done
+                              ? 'border-status-green bg-status-green/20'
+                              : 'border-zinc-600 hover:border-zinc-400'
+                          }`}
+                        />
+                        <span className={done ? 'line-through opacity-50' : ''}>{step}</span>
+                      </li>
+                    ) : (
+                      <li key={step} className="flex items-center gap-2 text-[10px] text-zinc-500">
+                        <div
+                          className={`h-1 w-1 rounded-full ${done ? 'bg-status-green' : 'bg-zinc-700'}`}
+                        />
+                        <span className={done ? 'line-through opacity-50' : ''}>{step}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

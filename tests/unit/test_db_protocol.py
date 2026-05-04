@@ -23,6 +23,7 @@ REQUIRED_METHODS = [
     "get_behavioral_profiles",
     "upsert_behavioral_profile",
     "complete_task",
+    "complete_subtask",
     "clear_database",
     "get_burnout_series",
 ]

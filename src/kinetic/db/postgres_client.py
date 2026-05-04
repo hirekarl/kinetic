@@ -179,8 +179,12 @@ class PostgresClient:
                         " VALUES ($1, $2, $3, $4, $5, $6)"
                         " ON CONFLICT (name, tenant) DO UPDATE SET"
                         "   priority = EXCLUDED.priority,"
-                        "   subtasks = EXCLUDED.subtasks,"
-                        "   completed_subtasks = EXCLUDED.completed_subtasks,"
+                        # '[]' is the canonical json.dumps([]) output — this comparison is stable.
+                        "   subtasks = CASE WHEN EXCLUDED.subtasks != '[]'"
+                        "                   THEN EXCLUDED.subtasks ELSE tasks.subtasks END,"
+                        "   completed_subtasks = CASE WHEN EXCLUDED.completed_subtasks != '[]'"
+                        "                             THEN EXCLUDED.completed_subtasks"
+                        "                             ELSE tasks.completed_subtasks END,"
                         "   status = EXCLUDED.status",
                         self.tenant,
                         task.name,
@@ -251,8 +255,12 @@ class PostgresClient:
                         " VALUES ($1, $2, $3, $4, $5, $6)"
                         " ON CONFLICT (name, tenant) DO UPDATE SET"
                         "   priority = EXCLUDED.priority,"
-                        "   subtasks = EXCLUDED.subtasks,"
-                        "   completed_subtasks = EXCLUDED.completed_subtasks,"
+                        # '[]' is the canonical json.dumps([]) output — this comparison is stable.
+                        "   subtasks = CASE WHEN EXCLUDED.subtasks != '[]'"
+                        "                   THEN EXCLUDED.subtasks ELSE tasks.subtasks END,"
+                        "   completed_subtasks = CASE WHEN EXCLUDED.completed_subtasks != '[]'"
+                        "                             THEN EXCLUDED.completed_subtasks"
+                        "                             ELSE tasks.completed_subtasks END,"
                         "   status = EXCLUDED.status",
                         self.tenant,
                         task.name,
@@ -649,6 +657,35 @@ class PostgresClient:
                 raise KeyError(task_name)
             await conn.execute(
                 "UPDATE tasks SET status = 'completed' WHERE name = $1 AND tenant = $2",
+                task_name,
+                self.tenant,
+            )
+
+    async def complete_subtask(self, task_name: str, subtask_name: str) -> None:
+        """Append subtask_name to completed_subtasks. Raises KeyError / ValueError as appropriate."""
+        async with self.pool.acquire() as conn, conn.transaction():
+            row = await conn.fetchrow(
+                "SELECT subtasks, completed_subtasks, status FROM tasks"
+                " WHERE name = $1 AND tenant = $2",
+                task_name,
+                self.tenant,
+            )
+            if row is None:
+                raise KeyError(task_name)
+            subtasks: list[str] = json.loads(row["subtasks"])
+            completed: list[str] = json.loads(row["completed_subtasks"])
+            if subtask_name not in subtasks:
+                raise ValueError(subtask_name)
+            if subtask_name not in completed:
+                completed.append(subtask_name)
+            new_status = (
+                "completed" if subtasks and set(subtasks) <= set(completed) else row["status"]
+            )
+            await conn.execute(
+                "UPDATE tasks SET completed_subtasks = $1, status = $2"
+                " WHERE name = $3 AND tenant = $4",
+                json.dumps(completed),
+                new_status,
                 task_name,
                 self.tenant,
             )

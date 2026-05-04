@@ -161,6 +161,22 @@ class DatabaseClient(Protocol):
         """
         ...
 
+    async def complete_subtask(self, task_name: str, subtask_name: str) -> None:
+        """Append subtask_name to completed_subtasks for the named task.
+
+        Auto-completes the parent task when all subtasks are in completed_subtasks
+        (only when the subtasks list is non-empty).
+
+        Args:
+            task_name: The name of the parent task.
+            subtask_name: The subtask step to mark complete.
+
+        Raises:
+            KeyError: If no task with task_name exists.
+            ValueError: If subtask_name is not in the task's subtasks list.
+        """
+        ...
+
     async def clear_database(self) -> None:
         """Delete all data for the current tenant.  Irreversible."""
         ...

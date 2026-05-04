@@ -40,7 +40,10 @@ async def parse_checkin(
         "actionable micro-steps in the 'subtasks' field.\n"
         "2. If the user indicates they completed a specific substep or the current task "
         "(e.g., 'I did it', 'Done with the sock'), add that specific text to 'completed_subtasks'.\n"
-        "3. Only set 'status' to 'completed' if the ENTIRE task is clearly finished."
+        "3. Only set 'status' to 'completed' if the ENTIRE task is clearly finished.\n"
+        "4. When marking a task 'status=completed', you may leave 'subtasks' as []. "
+        "The existing subtasks are preserved in the database and will not be wiped. "
+        "Do NOT re-enumerate or fabricate subtask lists when marking a task complete."
     )
 
     messages = [{"role": "system", "content": system_content}]
