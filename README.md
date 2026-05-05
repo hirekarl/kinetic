@@ -37,9 +37,9 @@
 
 **Video demo:**
 
-[![Kinetic demo video](assets/brand/video-thumbnail.png)](https://www.youtube.com/watch?v=P03BV-CmaG8)
+[![Kinetic demo video](assets/brand/video-thumbnail.png)](https://www.youtube.com/watch?v=cjF54OMjlfQ)
 
-[Watch the demo on YouTube →](https://www.youtube.com/watch?v=P03BV-CmaG8)
+[Watch the demo on YouTube →](https://www.youtube.com/watch?v=cjF54OMjlfQ)
 
 ---
 

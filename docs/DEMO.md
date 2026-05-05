@@ -1,12 +1,13 @@
-# Kinetic — Live Presentation Script
+# Kinetic — Demo Script
 
-**Presentation date:** Wednesday, May 6, 2026
-**Total duration:** 8–10 minutes
-**Structure:** Problem → Root Cause → Solution → Live Demo → What's Next
+**Format:** Loom · 5-part structure · 3–4 minutes total
+**Presenter:** Karl Johnson
 
 ---
 
-## Pre-Demo Setup (do this before anyone is watching)
+## Pre-Demo Setup
+
+Do this before you hit record.
 
 **Option A — Live deploy (recommended):** open [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com) in Chrome.
 
@@ -34,249 +35,148 @@ Open `http://localhost:5173` in Chrome.
 
 **Confirm before starting:**
 - [ ] Login screen is showing (not the dashboard)
-- [ ] You have your three check-in messages ready (below)
-
-**If Simulate Week fails (live deploy):** the demo tenant PostgreSQL data may need re-seeding — run `DATABASE_URL=<render-db-url> uv run python scripts/seed_demo.py` from a terminal with the Render internal DB URL.
-
-**If Simulate Week fails (local):** `uv run python scripts/seed_demo.py` seeds the SQLite DB directly.
+- [ ] Your three check-in messages are copied and ready to paste (below)
 
 ---
 
-## Section 1 — Problem (≈90 seconds, no keyboard)
+## 01 — The Builder · 15–30 sec
 
-> **Say:**
->
-> "Hi, I'm Karl Johnson, and this is Kinetic."
->
-> "Jordan is a senior engineer running at capacity — shipping features, managing stakeholders, staying current. By conventional metrics, Jordan is performing well. But there's a hidden cost."
->
-> "Sleep is the first thing to slip. Then domestic tasks pile up — quietly, until something breaks. Then relationships drift — not through neglect, but through deferred priority. By the time Jordan notices any of this, the debt is already compounding."
->
-> "The feedback loop today is burnout. The system only tells you something is wrong after the crash."
->
-> "Jordan's specific pain: every morning, 30–45 minutes are lost deciding what's actually on fire across three completely separate domains — bio, logistics, relationships. No single source of truth. No priority rank. Just three open tabs and a vague feeling of being behind."
+### Prose
+
+"Hi, I'm Karl Johnson. I make AI middleware for the middle class.
+
+This is Kinetic, a personal infrastructure management system. I built it in ten days on Python, FastAPI, and React, with Gemini 2.5 Flash handling the reasoning layer. Here's a problem a lot of us can relate to."
 
 ---
 
-## Section 2 — Root Cause (≈60 seconds, no keyboard)
+### Bullets
 
-> **Say:**
->
-> "The problem isn't discipline or time management. It's observability."
->
-> "Engineers instrument everything at work. Dashboards, alerts, runbooks, on-call rotations. But they run their personal infrastructure completely blind. There's no SLO for sleep. No alerting on relational drift. No triage queue for domestic logistics."
->
-> "Existing tools — sleep trackers, to-do apps, calendar reminders — each solve one domain in isolation. None of them synthesize across domains. None of them tell you *what to do first* given your current state across all three."
->
-> "The result: Jordan makes prioritization decisions while sleep-deprived, with incomplete information, every single morning."
+- Karl Johnson — full-stack engineer
+- "I make AI middleware for the middle class"
+- Kinetic — AI-Native L1 capstone, built in 10 days
+- Stack: Python / FastAPI / React / Gemini 2.5 Flash
 
 ---
 
-## Section 3 — Solution (≈45 seconds, no keyboard)
+## 02 — The Problem · 30–45 sec
 
-> **Say:**
->
-> "Kinetic is a personal infrastructure management system. One check-in message — natural language, under 30 seconds — routes through three specialist AI agents. It returns a single prioritized triage list: the two or three actions that arrest the most compounding debt right now."
->
-> "The stack: Gemini 2.5 Flash with Instructor for structured parsing, FastAPI and Pydantic on the backend, React and TypeScript on the frontend. Responses stream token-by-token over Server-Sent Events. Data persists to SQLite locally and PostgreSQL on Render in production."
->
-> "Let me show you."
+### Prose
 
----
+"Jordan is 34, a senior engineer nine years into his career. He has an Oura ring, a task manager, and a weekly review habit he keeps… about two weeks out of four. He has all the tools. What he doesn't have is synthesis.
 
-## Section 4 — Live Demo (≈6 minutes)
+Every morning, 30 to 45 minutes disappear deciding what's actually on fire. Bio, logistics, relationships — pick your order. When the laundry piles up past five days, something else is already wrong too.
 
-### 4.1 — Login and onboarding
-
-**Action:** Type `demo` in the username field and `demo` in the password field.
-
-> **Say:** "Demo tenant. Jordan's account."
-
-**Action:** Click **Sign In**.
-
-*The onboarding modal appears.*
-
-> **Say:** "First-time experience. Designed to be accessible and keyboard-navigable — compliant with WCAG 2.1 standards from day one."
-
-**Action:** Read the first screen briefly, then click **Next**.
-
-> **Say:** "Not a wellness app. Personal systems management."
-
-**Action:** Click **Next** on the second screen.
-
-**Action:** Click **Done** on the third screen.
+Jordan doesn't think of himself as burned out. He thinks of himself as behind. We all know what that feels like. It's not a discipline problem. It's an observability problem. That's the problem Kinetic solves."
 
 ---
 
-### 4.2 — Historical context: Simulate Week
+### Bullets
 
-> **Say:** "The system already has seven days of behavioral history pre-loaded. Let me show you what it's learned."
-
-**Action:** Click **Simulate Week** in the top-right header.
-
-*Wait ~2 seconds for the dashboard to populate.*
-
-> **Say:** "Five check-ins across seven days — baseline health, gradual sleep decline, peak stress, early recovery."
-
-**Action:** Scroll down on the right panel. Click **Behavioral Profile** to expand it.
-
-> **Say:** "This profile was synthesized by Gemini from the accumulated history — not rules, not templates. The model identified a recurring pattern: Jordan's sleep consistently falls below six hours on weekdays. Five consecutive observations. The system tracks the trend, not just today's snapshot."
-
-*Pause 4 seconds. Let the viewer read the profile.*
-
-**Action:** Click **Behavioral Profile** again to collapse it. Then click **Weekly Review** to expand.
-
-> **Say:** "The weekly digest is a separate Gemini call — prose synthesis of the full week's trajectory. AI-generated, cached for six hours. Jordan gets this before any check-in, so the Operational Liaison is already briefed."
-
-*Pause 3 seconds.*
-
-**Action:** Click **Weekly Review** to collapse it.
+- Jordan: 34, senior engineer at a Series B in Chicago — nine years in
+- Has the tools: Oura ring, task manager, weekly review — just no synthesis across them
+- Sleep slips → tasks pile → relationships drift
+- **The thesis: not a discipline problem — an observability problem**
+- 30–45 min lost every morning triaging across bio / logistics / relationships
+- The laundry is the canary: piles past five days = something else is already wrong
+- The only feedback loop is burnout — you find out after the crash
 
 ---
 
-### 4.3 — Turn 1: The crisis check-in
+## 03 — Solution + Demo · 60–90 sec
 
-**Action:** Click in the chat input. Hover over the **Send** button briefly to show it's disabled with empty input.
+### Prose
 
-> **Say:** "Empty input — Send is disabled. Can't submit noise."
+"Every day, you send one message to Kinetic — the same one you'd send a trusted colleague if you had 30 seconds. Three specialist AI agents analyze it and it comes back as a single prioritized triage list.
 
-**Action:** Type this message slowly:
+Here's what it looks like."
+
+**[Action: log in as `demo` / `demo`]**
+
+"This is Jordan's account. Watch what happens."
+
+**[Action: click through onboarding → Done]**
+
+"There's a short onboarding, three screens. It sets the right expectation. This isn't a wellness app, it's personal systems management."
+
+**[Action: click Simulate Week, wait ~2 seconds]**
+
+"Jordan has seven days of behavioral history already loaded. The Behavioral Profile on the right was synthesized by Gemini from those check-ins, not from rules or a template. It identified a real pattern in the data. Sleep was dropping below six hours on weekdays, five times in a row. The system tracks the trend, not just today's number.
+
+Now I'll send a live check-in."
+
+**[Action: type and send — paste slowly:]**
 
 ```
 I'm completely overwhelmed. Four hours sleep, laundry six days overdue, haven't talked to Marcus in weeks.
 ```
 
-> **Say (while typing):** "One message. All three domains. No form to fill, no category to choose — just brief it like a colleague."
+"This one message covers all three domains, exactly how Jordan would text a trusted colleague. Three specialist agents analyze it simultaneously and the response comes back.
 
-**Action:** Press **Enter**.
+Burnout score 82. The threshold for critical is 75, and the sleep trend chart shows exactly how Jordan got there. Laundry is past the critical threshold and the system broke it into actionable subtasks with an outsourcing cost estimate. Marcus is flagged, with a five-minute voice memo suggested as the minimum effective intervention.
 
-> **Say (during the loading pause):** "One Gemini call to parse the message into a typed Pydantic model. The lead orchestrator routes to all three agents — Bio-Metric Archivist, Logistics Fixer, Relational Diplomat. They compute in parallel. The Operational Liaison then streams the response."
-
-*The dashboard updates. Point to the bio card.*
-
-> **Say:** "CRITICAL. Jordan hasn't been imagining the fatigue. The Bio-Metric Archivist computed a burnout score of 82 from a seven-day weighted sleep trend. On a scale of 0 to 100, anything above 75 is a critical flag. Sleep sparkline on the right shows the decline curve. Burnout trend chart below it shows the trajectory."
-
-*Scroll right panel slightly to show logistics card.*
-
-> **Say:** "Logistics Fixer: laundry six days overdue, crossed the critical threshold. Look at the subtask breakdown — the agent didn't just flag it, it decomposed it into actionable steps. And it calculated the outsourcing ROI."
-
-*Gesture to relational card.*
-
-> **Say:** "Relational Diplomat: connection margin score 35, Marcus in the red. The agent proposed a five-minute voice memo as the minimal effective intervention."
+One list, ranked across all three domains. Jordan doesn't decide what matters most this morning. That decision is already made."
 
 ---
 
-### 4.4 — Turn 2: Multi-turn ROI follow-up
+### Bullets
 
-**Action:** Scroll back to the top of the right panel. Click in the chat input.
-
-**Action:** Type:
-
-```
-How much time do I save if I outsource the laundry this week?
-```
-
-**Action:** Press **Enter**.
-
-> **Say (during loading):** "Second turn. The system has the full conversation context — Jordan doesn't re-explain the situation."
-
-*Dashboard updates.*
-
-> **Say:** "120 minutes of focus time reclaimed. The Logistics Fixer calculated this from task complexity and the outsourcing suggestion it already had. Combined with the sleep protocol, 15.5-point projected burnout reduction. That's the ROI card — not just describing the problem, quantifying the cost of inaction."
+- One message → three specialist agents in parallel → one prioritized triage list
+- Demo flow: login → onboarding → Simulate Week (7-day history) → live check-in
+- Check-in: *"Four hours sleep, laundry overdue, haven't talked to Marcus in weeks"*
+- Response comes back from all three agents
+- Bio: burnout score 82 (critical), sleep sparkline shows the decline curve
+- Logistics: laundry past critical threshold, decomposed into subtasks, outsourcing ROI calculated
+- Relational: Marcus flagged — five-minute voice memo as minimum effective intervention
+- Single triage list, cross-domain priority rank — Jordan doesn't decide, it's already done
 
 ---
 
-### 4.5 — Task check-off and live dashboard update
+## 04 — How It Works · 45–60 sec
 
-**Action:** Scroll down to **Prioritized Triage**.
+### Prose
 
-> **Say:** "One unified triage list. Priority-ranked across all three domains. Jordan doesn't have to choose between bio, logistics, and relationships — the system already did that."
+"There are two technical decisions I made that are worth calling out.
 
-**Action:** Point to the laundry item (priority 7). Click the checkbox to mark **Laundry Protocol** complete.
+The first is structured outputs. Gemini parses Jordan's message using Instructor, a library that forces the model to return typed, validated data rather than freeform text. You either get a clean structured payload, or you get a loud error. There's no silent drift.
 
-> **Say:** "Action taken. Watch the dashboard."
+The second is parallelism. All three agents fire at the same time and their results get merged at the end. Running them in sequence would add two extra round-trips on every single check-in.
 
-*The laundry item disappears from the triage list. ROI card updates.*
-
-> **Say:** "Live update. The triage list re-ranks. ROI now shows 22% margin reclaimed. The system reflects the action immediately."
+The same codebase also runs on SQLite locally and PostgreSQL in production."
 
 ---
 
-### 4.6 — Turn 3: Recovery confirmation
+### Bullets
 
-**Action:** Click in the chat input. Type:
-
-```
-I've outsourced the laundry. What's my status now?
-```
-
-**Action:** Press **Enter**.
-
-*Dashboard updates to yellow.*
-
-> **Say:** "Status lifts from red to yellow. Logistics sector is green. The system confirms the action closed the loop and redirects Jordan's attention to bio recovery — the remaining priority."
+- **Structured outputs:** Instructor forces Gemini to return validated, typed data — clean payload or loud error, no silent drift
+- **Parallel agents:** all three fire simultaneously and results get merged — sequential would add two extra round-trips per check-in
+- **Persistence:** same codebase, same interface — SQLite locally, PostgreSQL in production; the app doesn't know which one it has
 
 ---
 
-### 4.7 — Error handling and recovery
+## 05 — What's Next · 15–30 sec
 
-> **Say:** "One more thing — what happens when the analysis engine goes down?"
+### Prose
 
-*[The demo will briefly show an error state — this is scripted.]*
+"What's next? Well, Jordan already has an Oura ring. He just can't get it to talk to anything useful.
 
-**Action:** Click in the chat input. Type:
+Phase two for Kinetic will involve implementing passive data ingestion. Once Oura is set up to send automatic updates to Kinetic, the platform will brief Jordan each morning on schedule instead of waiting to be asked.
 
-```
-Can you give me a read on my sleep trajectory?
-```
+As an industry, we've built extraordinary observability tools for software. Jordan uses them every day and trusts them with production. We just haven't turned that lens on ourselves. Kinetic does.
 
-**Action:** Press **Enter**.
-
-*After the loading indicator, an error banner appears at the top of the dashboard.*
-
-> **Say:** "Graceful degradation. Meaningful message — not a stack trace. The system tells Jordan what went wrong, and offers a single action: Retry."
-
-**Action:** Click **Retry**.
-
-*Dashboard recovers. Response appears.*
-
-> **Say:** "No page reload. The app recovers from a single component failure and replays the last message automatically."
+Your infrastructure is showing. What are you going to do about it?"
 
 ---
 
-### 4.8 — Agent Dispatch Log
+### Bullets
 
-**Action:** Scroll down to **Agent Dispatch Log** and click to expand it.
-
-**Action:** Click the first entry to expand it.
-
-> **Say:** "Full routing audit. Every check-in is logged with which agent responded, what it found, and when. Transparent AI — Jordan can always see what fired and why."
-
----
-
-### 4.9 — Mobile responsiveness
-
-> **Say:** "And it's responsive."
-
-*[The demo will resize the viewport to mobile dimensions — this is scripted.]*
-
-> **Say:** "Chat panel stacks above the dashboard at mobile width. Same data, same triage, same interactions. Scoped to desktop for this prototype but the layout holds."
+- Jordan already has an Oura ring — just no integration that does anything useful with it
+- Next: passive data ingestion so Jordan stops being the sensor
+- Once in place: Kinetic briefs Jordan proactively — one morning notification, top three actions, no app to open
+- Close: We've built observability for software. We just haven't turned that lens on ourselves. Kinetic does. Your infrastructure is showing. What are you going to do about it?
 
 ---
 
-## Section 5 — What's Next (≈60 seconds, no keyboard)
-
-> **Say:**
->
-> "The most valuable next feature is proactive push. Right now, Kinetic requires Jordan to brief it. The next step is to reverse that interaction: instead of waiting for a check-in, the system will brief Jordan."
->
-> "Every morning at 6am, Kinetic runs a background check-in from the previous night's data — sleep from wearable API, task state from the DB, relational drift from contact frequency. It synthesizes a triage list and pushes a single notification: *here are your top three actions for today, in priority order.*"
->
-> "Jordan doesn't open an app. The system briefs Jordan. That's the product."
-
----
-
-## If Something Goes Wrong
+## Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -287,6 +187,8 @@ Can you give me a read on my sleep trajectory?
 | Behavioral Profile shows "Building your profile" | Click Simulate Week again |
 | Simulate Week button not visible | Logged in as non-demo tenant — sign out, sign in as `demo` |
 | Response takes > 30 seconds | Gemini rate limit — wait 60 seconds, retry |
+
+---
 
 ## After the Demo
 
