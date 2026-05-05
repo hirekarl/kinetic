@@ -29,7 +29,7 @@
 
 **What it does not do:** Kinetic does not provide calendar integration, push notifications, wearable device sync, social features, payment processing, or native mobile apps. It has no automatic data collection — every data point comes from a user check-in message.
 
-**Technology rationale:** Gemini 2.5 Flash + Instructor enforces typed Pydantic output from the LLM, eliminating JSON parsing fragility. FastAPI + asyncpg targets sub-100ms response on structured data queries. The `DatabaseClient` Protocol abstracts SQLite (local dev, zero config) and PostgreSQL (Render production) behind the same 15-method interface — zero application code changes at deploy time. SSE streaming delivers the Operational Liaison's response token-by-token without WebSocket overhead; `fetch` + `ReadableStream` is used instead of `EventSource` because `EventSource` does not support POST bodies.
+**Technology rationale:** Gemini 2.5 Flash + Instructor enforces typed Pydantic output from the LLM, eliminating JSON parsing fragility. FastAPI + asyncpg targets sub-100ms response on structured data queries. The `DatabaseClient` Protocol abstracts SQLite (local dev, zero config) and PostgreSQL (Render production) behind the same 16-method interface — zero application code changes at deploy time. SSE streaming delivers the Operational Liaison's response token-by-token without WebSocket overhead; `fetch` + `ReadableStream` is used instead of `EventSource` because `EventSource` does not support POST bodies.
 
 **What's next:** The highest-value next feature is passive data ingestion — pulling sleep data from a wearable API (Oura, Whoop) so the system updates without a manual check-in. This tests the core assumption that observability, not discipline, is what's missing. After that: a mobile-native interface so the check-in friction drops from 30 seconds to 10.
 
@@ -225,6 +225,7 @@ See [ROADMAP.md](ROADMAP.md) for the full sprint-by-sprint breakdown.
 | Sprint 12 | Weekly digest — Gemini prose summary card with 6h cache + refresh | `v1.7.0` | ✅ Released |
 | Sprint 13 | Demo polish — mobile layout, Simulate Week, landing page, brand assets, SEO metadata, PWA manifest, live deploy | `v1.8.0` | ✅ Released |
 | Sprint 14 | Structured logging — structlog pipeline, request middleware, callsite instrumentation; SEO/LLM discoverability — llms.txt, sitemap, robots.txt, security.txt, per-route meta tags | `v1.9.0` | ✅ Released |
+| Sprint 15 | Logistics state sync + subtask check-off — non-destructive UPSERT, field-level history merge, streaming done-event refresh, subtask checkboxes with optimistic UI | `v1.10.0` | ✅ Released |
 
 **Demo deadline:** 2026-05-06 · **MVP deadline:** 2026-05-06
 
@@ -244,7 +245,7 @@ This project uses a **multi-agent TDD team** via Claude Code slash commands. Wor
      ↓
 /security-reviewer → secrets scan, input validation, dependency audit
      ↓
-/docs-keeper     → CLAUDE.md · GEMINI.md · ROADMAP.md · CHANGELOG.md in sync
+/docs-keeper     → CLAUDE.md · GEMINI.md · README.md · ROADMAP.md · CHANGELOG.md in sync
 ```
 
 Every commit follows [Conventional Commits](https://www.conventionalcommits.org/). Releases are cut with `./scripts/release.sh`.
