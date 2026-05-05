@@ -256,9 +256,7 @@ class OperationalLiaison:
             if msg["role"] == "system":
                 continue
             role = "user" if msg["role"] == "user" else "model"
-            genai_contents.append(
-                types.Content(role=role, parts=[types.Part(text=msg["content"])])
-            )
+            genai_contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
 
         config = types.GenerateContentConfig(system_instruction=system_prompt)
         log.info("llm.stream.start", model=_MODEL)

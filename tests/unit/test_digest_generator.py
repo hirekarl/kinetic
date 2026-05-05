@@ -208,9 +208,7 @@ async def test_generate_digest_gemini_exception_does_not_raise() -> None:
     """A Gemini exception never propagates — generate_digest always returns DigestResponse."""
     db = _make_db()
     mock_cls = MagicMock()
-    mock_cls.return_value.aio.models.generate_content = AsyncMock(
-        side_effect=OSError("network")
-    )
+    mock_cls.return_value.aio.models.generate_content = AsyncMock(side_effect=OSError("network"))
 
     with patch("kinetic.services.digest_generator.genai.Client", mock_cls):
         result = await dg.generate_digest(db, "test-key", "tenant-j")
