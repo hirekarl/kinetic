@@ -69,11 +69,11 @@ src/kinetic/
   api/
     __init__.py            package init
     auth.py                JWT auth endpoints: POST /api/auth/login, GET /api/auth/me, POST /api/auth/logout; LoginRequest + TokenResponse models
-    routes.py              FastAPI APIRouter (GET /api/digest, POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, POST /api/debug/reset, POST /api/demo/simulate); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette; /digest returns DigestResponse (cached 6h, force=bool param); /demo/simulate is 403-gated to demo tenant only
+    routes.py              FastAPI APIRouter (GET /api/digest, POST /api/checkin, POST /api/checkin/stream, GET /api/history, PATCH /api/tasks/{task_name}/complete, PATCH /api/tasks/{task_name}/subtasks, POST /api/debug/reset, POST /api/demo/simulate); all routes require get_current_tenant; /stream returns EventSourceResponse via sse-starlette; /digest returns DigestResponse (cached 6h, force=bool param); /demo/simulate is 403-gated to demo tenant only; CompleteSubtaskRequest model; subtask route raises 404/422 from KeyError/ValueError
   db/
-    base.py                DatabaseClient Protocol — 15-method shared interface satisfied by both SqliteClient and PostgresClient
-    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series(), insert_checkin_at()
-    postgres_client.py     asyncpg PostgreSQL client: same 15-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series(), insert_checkin_at()
+    base.py                DatabaseClient Protocol — 16-method shared interface satisfied by both SqliteClient and PostgresClient
+    sqlite_client.py       SQLite persistence: check-ins, bio metrics, tasks, vibes, behavioral profiles, contact_pauses; get_behavioral_summary(), get_behavioral_profiles(), upsert_behavioral_profile(), upsert_contact_pause(), get_active_pauses(), get_burnout_series(), insert_checkin_at(), complete_subtask(); UPSERT preserves subtasks/completed_subtasks when incoming is empty
+    postgres_client.py     asyncpg PostgreSQL client: same 16-method interface as SqliteClient; per-tenant row isolation via tenant column; _migrate() for idempotent DDL; get_burnout_series(), insert_checkin_at(), complete_subtask()
   services/
     __init__.py            package init
     pattern_detector.py    detect_and_update_patterns(): rate-limited Gemini pattern synthesis, fires as background asyncio task; uses await client.aio.models.generate_content() (async-safe, non-blocking)
@@ -86,7 +86,7 @@ tests/
   unit/test_main.py        startup warning / lifespan tests; pool create + close lifecycle (AsyncMock)
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
-  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 15 method names, isinstance check against SqliteClient
+  unit/test_db_protocol.py DatabaseClient Protocol completeness: all 16 method names, isinstance check against SqliteClient
   unit/test_simulate_route.py 7 tests for POST /api/demo/simulate: 401 no auth, 403 non-demo tenant, 200 shape, service called, 5 rows inserted, timestamps historical, CheckInPayload type verified
   unit/test_burnout_series.py 14 tests for get_burnout_series(): empty/single/formula/ordering/days-filter/partial/all-None/perfect-health; Postgres mock; get_behavioral_summary() wiring
   unit/test_digest_generator.py 10 tests for generate_digest(): happy path, cache hit/miss/TTL, force=True bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery
@@ -96,6 +96,7 @@ tests/
   unit/test_logging_middleware.py  8 tests for request.start/done/error lifecycle events, context binding (request_id/path/method), exception path via direct dispatch() call
   unit/                    agent logic, orchestrator, parser tests (Phase 2+)
   integration/test_auth_routes.py  auth endpoint tests: login happy/error paths, me, protected routes
+  integration/test_api.py          5 subtask route tests: 200 success, 404 unknown task, 422 unknown subtask, 401 no auth, 422 missing body field
   integration/test_postgres_client.py  29 PostgresClient integration tests; all methods + tenant isolation; skipped without DATABASE_URL
   integration/test_stream_route.py  6 SSE endpoint tests: 400 on empty, 503 on OSError, content-type header, agents/token/done event presence
   integration/             end-to-end API tests (Phase 3+)
@@ -111,7 +112,7 @@ frontend/src/
   components/LoginScreen.test.tsx  10 Vitest tests: heading, labeled inputs, submit loading/enabled states, error alert, form submission, input types, back-link, document title; HelmetProvider wrapper
   components/OnboardingModal.tsx  3-screen first-visit tutorial; localStorage persistence; focus trap + Escape key
   components/ChatPanel/    natural-language input + streaming display; streamingContent prop drives in-progress bubble with blinking cursor
-  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, weekly digest card, agent dispatch log
+  components/Dashboard/    status cards, triage list, ROI summary, behavioral profile panel, sleep sparkline, burnout trend chart, weekly digest card, agent dispatch log; LogisticsStatusCard accepts optional onCompleteSubtask prop for per-subtask interactive checkboxes with optimistic UI
     SleepSparkline.tsx     pure SVG polyline sparkline; aria-hidden; amber/emerald stroke from declining prop; null for < 2 points
     BurnoutTrendChart.tsx  SVG polyline chart for 14-day burnout series; red/amber/emerald stroke from linear regression slope; aria-hidden + sr-only label; null for < 2 points
     WeeklyDigestCard.tsx   collapsible "Weekly Review" disclosure; prose summary paragraph; "Generated X minutes ago" relative timestamp; Refresh button with spinner; loading skeleton (role="status"); [DIGEST ERROR] error block; no-data empty state
@@ -120,10 +121,10 @@ frontend/src/
     agentLog.ts            buildAgentLogEntry(): derives AgentLogEntry from SystemHealthPayload + message + timestamp
   hooks/
     useAuth.ts             useAuth(): user/token/isLoading state; lazy isLoading init prevents flash-of-LoginScreen; localStorage JWT persistence; mount-time fetchMe validation; login/logout actions
-    useChat.ts             useChat(token): health/messages/agentLog/isLoading/error/streamingContent state; history hydration useEffect; handleSendMessage, handleRetry, handleCompleteTask, handleReset; exposes setHealth + setMessages for simulation; clearSession for logout
+    useChat.ts             useChat(token): health/messages/agentLog/isLoading/error/streamingContent state; history hydration useEffect; handleSendMessage, handleRetry, handleCompleteTask, handleCompleteSubtask, handleReset; done-event auto-refresh fetchHistory when task_completions non-empty; exposes setHealth + setMessages for simulation; clearSession for logout
     useDigest.ts           useDigest(token): digestData/digestLoading/digestRefreshing state; fetch-on-mount useEffect; handleRefreshDigest (force=true); clearDigest for logout
   api/
-    client.ts              fetchCheckin, fetchHistory, completeTask, fetchDigest, simulateWeek (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
+    client.ts              fetchCheckin, fetchHistory, completeTask, completeSubtask, fetchDigest, simulateWeek (all accept optional token); login, fetchMe, logout; streamCheckin() SSE client with manual ReadableStream parsing and fetchCheckin fallback; authHeaders() helper
   test/setup.ts            Vitest + @testing-library/jest-dom bootstrap
   e2e/                     Playwright + axe-core specs: auth.spec.ts, app.spec.ts, onboarding.spec.ts, a11y-audit.spec.ts
     live-demo.spec.ts      Playwright demo recording script: 12-section mocked flow (login error, onboarding, Simulate Week, Behavioral Profile, Weekly Digest, 3 chat turns, task check-off, 503/retry, Agent Dispatch Log, mobile viewport); smooth scroll + mouse cursor overlay; 1920×1080 headless capture
@@ -187,6 +188,7 @@ scripts/
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ✅ |
 | Sprint 14 | `v1.9.0` | Structured Logging + SEO/LLM Discoverability | ✅ |
+| Sprint 15 | `v1.10.0` | Logistics State Sync + Subtask Check-Off | 🔄 |
 
 ---
 

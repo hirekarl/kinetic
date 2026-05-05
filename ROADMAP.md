@@ -654,6 +654,41 @@ Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON
 
 ---
 
+## Sprint 15 — Logistics State Sync + Subtask Check-Off 🔄
+**Target version:** `v1.10.0`
+
+Fix corrupted logistics dashboard state after verbal task completion and add per-subtask interactive check-off.
+
+### Backend ✅
+- [x] Non-destructive UPSERT in `sqlite_client.py` and `postgres_client.py` — `CASE WHEN != '[]'` guards preserve `subtasks` / `completed_subtasks` when LLM returns empty lists
+- [x] Field-level merge in `_merge_history` (`orchestrator/lead.py`) — fills empty subtask fields from DB for tasks already in the LLM payload; recovers subtask history after verbal completion
+- [x] `complete_subtask(task_name, subtask_name)` method on both DB clients + `DatabaseClient` Protocol (now 16 methods); idempotent; auto-completes parent task when all subtasks done; guards against `subtasks = []` auto-complete
+- [x] `PATCH /api/tasks/{task_name}/subtasks` endpoint with `CompleteSubtaskRequest` Pydantic body; raises 404 (KeyError) / 422 (ValueError); auth-gated; structlog callsite
+- [x] LLM parser rule 4: do not re-enumerate subtask lists when marking a task complete
+- [x] Tests: 10 UPSERT preservation tests, 4 `_merge_history` merge tests, 6 `complete_subtask` unit tests, 5 API route tests (376 total, 98% coverage)
+
+### Frontend ✅
+- [x] `done` event auto-refresh: `useChat.ts` calls `fetchHistory` when `task_completions` is non-empty — dashboard clears completed tasks without manual refresh
+- [x] Display guard in `LogisticsStatusCard.tsx`: prevents "N/0 steps" when `subtasks` is empty; zero/zero renders nothing
+- [x] `completeSubtask(taskName, subtaskName, token?)` in `api/client.ts`
+- [x] `handleCompleteSubtask` in `useChat` hook; calls API then refreshes health
+- [x] `onCompleteSubtask?: (taskName, subtaskName) => Promise<void>` prop on `LogisticsStatusCard`; renders `role="checkbox"` buttons per subtask with optimistic `aria-checked` UI; read-only dots preserved when no handler passed
+- [x] `App.tsx` wires `handleCompleteSubtask` → `onCompleteSubtask` prop
+- [x] Tests: 6 display guard tests, 6 subtask checkbox interaction tests, 4 `useChat` hook tests, 3 API client tests (303 total, 99.95% coverage)
+
+### Quality Gates
+- [x] `uv run pytest` → 376 passed, 29 skipped, 0 failed; 98% coverage
+- [x] `uv run mypy src/kinetic --strict` → 0 errors
+- [x] `uv run ruff check src/ tests/` → 0 warnings
+- [x] `npm run test:coverage` → 303 passed, 99.95% coverage
+- [x] `npm run typecheck` → 0 errors
+- [x] `npm run lint` → 0 errors
+- [x] `/qa-reviewer` APPROVED
+- [x] `/security-reviewer` APPROVED (parameterized queries, auth-gated, no stack trace leakage)
+- [ ] `v1.10.0` release ceremony
+
+---
+
 ## Version Map
 
 | Version | Sprint | PRD Phase | Status |
@@ -674,3 +709,4 @@ Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ✅ Released |
 | `v1.9.0` | Sprint 14 — Structured Logging + SEO/LLM Discoverability | Phase 4+ | ✅ Released |
+| `v1.10.0` | Sprint 15 — Logistics State Sync + Subtask Check-Off | Phase 4+ | 🔄 In progress |
