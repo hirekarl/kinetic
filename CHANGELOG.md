@@ -4,22 +4,15 @@ All notable changes to Kinetic are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## v1.10.0 (2026-05-04)
 
-### Added
-- `PATCH /api/tasks/{task_name}/subtasks` endpoint — mark an individual subtask complete; auto-promotes parent task to `completed` when all subtasks are done
-- `completeSubtask()` API client function and `handleCompleteSubtask` hook action in the frontend
-- Per-subtask interactive checkboxes on the Logistics Fixer card with optimistic `aria-checked` UI; wires to the new PATCH endpoint via `onCompleteSubtask` prop
+### Feat
 
-### Fixed
-- Non-destructive UPSERT in SQLite and PostgreSQL clients — `subtasks` and `completed_subtasks` are preserved when the LLM returns empty lists, eliminating the "3/0 steps" display corruption
-- `_merge_history` now does field-level backfill from the DB for tasks already present in the LLM payload, recovering subtask history after a verbal completion
-- Streaming `done` event now triggers a `fetchHistory` refresh when `task_completions` is non-empty, syncing the dashboard immediately without a manual page reload
-- `LogisticsStatusCard` display guard prevents "N/0 steps" rendering when `subtasks` is empty; tasks with no steps defined render no progress text at all
+- **logistics**: non-destructive upsert, field-level merge, subtask check-off
 
-### Changed
-- `DatabaseClient` Protocol extended from 15 to 16 methods (`complete_subtask` added)
-- LLM parser rule 4 added: model is instructed not to re-enumerate subtask lists when marking a task complete
+### Fix
+
+- **readme**: replace static version badge with dynamic GitHub tag badge
 
 ## v1.9.2 (2026-05-04)
 
