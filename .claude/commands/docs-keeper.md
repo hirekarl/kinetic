@@ -13,6 +13,8 @@ You will receive a security approval report and optionally a description of what
 
 ## Audit Checklist
 
+**All five files are mandatory.** The output format requires a non-empty entry for every file. Writing "no drift" for README.md without explicitly checking each item in the README.md section below is a failing audit — not a passing one.
+
 For each of the following, compare the current state of the docs against the actual code and update anything that has drifted:
 
 ### CLAUDE.md

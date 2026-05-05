@@ -19,5 +19,18 @@
       "Bash(cat:*)",
       "Bash(mkdir:*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import sys,json,subprocess,os; d=json.load(sys.stdin); f=d.get('tool_input',{}).get('file_path',''); subprocess.run(['uv','run','ruff','format',f,'--quiet']) if f and f.endswith('.py') and os.path.exists(f) else None\""
+          }
+        ]
+      }
+    ]
   }
 }

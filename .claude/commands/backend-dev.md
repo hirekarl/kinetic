@@ -17,7 +17,8 @@ You will receive a task card (from `/architect`). Before starting, read:
 5. **Run:** `uv run pytest --cov=kinetic --cov-report=term-missing` — show coverage
 6. **Run:** `uv run mypy src/kinetic --strict` — show output (must be zero errors)
 7. **Run:** `uv run ruff check src/ tests/` — show output (must be zero warnings)
-8. **Produce a handoff summary** (see format below)
+8. **Self-review:** Before writing the handoff summary, scan your changes for: missing `await` on async calls, unused variable assignments (F841 — especially in multi-agent result aggregation), copy-paste errors where one agent's result variable is used in another's slot, and any `# type: ignore` that masks a real type error. Fix anything found before proceeding.
+9. **Produce a handoff summary** (see format below)
 
 ## Code Standards
 
@@ -27,6 +28,7 @@ You will receive a task card (from `/architect`). Before starting, read:
 - Mark `# pragma: no cover` only on `if TYPE_CHECKING:` blocks and `raise NotImplementedError` stubs
 - No `# type: ignore` comments — fix the root cause instead
 - No bare `except:` — always catch specific exception types
+- **Never add Claude as a co-author** in commit messages — Karl Johnson is the sole author; no `Co-Authored-By:` footers
 
 ## Handoff Summary Format
 

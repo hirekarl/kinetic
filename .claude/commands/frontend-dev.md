@@ -19,7 +19,8 @@ You will receive a task card (from `/architect`) and, if this is a new feature, 
 7. **Run:** `npm run lint` — show output (must be zero errors, including jsx-a11y)
 8. **Run:** `npm run typecheck` — show output (must be zero errors)
 9. **Run Playwright** (if e2e test was part of the task): `npm run e2e` — show results including axe violations
-10. **Produce a handoff summary** (see format below)
+10. **Self-review:** Before writing the handoff summary, scan your changes for: `async` functions that contain no `await` (ESLint `require-await`), arrow-function void-return shorthand that should use braces (`no-confusing-void-expression`), any `any` type introduced under pressure, and Vitest `vi` used as a global without an explicit import (TypeScript needs the import even when `globals: true` is set). Fix anything found before proceeding.
+11. **Produce a handoff summary** (see format below)
 
 ## Code Standards
 
@@ -29,6 +30,7 @@ You will receive a task card (from `/architect`) and, if this is a new feature, 
 - Use `@testing-library/react` for component tests — query by role, label, or accessible name (not by class or id)
 - Every new component needs at least: render test, interaction test, and accessibility test (axe or jsx-a11y-safe markup)
 - No inline styles that carry semantic meaning — use CSS custom properties from `src/index.css`
+- **Never add Claude as a co-author** in commit messages — Karl Johnson is the sole author; no `Co-Authored-By:` footers
 
 ## Handoff Summary Format
 

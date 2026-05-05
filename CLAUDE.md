@@ -290,6 +290,24 @@ The ceremony script:
 
 ---
 
+## Git Authorship
+
+**Never add Claude as a co-author.** Karl Johnson is the sole author of all commits in this repo. Do not add `Co-Authored-By:` footers to commit messages, and do not include AI attribution ("Generated with Claude Code") in commit messages or descriptions. This rule applies to all agents in the dev team.
+
+---
+
+## Sprint Closure Checklist
+
+At the end of every sprint (after `/docs-keeper` completes):
+
+1. All tests passing with ≥ 80% coverage — `uv run pytest` + `npm run test:coverage`
+2. Docs synced — CLAUDE.md, GEMINI.md, README.md, ROADMAP.md, CHANGELOG.md all reflect current code
+3. `./scripts/release.sh` — bump version, update CHANGELOG, create release commit + tag
+4. Push commits **and** tags — `git push && git push --tags`
+5. Verify CI is green before calling the sprint done
+
+---
+
 ## TDD Workflow
 
 Every feature follows **Red → Green → Refactor** strictly:
@@ -319,7 +337,7 @@ Six specialist agents are available as Claude Code slash commands:
 | `/frontend-dev` | Frontend TDD Dev | Write failing Vitest/Playwright tests first, then React/TS implementation |
 | `/qa-reviewer` | QA Reviewer | Validate test quality, coverage gaps, integration scenarios; approve or block |
 | `/security-reviewer` | Security Reviewer | Run bandit/pip-audit/npm audit; check secrets, input validation, OWASP Top 10 |
-| `/docs-keeper` | Docs Keeper | Keep CLAUDE.md, GEMINI.md, inline docs, and memory in sync with code reality |
+| `/docs-keeper` | Docs Keeper | Keep CLAUDE.md, GEMINI.md, README.md, ROADMAP.md, CHANGELOG.md, inline docs, and memory in sync with code reality |
 
 ---
 
