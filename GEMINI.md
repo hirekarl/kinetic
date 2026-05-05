@@ -134,6 +134,7 @@ tests/
   unit/test_auth.py        auth utility tests: verify_password, JWT round-trip, expired/tampered tokens, FastAPI dependency behavior
   unit/test_lead_db.py     get_db() isolation tests: default path, named tenant path, client caching, pool-mode branch
   unit/test_db_protocol.py DatabaseClient Protocol completeness: all 16 method names, isinstance check against SqliteClient
+  unit/test_postgres_client_unit.py 36 unit tests for all 16 PostgresClient interface methods + _migrate via mocked asyncpg pool (no DATABASE_URL required); covers complete_subtask happy path, KeyError, ValueError, auto-completion, and idempotency
   unit/test_simulate_route.py 7 tests for POST /api/demo/simulate: 401 no auth, 403 non-demo tenant, 200 shape, service called, 5 rows inserted, timestamps historical, CheckInPayload type verified
   unit/test_burnout_series.py 14 tests for get_burnout_series(): empty/single/formula/ordering/days-filter/partial/all-None/perfect-health; Postgres mock; get_behavioral_summary() wiring
   unit/test_digest_generator.py 10 tests for generate_digest(): happy path, cache hit/miss/TTL, force=True bypass+update, empty-data canned response, history-only guard bypass, Gemini exception recovery

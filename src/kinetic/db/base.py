@@ -8,7 +8,7 @@ from kinetic.models.outputs import BehavioralProfile, BehavioralSummary
 
 
 @runtime_checkable
-class DatabaseClient(Protocol):
+class DatabaseClient(Protocol):  # pragma: no cover
     """Shared persistence interface satisfied by both SqliteClient and PostgresClient.
 
     All methods are async.  Implementations must provide per-tenant row isolation;

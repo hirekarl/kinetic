@@ -654,7 +654,7 @@ Replace ad-hoc `logging.getLogger` calls with a unified structlog pipeline. JSON
 
 ---
 
-## Sprint 15 — Logistics State Sync + Subtask Check-Off 🔄
+## Sprint 15 — Logistics State Sync + Subtask Check-Off ✅
 **Target version:** `v1.10.0`
 
 Fix corrupted logistics dashboard state after verbal task completion and add per-subtask interactive check-off.
@@ -677,7 +677,7 @@ Fix corrupted logistics dashboard state after verbal task completion and add per
 - [x] Tests: 6 display guard tests, 6 subtask checkbox interaction tests, 4 `useChat` hook tests, 3 API client tests (303 total, 99.95% coverage)
 
 ### Quality Gates
-- [x] `uv run pytest` → 376 passed, 29 skipped, 0 failed; 98% coverage
+- [x] `uv run pytest` → 381 passed, 29 skipped, 0 failed; 100% coverage
 - [x] `uv run mypy src/kinetic --strict` → 0 errors
 - [x] `uv run ruff check src/ tests/` → 0 warnings
 - [x] `npm run test:coverage` → 303 passed, 99.95% coverage
@@ -685,7 +685,8 @@ Fix corrupted logistics dashboard state after verbal task completion and add per
 - [x] `npm run lint` → 0 errors
 - [x] `/qa-reviewer` APPROVED
 - [x] `/security-reviewer` APPROVED (parameterized queries, auth-gated, no stack trace leakage)
-- [ ] `v1.10.0` release ceremony
+- [x] `v1.10.0` release ceremony
+- [x] 100% backend coverage: 5 `complete_subtask` unit tests + Protocol `# pragma: no cover` (381 passed, 29 skipped)
 
 ---
 
@@ -709,4 +710,4 @@ Fix corrupted logistics dashboard state after verbal task completion and add per
 | `v1.7.0` | Sprint 12 — Weekly Digest | Phase 4+ | ✅ Released |
 | `v1.8.0` | Sprint 13 — Demo Polish + Shareable Deploy | Phase 4+ | ✅ Released |
 | `v1.9.0` | Sprint 14 — Structured Logging + SEO/LLM Discoverability | Phase 4+ | ✅ Released |
-| `v1.10.0` | Sprint 15 — Logistics State Sync + Subtask Check-Off | Phase 4+ | 🔄 In progress |
+| `v1.10.0` | Sprint 15 — Logistics State Sync + Subtask Check-Off | Phase 4+ | ✅ Released |

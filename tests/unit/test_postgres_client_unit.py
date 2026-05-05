@@ -516,6 +516,80 @@ async def test_complete_task_raises_keyerror_for_unknown_task() -> None:
         await client.complete_task("nonexistent")
 
 
+# ── complete_subtask ──────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_appends_and_updates() -> None:
+    """complete_subtask() appends subtask and calls UPDATE."""
+    client, conn = _client()
+    conn.fetchrow.return_value = _row(
+        subtasks=json.dumps(["sort", "wash"]),
+        completed_subtasks=json.dumps([]),
+        status="pending",
+    )
+    await client.complete_subtask("laundry", "sort")
+    conn.execute.assert_called_once()
+    sql = conn.execute.call_args[0][0]
+    assert "UPDATE tasks" in sql
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_raises_keyerror_for_unknown_task() -> None:
+    """complete_subtask() raises KeyError when task row is not found."""
+    client, conn = _client()
+    conn.fetchrow.return_value = None
+    with pytest.raises(KeyError):
+        await client.complete_subtask("nonexistent", "sort")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_raises_valueerror_for_unknown_subtask() -> None:
+    """complete_subtask() raises ValueError when subtask not in task's subtask list."""
+    client, conn = _client()
+    conn.fetchrow.return_value = _row(
+        subtasks=json.dumps(["sort", "wash"]),
+        completed_subtasks=json.dumps([]),
+        status="pending",
+    )
+    with pytest.raises(ValueError):
+        await client.complete_subtask("laundry", "nonexistent_step")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_auto_completes_parent_when_all_done() -> None:
+    """complete_subtask() sets status='completed' when all subtasks are finished."""
+    client, conn = _client()
+    conn.fetchrow.return_value = _row(
+        subtasks=json.dumps(["sort", "wash"]),
+        completed_subtasks=json.dumps(["sort"]),
+        status="pending",
+    )
+    await client.complete_subtask("laundry", "wash")
+    _, new_status, *_ = conn.execute.call_args[0][1:]
+    assert new_status == "completed"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_complete_subtask_is_idempotent() -> None:
+    """complete_subtask() does not duplicate an already-completed subtask."""
+    client, conn = _client()
+    conn.fetchrow.return_value = _row(
+        subtasks=json.dumps(["sort", "wash"]),
+        completed_subtasks=json.dumps(["sort"]),
+        status="pending",
+    )
+    await client.complete_subtask("laundry", "sort")
+    completed_json = conn.execute.call_args[0][1]
+    completed = json.loads(completed_json)
+    assert completed.count("sort") == 1
+
+
 # ── clear_database ────────────────────────────────────────────────────────────
 
 
