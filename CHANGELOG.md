@@ -6,6 +6,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## v1.10.1 (2026-05-05)
 
+### Test
+
+- Restore 100% backend coverage: add 5 `complete_subtask` unit tests to `test_postgres_client_unit.py` covering happy path, KeyError, ValueError, auto-completion, and idempotency; add `# pragma: no cover` to `DatabaseClient` Protocol class (stubs are type-only, not executable)
+
 ## v1.10.0 (2026-05-04)
 
 ### Feat
