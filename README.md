@@ -23,7 +23,13 @@
 
 **Problem:** High-performing engineers instrument everything at work — CI pipelines, on-call runbooks, dashboards — but run their personal systems completely blind. Sleep, domestic logistics, and close relationships accumulate hidden debt with no alerting and no triage list. The only feedback loop is burnout, which fires weeks after the damage is done.
 
-**User:** Jordan is a senior software engineer at a growth-stage startup. He ships 50+ hours a week, has the discipline to build reliable production systems, but has never applied that same observability to himself. By the time he notices something is wrong — sleep tanked, laundry three weeks overdue, a close friend he hasn't spoken to in two weeks — he's already deep in a compounding debt spiral that costs 4–8 hours of recovery flow time to unwind.
+**User:** Jordan is a senior software engineer at a growth-stage startup — nine years in, title says IC but the actual job is closer to informal tech lead. He ships 50+ hours a week, has the discipline to build reliable production systems, and has never applied that same observability to himself.
+
+> "I'm completely overwhelmed. Four hours sleep, laundry six days overdue, haven't talked to Marcus in weeks."
+
+He has a task manager, a sleep tracker, and a weekly review habit he keeps about half the time. He has the tools — he doesn't have synthesis. Every morning he opens three separate apps and does triage in his head; that process takes 30–45 minutes and consumes the clearest part of his cognitive day. Laundry is his canary: when it piles up, everything else has slipped too. He doesn't think of himself as burned out. He thinks of himself as *behind*.
+
+Full profile → [`docs/JORDAN.md`](docs/JORDAN.md)
 
 **What Kinetic does:** One natural-language check-in per day routes through three specialist AI agents (bio, logistics, relational) and an operational liaison. It returns a prioritized triage list of two or three high-leverage actions — the ones that arrest the most compounding debt — so Jordan can clear them in five minutes and return to flow.
 
@@ -33,7 +39,9 @@
 
 **What's next:** The highest-value next feature is passive data ingestion — pulling sleep data from a wearable API (Oura, Whoop) so the system updates without a manual check-in. This tests the core assumption that observability, not discipline, is what's missing. After that: a mobile-native interface so the check-in friction drops from 30 seconds to 10.
 
-**Demo script and presentation reference:** [`docs/DEMO.md`](docs/DEMO.md) · [`docs/PRESENTATION.md`](docs/PRESENTATION.md)
+**Product spec:** [`docs/Kinetic-PRD.md`](docs/Kinetic-PRD.md)
+
+**Demo and presentation:** [`docs/DEMO.md`](docs/DEMO.md) · [`docs/PRESENTATION.md`](docs/PRESENTATION.md) · [`docs/slides.md`](docs/slides.md)
 
 **Video demo:**
 
