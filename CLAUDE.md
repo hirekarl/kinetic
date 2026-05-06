@@ -189,7 +189,7 @@ scripts/
 | Sprint 12 | `v1.7.0` | Weekly Digest | ✅ |
 | Sprint 13 | `v1.8.0` | Demo Polish + Shareable Deploy | ✅ |
 | Sprint 14 | `v1.9.0` | Structured Logging + SEO/LLM Discoverability | ✅ |
-| Sprint 15 | `v1.10.0` | Logistics State Sync + Subtask Check-Off | 🔄 |
+| Sprint 15 | `v1.10.0` | Logistics State Sync + Subtask Check-Off | ✅ |
 
 ---
 
