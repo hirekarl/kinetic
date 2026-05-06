@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![WCAG 2.1 AA](https://img.shields.io/badge/WCAG_2.1-AA-green?logo=w3c&logoColor=white)](frontend/src/e2e/a11y-audit.spec.ts)
+[![WCAG 2.1 AA](https://img.shields.io/badge/WCAG_2.1-AA-green?logo=w3c&logoColor=white)](frontend/e2e/a11y-audit.spec.ts)
 
 **Live demo:** [https://kinetic-frontend-c2bd.onrender.com](https://kinetic-frontend-c2bd.onrender.com)
 
