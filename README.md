@@ -37,7 +37,7 @@
 
 **Video demo:**
 
-[![Kinetic demo video](assets/brand/video-thumbnail.png)](https://www.youtube.com/watch?v=cjF54OMjlfQ)
+[![Watch the Kinetic demo on YouTube](assets/brand/video-thumbnail.png)](https://www.youtube.com/watch?v=cjF54OMjlfQ)
 
 [Watch the demo on YouTube →](https://www.youtube.com/watch?v=cjF54OMjlfQ)
 
@@ -51,26 +51,7 @@ Kinetic is a mission-control dashboard that surfaces that debt before it compoun
 
 ![Kinetic landing page](assets/brand/landing-1920x1080.png)
 
-```
-"Slept 5 hours, ate okay, feeling disconnected from Marcus."
-     │
-     ▼
-┌─────────────────────────────────────────────────────────┐
-│  Kinetic                              ● YELLOW          │
-├──────────────────────┬──────────────────────────────────┤
-│  > Slept 5 hours,    │  BIO          ● yellow           │
-│    ate okay,         │  Burnout: 62  Sleep debt: 3.5h   │
-│    feeling           │  Hard stop at 11pm recommended   │
-│    disconnected      ├──────────────────────────────────┤
-│    from Marcus.      │  LOGISTICS    ● yellow           │
-│                      │  Laundry overdue: 2d             │
-│  Brief your system.  │  → Pickup tonight (~$25, 2h ROI) │
-│  What's your status? ├──────────────────────────────────┤
-│                      │  RELATIONAL   ● red              │
-│  ________________    │  Marcus: 11d, score 4/10         │
-│  [Send]              │  → Text to schedule a call (30s) │
-└──────────────────────┴──────────────────────────────────┘
-```
+![Kinetic dashboard — live triage view](assets/brand/dashboard-preview.png)
 
 ---
 
